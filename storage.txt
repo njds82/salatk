@@ -1,0 +1,113 @@
+# Salatk Project - Database Schema Specification
+# Version: 1.3.2
+# Date: 2025-12-25
+
+This document serves as a technical reference for creating a structured database (SQL or NoSQL) based on the Salatk application's data management logic.
+
+================================================================================
+1. TABLE: Users
+================================================================================
+Description: Stores user profile and authentication information.
+
+FIELDS:
+- id (UUID/String): Unique user identifier. Example: "user_1735117536"
+- fullName (String): The user's full name.
+- email (String, Unique): User's email address for login.
+- password (String, Hashed): Hashed password for security.
+- createdAt (DateTime): Account creation timestamp (ISO 8601).
+
+================================================================================
+2. TABLE: UserSettings
+================================================================================
+Description: Stores user-specific application preferences.
+
+FIELDS:
+- userId (Foreign Key -> Users.id): Reference to the user.
+- language (String): 'ar' or 'en'. Default: 'ar'.
+- theme (String): 'light' or 'dark'. Default: 'light'.
+- lastVisit (Date): Date of last application usage (YYYY-MM-DD).
+- initializedAt (Timestamp): When the user's data was first created.
+
+================================================================================
+3. TABLE: PrayerRecords
+================================================================================
+Description: Records daily prayer performance status.
+
+FIELDS:
+- userId (Foreign Key -> Users.id): Reference to the user.
+- date (Date): The day of the prayer (YYYY-MM-DD).
+- prayerKey (String): One of: 'fajr', 'duha', 'dhuhr', 'asr', 'maghrib', 'isha', 'qiyam'.
+- status (String): 'done' (performed) or 'missed'.
+- timestamp (Timestamp): Exact time the status was recorded.
+
+================================================================================
+4. TABLE: QadaPrayers
+================================================================================
+Description: Tracks missed prayers (obligatory) that need to be "made up" (Qada).
+
+FIELDS:
+- id (UUID/String): Unique record identifier.
+- userId (Foreign Key -> Users.id): Reference to the user.
+- prayerKey (String): The name of the missed prayer.
+- originalDate (Date): The date the prayer was missed (or 'unknown' if manual).
+- rakaat (Integer): Number of rakaat for this prayer.
+- timestamp (Timestamp): When the record was created.
+- isManual (Boolean): True if added manually by user, False if auto-marked.
+- isMadeUp (Boolean): True if the prayer has been compensated.
+
+================================================================================
+5. TABLE: Habits
+================================================================================
+Description: Defined habits for tracking spiritual growth or avoidance.
+
+FIELDS:
+- id (UUID/String): Unique habit identifier.
+- userId (Foreign Key -> Users.id): Reference to the user.
+- name (String): Reference key or name of the habit (translatable).
+- type (String): 'worship' (positive) or 'sin' (negative to avoid).
+- createdAt (Timestamp): When the habit was added.
+
+================================================================================
+6. TABLE: HabitHistory
+================================================================================
+Description: Logs daily actions taken for specific habits.
+
+FIELDS:
+- userId (Foreign Key -> Users.id): Reference to the user.
+- habitId (Foreign Key -> Habits.id): Reference to the habit definition.
+- date (Date): The day of the action (YYYY-MM-DD).
+- action (String): 
+    - For 'worship': 'done'.
+    - For 'sin': 'committed' or 'avoided'.
+- timestamp (Timestamp): When the action was logged.
+
+================================================================================
+7. TABLE: PointsHistory
+================================================================================
+Description: Audit log for all merit points earned or lost.
+
+FIELDS:
+- userId (Foreign Key -> Users.id): Reference to the user.
+- amount (Integer): Points changed (positive or negative).
+- reason (String): Description of why points changed (translated key or string).
+- timestamp (Timestamp): When points were adjusted.
+
+================================================================================
+8. TABLE: Locations
+================================================================================
+Description: Stores geographical coordinates for prayer time calculations.
+
+FIELDS:
+- userId (Foreign Key -> Users.id): Reference to the user.
+- latitude (Float): GPS Latitude.
+- longitude (Float): GPS Longitude.
+- isManualMode (Boolean): True if coordinates were entered manually.
+- lastUpdate (Timestamp): When the location was last refreshed.
+
+================================================================================
+DATA RELATIONSHIP SUMMARY:
+- All data tables rely on 'userId' to support multi-user functionality.
+- 'QadaPrayers' are automatically generated when a 'PrayerRecord' is marked 'missed'.
+- Points are deducted for 'missed' mandatory prayers and 'committed' sins.
+- Points are awarded for 'performed' prayers, 'made up' qada, 'done' worship habits, and 'avoided' sin habits.
+================================================================================
