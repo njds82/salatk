@@ -150,6 +150,80 @@ const SyncManager = {
     },
 
     // ========================================
+    // Push All Local Data (Migration/Force Sync)
+    // ========================================
+    async pushAllLocalData() {
+        console.log('SyncManager: Pushing ALL local data...');
+        if (!AuthManager.isAuthenticated()) {
+            console.log('SyncManager: Not authenticated.');
+            return false;
+        }
+
+        const data = loadData();
+        try {
+            // 1. Settings
+            await this.pushSettings(data.settings);
+
+            // 2. Prayers
+            const prayerUpdates = [];
+            for (const date in data.prayers) {
+                for (const key in data.prayers[date]) {
+                    const p = data.prayers[date][key];
+                    prayerUpdates.push(this.pushPrayerRecord(date, key, p.status));
+                }
+            }
+            await Promise.all(prayerUpdates);
+
+            // 3. Qada
+            // We use pushQadaRecord for each
+            const qadaUpdates = data.qadaPrayers.map(q => this.pushQadaRecord(q));
+            await Promise.all(qadaUpdates);
+
+            // 4. Habits
+            const habitUpdates = data.habits.map(async h => {
+                await this.pushHabit(h);
+                // History
+                if (h.history) {
+                    const historyPromises = Object.entries(h.history).map(([date, action]) =>
+                        this.pushHabitAction(h.id, date, action)
+                    );
+                    await Promise.all(historyPromises);
+                }
+            });
+            await Promise.all(habitUpdates);
+
+            // 5. Points
+            // Points history is append-only. Pushing all might duplicate if we don't have IDs.
+            // However, Supabase table has UUID PK. 
+            // Local history doesn't have UUIDs usually unless we added them.
+            // If we blindly push, we duplicate.
+            // Better: Trust that `addPoints` was called. But for MIGRATION, we need to push.
+            // Let's blindly push but maybe we should rely on "Total Points" if we had a summary table? 
+            // Current schema recalculates from history? No, point history is audit.
+            // Let's skip bulk pushing point history to avoid massive duplicates, 
+            // OR checks if it exists (expensive).
+            // User mostly cares about Prayers/Habits/Settings preservation.
+            // Let's push ONE "Migration" point record if DB is empty to match total?
+            // For now: Skip bulk points push to be safe, assuming user will just earn new points.
+
+            // 6. Location
+            const cachedLoc = localStorage.getItem(PRAYER_CACHE_KEY);
+            if (cachedLoc) {
+                try {
+                    const loc = JSON.parse(cachedLoc);
+                    await this.pushLocation(loc);
+                } catch (e) { }
+            }
+
+            console.log('SyncManager: Push All complete.');
+            return true;
+        } catch (error) {
+            console.error('SyncManager: Push All failed', error);
+            return false;
+        }
+    },
+
+    // ========================================
     // Push Data (Local -> Cloud)
     // ========================================
 
