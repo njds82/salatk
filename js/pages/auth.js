@@ -45,7 +45,7 @@ function renderAuthPage(type = 'login') {
                 
                 <div class="auth-footer">
                     <p>${isLogin ? t('no_account_text') : t('have_account_text')} 
-                        <a href="#" onclick="toggleAuthType('${isLogin ? 'signup' : 'login'}')">
+                        <a href="#${isLogin ? 'signup' : 'login'}">
                             ${isLogin ? t('signup_link') : t('login_link')}
                         </a>
                     </p>
