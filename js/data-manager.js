@@ -145,6 +145,11 @@ function getDailyPrayers(date = getCurrentDate()) {
     if (!data.prayers[date]) {
         data.prayers[date] = {};
         saveData(data);
+
+        // Sync to cloud
+        if (window.SyncManager) {
+            SyncManager.removeQadaRecord(id);
+        }
     }
     return data.prayers[date];
 }
@@ -334,6 +339,15 @@ function markHabit(habitId, action, date = getCurrentDate()) {
     }
 
     saveData(data);
+
+    // Sync to cloud
+    if (window.SyncManager) {
+        if (habit.history[date]) {
+            SyncManager.pushHabitAction(habitId, date, habit.history[date]);
+        } else {
+            // Logic not reachable here given lines 318-320 check, but safe to assume add
+        }
+    }
     return { success: true, data };
 }
 
@@ -359,6 +373,11 @@ function addPointsToData(data, amount, reason) {
         reason: reason,
         timestamp: getTimestamp()
     });
+
+    // Sync to cloud
+    if (window.SyncManager) {
+        SyncManager.pushPoint(amount, reason);
+    }
 }
 
 // Get points
@@ -441,7 +460,11 @@ function importData(file) {
             try {
                 const data = JSON.parse(e.target.result);
                 saveData(data);
-                resolve(data);
+
+                // Sync to cloud
+                if (window.SyncManager) {
+                    SyncManager.pushSettings(data.settings);
+                }
             } catch (error) {
                 reject(error);
             }
@@ -455,6 +478,12 @@ function importData(file) {
 function clearAllData() {
     const data = getDefaultData();
     saveData(data);
+
+    // Sync to cloud
+    if (window.SyncManager) {
+        const newHabit = data.habits[data.habits.length - 1];
+        SyncManager.pushHabit(newHabit);
+    }
     return data;
 }
 
@@ -552,5 +581,11 @@ function resetHabitStatus(habitId, date = getCurrentDate()) {
     delete habit.history[date];
 
     saveData(data);
+
+    // Sync to cloud
+    if (window.SyncManager) {
+        SyncManager.removeHabitAction(habitId, date);
+    }
+
     return { success: true, data };
 }

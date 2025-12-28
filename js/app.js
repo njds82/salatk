@@ -39,7 +39,15 @@ async function checkAuthAndInit() {
         await PrayerManager.init();
     }
 
-    // Update points display
+    // Sync data if configured
+    if (window.SyncManager) {
+        await SyncManager.pullAllData();
+        // Since we pulled new data, reload in-memory structures if needed 
+        // (pullAllData writes to localStorage, so next reads are fine)
+    }
+
+    // Update points display after potential sync
+    updatePointsDisplay();
     updatePointsDisplay();
 
     // Navigate to initial page
