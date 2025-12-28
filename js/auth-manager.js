@@ -8,6 +8,7 @@ const AuthManager = {
             email,
             password,
             options: {
+                emailRedirectTo: 'https://salatk-beta.pages.dev/',
                 data: {
                     full_name: fullName
                 }
