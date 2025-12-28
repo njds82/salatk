@@ -245,6 +245,18 @@ const SyncManager = {
         if (error) console.error('SyncManager: pushPrayerRecord failed', error);
     },
 
+    async deletePrayerRecord(date, prayerKey) {
+        if (!AuthManager.isAuthenticated()) return;
+        const user = await AuthManager.getCurrentUser();
+
+        const { error } = await window.supabaseClient
+            .from('prayer_records')
+            .delete()
+            .match({ user_id: user.id, date: date, prayer_key: prayerKey });
+
+        if (error) console.error('SyncManager: deletePrayerRecord failed', error);
+    },
+
     async pushQadaRecord(qadaItem) {
         if (!AuthManager.isAuthenticated()) return;
         const user = await AuthManager.getCurrentUser();
