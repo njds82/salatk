@@ -145,11 +145,6 @@ function getDailyPrayers(date = getCurrentDate()) {
     if (!data.prayers[date]) {
         data.prayers[date] = {};
         saveData(data);
-
-        // Sync to cloud
-        if (window.SyncManager) {
-            SyncManager.removeQadaRecord(id);
-        }
     }
     return data.prayers[date];
 }
@@ -183,6 +178,12 @@ function markPrayerPerformed(prayerKey, date = getCurrentDate()) {
     addPointsToData(data, prayer.points, `${t(prayer.nameKey)} - ${t('performed')}`);
 
     saveData(data);
+
+    // Sync to cloud
+    if (window.SyncManager) {
+        SyncManager.pushPrayerRecord(date, prayerKey, 'done');
+    }
+
     return { success: true, data };
 }
 
@@ -216,16 +217,28 @@ function markPrayerMissed(prayerKey, date = getCurrentDate()) {
         addPointsToData(data, -prayer.points, `${t(prayer.nameKey)} - ${t('missed')}`);
 
         // Add to qada prayers
-        data.qadaPrayers.push({
+        const qadaItem = {
             id: generateId(),
             prayer: prayerKey,
             date: date,
             rakaat: prayer.rakaat,
             timestamp: getTimestamp()
-        });
+        };
+        data.qadaPrayers.push(qadaItem);
+
+        // Sync Qada item to cloud
+        if (window.SyncManager) {
+            SyncManager.pushQadaRecord(qadaItem);
+        }
     }
 
     saveData(data);
+
+    // Sync Prayer status to cloud
+    if (window.SyncManager) {
+        SyncManager.pushPrayerRecord(date, prayerKey, 'missed');
+    }
+
     return { success: true, data };
 }
 
@@ -251,6 +264,12 @@ function makeUpQadaPrayer(qadaId) {
     addPointsToData(data, 3, t('made_up'));
 
     saveData(data);
+
+    // Sync to cloud
+    if (window.SyncManager) {
+        SyncManager.removeQadaRecord(qadaId);
+    }
+
     return { success: true, data };
 }
 
@@ -265,14 +284,20 @@ function addManualQadaPrayer(prayerKey, count = 1, date = null) {
 
     // Add multiple prayers if count > 1
     for (let i = 0; i < count; i++) {
-        data.qadaPrayers.push({
+        const qadaItem = {
             id: generateId(),
             prayer: prayerKey,
             date: date || 'unknown',
             rakaat: prayer.rakaat,
             timestamp: getTimestamp(),
             manual: true
-        });
+        };
+        data.qadaPrayers.push(qadaItem);
+
+        // Sync to cloud
+        if (window.SyncManager) {
+            SyncManager.pushQadaRecord(qadaItem);
+        }
     }
 
     saveData(data);
@@ -553,6 +578,12 @@ function resetPrayerStatus(prayerKey, date = getCurrentDate()) {
     delete data.prayers[date][prayerKey];
 
     saveData(data);
+
+    // Sync to cloud
+    if (window.SyncManager) {
+        SyncManager.deletePrayerRecord(date, prayerKey);
+    }
+
     return { success: true, data };
 }
 
