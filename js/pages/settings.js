@@ -208,40 +208,45 @@ function handleImportData() {
 
 // Handle clear all data
 function handleClearAllData() {
+
     confirmDialog(t('confirm_clear_all'), () => {
         clearAllData();
         showToast(t('data_cleared_message'), 'info');
         updatePointsDisplay();
         navigateTo('daily-prayers');
-        // Handle force sync
-        async function handleForceSync() {
-            showToast(t('syncing_message') || 'Syncing...', 'info');
-            if (window.SyncManager) {
-                try {
-                    // We'll push current state first to ensure local changes aren't lost if they weren't synced yet
-                    // However, SyncManager currently only has fine-grained object pushes.
-                    // Let's rely on pullAllData for now, or implement a pushAll in SyncManager.
-                    // A "Force Sync" usually implies "Make cloud look like me" or "Make me look like cloud".
-                    // Given "offline-first" style, we usually want "Push dirty, then Pull".
-                    // For now, let's just Pull to verify connection, as Push happens on edit.
-                    // If the user says "Database empty", they might have data LOCALLY they want to see in cloud.
-                    // So we actually need a "Push All" for existing local data that was created before sync was active.
+    });
+}
 
-                    // NOTE: This assumes the user has local data they want to SAVE to the empty DB.
-                    const success = await SyncManager.pushAllLocalData();
-                    if (success) {
-                        showToast(t('sync_success') || 'Sync complete', 'success');
-                        // Refresh data
-                        await SyncManager.pullAllData();
-                        renderPage('settings');
-                    } else {
-                        showToast(t('sync_error') || 'Sync failed', 'error');
-                    }
-                } catch (error) {
-                    console.error(error);
-                    showToast(t('sync_error') || 'Sync failed', 'error');
-                }
+// Handle force sync
+async function handleForceSync() {
+    showToast(t('syncing_message') || 'Syncing...', 'info');
+    if (window.SyncManager) {
+        try {
+            // We'll push current state first to ensure local changes aren't lost if they weren't synced yet
+            // However, SyncManager currently only has fine-grained object pushes.
+            // Let's rely on pullAllData for now, or implement a pushAll in SyncManager.
+            // A "Force Sync" usually implies "Make cloud look like me" or "Make me look like cloud".
+            // Given "offline-first" style, we usually want "Push dirty, then Pull".
+            // For now, let's just Pull to verify connection, as Push happens on edit.
+            // If the user says "Database empty", they might have data LOCALLY they want to see in cloud.
+            // So we actually need a "Push All" for existing local data that was created before sync was active.
+
+            // NOTE: This assumes the user has local data they want to SAVE to the empty DB.
+            const success = await SyncManager.pushAllLocalData();
+            if (success) {
+                showToast(t('sync_success') || 'Sync complete', 'success');
+                // Refresh data
+                await SyncManager.pullAllData();
+                renderPage('settings');
             } else {
-                showToast(t('error_general'), 'error');
+                showToast(t('sync_error') || 'Sync failed', 'error');
             }
+        } catch (error) {
+            console.error(error);
+            showToast(t('sync_error') || 'Sync failed', 'error');
         }
+    } else {
+        showToast(t('error_general'), 'error');
+    }
+}
+
