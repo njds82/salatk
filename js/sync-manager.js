@@ -19,121 +19,127 @@ const SyncManager = {
         const userId = session.user.id;
 
         try {
-            // Parallel Fetch using Promise.all
-            const promises = [
-                window.supabaseClient.from('user_settings').select('*').eq('user_id', userId).maybeSingle(),
-                window.supabaseClient.from('prayer_records').select('*').eq('user_id', userId),
-                window.supabaseClient.from('qada_prayers').select('*').eq('user_id', userId),
-                window.supabaseClient.from('habits').select('*').eq('user_id', userId),
-                window.supabaseClient.from('habit_history').select('*').eq('user_id', userId),
-                window.supabaseClient.from('points_history').select('*').eq('user_id', userId),
-                window.supabaseClient.from('locations').select('*').eq('user_id', userId).maybeSingle()
-            ];
-
-            const [
-                { data: settings },
-                { data: prayers },
-                { data: qada },
-                { data: habits },
-                { data: habitHistory },
-                { data: points },
-                { data: location }
-            ] = await Promise.all(promises);
-
-            // --- Update IndexedDB in Bulk ---
+            console.group('SyncManager: Pull Operations');
 
             // 1. Settings
-            if (settings) {
-                const settingsEntries = [
-                    { key: 'language', value: settings.language },
-                    { key: 'theme', value: settings.theme },
-                    { key: 'lastVisit', value: settings.last_visit },
-                    { key: 'initialized', value: new Date(settings.initialized_at || Date.now()).getTime() }
-                ];
-                await db.settings.bulkPut(settingsEntries);
-            }
+            try {
+                const { data: settings, error } = await window.supabaseClient.from('user_settings').select('*').eq('user_id', userId).maybeSingle();
+                if (error) throw error;
+                if (settings) {
+                    await db.settings.bulkPut([
+                        { key: 'language', value: settings.language },
+                        { key: 'theme', value: settings.theme },
+                        { key: 'lastVisit', value: settings.last_visit },
+                        { key: 'initialized', value: new Date(settings.initialized_at || Date.now()).getTime() }
+                    ]);
+                    console.log('✔ Settings synced');
+                }
+            } catch (e) { console.error('✘ Settings sync failed', e); }
 
             // 2. Prayers
-            if (prayers && prayers.length > 0) {
-                const prayerRecords = prayers.map(p => ({
-                    date: p.date,
-                    key: p.prayer_key,
-                    status: p.status,
-                    timestamp: new Date(p.recorded_at).getTime()
-                }));
-                await db.prayers.bulkPut(prayerRecords);
-            }
+            try {
+                const { data: prayers, error } = await window.supabaseClient.from('prayer_records').select('*').eq('user_id', userId);
+                if (error) throw error;
+                if (prayers?.length > 0) {
+                    const prayerRecords = prayers.map(p => ({
+                        date: p.date,
+                        key: p.prayer_key,
+                        status: p.status,
+                        timestamp: new Date(p.recorded_at).getTime()
+                    }));
+                    await db.prayers.bulkPut(prayerRecords);
+                    console.log(`✔ ${prayers.length} Prayers synced`);
+                }
+            } catch (e) { console.error('✘ Prayers sync failed', e); }
 
             // 3. Qada
-            if (qada && qada.length > 0) {
-                const qadaRecords = qada.map(q => ({
-                    id: q.id, // Ensure UUID consistency from UUID in DB
-                    prayer: q.prayer_key,
-                    date: q.original_date,
-                    rakaat: q.rakaat,
-                    timestamp: new Date(q.recorded_at).getTime(),
-                    manual: q.is_manual
-                }));
-                await db.qada.bulkPut(qadaRecords);
-            }
+            try {
+                const { data: qada, error } = await window.supabaseClient.from('qada_prayers').select('*').eq('user_id', userId);
+                if (error) throw error;
+                if (qada?.length > 0) {
+                    const qadaRecords = qada.map(q => ({
+                        id: q.id,
+                        prayer: q.prayer_key,
+                        date: q.original_date,
+                        rakaat: q.rakaat,
+                        timestamp: new Date(q.recorded_at).getTime(),
+                        manual: q.is_manual
+                    }));
+                    await db.qada.bulkPut(qadaRecords);
+                    console.log(`✔ ${qada.length} Qada records synced`);
+                }
+            } catch (e) { console.error('✘ Qada sync failed', e); }
 
             // 4. Habits
-            if (habits && habits.length > 0) {
-                const habitRecords = habits.map(h => ({
-                    id: h.id,
-                    name: h.name,
-                    type: h.type,
-                    created: new Date(h.created_at).getTime()
-                }));
-                await db.habits.bulkPut(habitRecords);
-            }
+            try {
+                const { data: habits, error } = await window.supabaseClient.from('habits').select('*').eq('user_id', userId);
+                if (error) throw error;
+                if (habits?.length > 0) {
+                    const habitRecords = habits.map(h => ({
+                        id: h.id,
+                        name: h.name,
+                        type: h.type,
+                        created: new Date(h.created_at).getTime()
+                    }));
+                    await db.habits.bulkPut(habitRecords);
+                    console.log(`✔ ${habits.length} Habits synced`);
+                }
+            } catch (e) { console.error('✘ Habits sync failed', e); }
 
             // 5. Habit History
-            if (habitHistory && habitHistory.length > 0) {
-                const historyRecords = habitHistory.map(h => ({
-                    habitId: h.habit_id,
-                    date: h.date,
-                    action: h.action
-                }));
-                await db.habit_history.bulkPut(historyRecords);
-            }
+            try {
+                const { data: habitHistory, error } = await window.supabaseClient.from('habit_history').select('*').eq('user_id', userId);
+                if (error) throw error;
+                if (habitHistory?.length > 0) {
+                    const historyRecords = habitHistory.map(h => ({
+                        habitId: h.habit_id,
+                        date: h.date,
+                        action: h.action
+                    }));
+                    await db.habit_history.bulkPut(historyRecords);
+                    console.log(`✔ ${habitHistory.length} Habit actions synced`);
+                }
+            } catch (e) { console.error('✘ Habit history sync failed', e); }
 
             // 6. Points
-            if (points && points.length > 0) {
-                // Danger: Duplication if we just add.
-                // We should probably rely on the Cloud as source of truth for total history?
-                // Or just overwrite if we want valid full sync.
-                // Dexie 'bulkPut' uses keys. 'points' table key is ++id (auto). 
-                // We don't have UUIDs in local schema for points, only timestamp (non-unique).
-                // To avoid duplication, we might clear local points and re-fill?
-                // Strategy: Clear local points and replace with cloud points (Simplest for accuracy)
-                await db.points.clear();
-                const pointRecords = points.map(p => ({
-                    amount: p.amount,
-                    reason: p.reason,
-                    timestamp: new Date(p.recorded_at).getTime() // We lose original ordering ID unless we sort
-                }));
-                await db.points.bulkAdd(pointRecords);
-            }
+            try {
+                const { data: points, error } = await window.supabaseClient.from('points_history').select('*').eq('user_id', userId);
+                if (error) throw error;
+                if (points?.length > 0) {
+                    await db.points.clear();
+                    const pointRecords = points.map(p => ({
+                        amount: p.amount,
+                        reason: p.reason,
+                        timestamp: new Date(p.recorded_at).getTime()
+                    }));
+                    await db.points.bulkAdd(pointRecords);
+                    console.log(`✔ ${points.length} Points synced`);
+                }
+            } catch (e) { console.error('✘ Points sync failed', e); }
 
             // 7. Location
-            if (location) {
-                // Store in settings or separate store
-                // We have a 'locations' store in db.js singleton
-                await db.locations.put({
-                    id: 'user_location',
-                    lat: location.latitude,
-                    long: location.longitude,
-                    manualMode: location.is_manual_mode,
-                    lastUpdate: new Date(location.last_update).getTime()
-                });
-            }
+            try {
+                const { data: location, error } = await window.supabaseClient.from('locations').select('*').eq('user_id', userId).maybeSingle();
+                if (error) throw error;
+                if (location) {
+                    await db.locations.put({
+                        id: 'user_location',
+                        lat: location.latitude,
+                        long: location.longitude,
+                        manualMode: location.is_manual_mode,
+                        lastUpdate: new Date(location.last_update).getTime()
+                    });
+                    console.log('✔ Location synced');
+                }
+            } catch (e) { console.error('✘ Location sync failed', e); }
 
-            console.log('SyncManager: Pull complete. IndexedDB updated.');
+            console.groupEnd();
+            console.log('SyncManager: Pull complete.');
             return true;
 
         } catch (error) {
-            console.error('SyncManager: Pull failed', error);
+            console.groupEnd();
+            console.error('SyncManager: Fatal pull error', error);
             return false;
         }
     },
@@ -263,22 +269,24 @@ const SyncManager = {
             return false;
         }
 
-        console.log('SyncManager: Pushing all local data...');
-        const user = await getUser();
-
         try {
+            console.group('SyncManager: Push Operations');
+            const user = await getUser();
+
             // 1. Settings
             const allSettings = await db.settings.toArray();
             if (allSettings.length > 0) {
                 const settingsObj = {};
                 allSettings.forEach(s => settingsObj[s.key] = s.value);
 
-                await window.supabaseClient.from('user_settings').upsert({
+                const { error } = await window.supabaseClient.from('user_settings').upsert({
                     user_id: user.id,
                     language: settingsObj.language || 'ar',
                     theme: settingsObj.theme || 'light',
                     last_visit: settingsObj.lastVisit || new Date().toISOString().split('T')[0]
                 });
+                if (error) console.error('✘ Settings push failed', error);
+                else console.log('✔ Settings pushed');
             }
 
             // 2. Prayers
@@ -291,13 +299,11 @@ const SyncManager = {
                     status: p.status,
                     recorded_at: new Date(p.timestamp || Date.now()).toISOString()
                 }));
-                // Process in chunks of 50 to avoid payload limits
                 for (let i = 0; i < prayerUpdates.length; i += 50) {
-                    const chunk = prayerUpdates.slice(i, i + 50);
-                    await window.supabaseClient
-                        .from('prayer_records')
-                        .upsert(chunk, { onConflict: 'user_id, date, prayer_key' });
+                    const { error } = await window.supabaseClient.from('prayer_records').upsert(prayerUpdates.slice(i, i + 50), { onConflict: 'user_id, date, prayer_key' });
+                    if (error) console.error('✘ Prayers chunk push failed', error);
                 }
+                console.log(`✔ ${prayerUpdates.length} Prayers pushed`);
             }
 
             // 3. Qada
@@ -313,9 +319,9 @@ const SyncManager = {
                     is_manual: q.manual || false,
                     is_made_up: false
                 }));
-                for (let i = 0; i < qadaUpdates.length; i += 50) {
-                    await window.supabaseClient.from('qada_prayers').upsert(qadaUpdates.slice(i, i + 50));
-                }
+                const { error } = await window.supabaseClient.from('qada_prayers').upsert(qadaUpdates);
+                if (error) console.error('✘ Qada push failed', error);
+                else console.log(`✔ ${qadaUpdates.length} Qada records pushed`);
             }
 
             // 4. Habits
@@ -328,7 +334,9 @@ const SyncManager = {
                     type: h.type,
                     created_at: new Date(h.created || Date.now()).toISOString()
                 }));
-                await window.supabaseClient.from('habits').upsert(habitUpdates);
+                const { error } = await window.supabaseClient.from('habits').upsert(habitUpdates);
+                if (error) console.error('✘ Habits push failed', error);
+                else console.log(`✔ ${habitUpdates.length} Habits pushed`);
             }
 
             // 5. Habit History
@@ -342,29 +350,47 @@ const SyncManager = {
                     recorded_at: new Date().toISOString()
                 }));
                 for (let i = 0; i < historyUpdates.length; i += 50) {
-                    await window.supabaseClient
-                        .from('habit_history')
-                        .upsert(historyUpdates.slice(i, i + 50), { onConflict: 'user_id, habit_id, date' });
+                    const { error } = await window.supabaseClient.from('habit_history').upsert(historyUpdates.slice(i, i + 50), { onConflict: 'user_id, habit_id, date' });
+                    if (error) console.error('✘ Habit history chunk failed', error);
                 }
+                console.log(`✔ ${historyUpdates.length} Habit actions pushed`);
             }
 
-            // 6. Location
+            // 6. Points
+            const allPoints = await db.points.toArray();
+            if (allPoints.length > 0) {
+                const pointUpdates = allPoints.map(p => ({
+                    user_id: user.id,
+                    amount: p.amount,
+                    reason: p.reason,
+                    recorded_at: new Date(p.timestamp || Date.now()).toISOString()
+                }));
+                const { error } = await window.supabaseClient.from('points_history').insert(pointUpdates);
+                if (error) console.error('✘ Points push failed', error);
+                else console.log(`✔ ${pointUpdates.length} Points pushed`);
+            }
+
+            // 7. Location
             const location = await db.locations.get('user_location');
             if (location) {
-                await window.supabaseClient.from('locations').upsert({
+                const { error } = await window.supabaseClient.from('locations').upsert({
                     user_id: user.id,
                     latitude: location.lat,
                     longitude: location.long,
                     is_manual_mode: location.manualMode,
                     last_update: new Date(location.lastUpdate).toISOString()
                 });
+                if (error) console.error('✘ Location push failed', error);
+                else console.log('✔ Location pushed');
             }
 
+            console.groupEnd();
             console.log('SyncManager: Push complete.');
             return true;
 
         } catch (error) {
-            console.error('SyncManager: Push failed', error);
+            console.groupEnd();
+            console.error('SyncManager: Fatal push error', error);
             return false;
         }
     },
@@ -494,6 +520,60 @@ const SyncManager = {
             }
         } catch (err) {
             console.error('Error handling realtime event:', err);
+        }
+    },
+    async diagnoseSync() {
+        console.group('%c Sync Diagnostics ', 'background: #222; color: #bada55; font-size: 1.2em');
+
+        try {
+            // 1. Connection Check
+            console.log('1. Checking SDK...');
+            if (!window.supabaseClient) {
+                console.error('✘ Supabase SDK not initialized.');
+                return;
+            }
+            console.log('✔ SDK Initialized');
+
+            // 2. Auth Check
+            console.log('2. Checking Auth...');
+            const { data: { session } } = await window.supabaseClient.auth.getSession();
+            if (!session) {
+                console.error('✘ No active session. Please log in.');
+                return;
+            }
+            console.log('✔ Logged in as:', session.user.email);
+            const userId = session.user.id;
+
+            // 3. Permissions Check (Profile)
+            console.log('3. Checking Profile Access...');
+            const { data: profile, error: pError } = await window.supabaseClient.from('profiles').select('*').eq('id', userId).maybeSingle();
+            if (pError) console.error('✘ Profile access error:', pError.message);
+            else if (!profile) console.warn('⚠ Profile record missing in cloud!');
+            else console.log('✔ Profile access OK');
+
+            // 4. Table Health Check
+            const tables = ['user_settings', 'prayer_records', 'qada_prayers', 'habits', 'habit_history', 'points_history', 'locations'];
+            console.log('4. Checking Table Permissions...');
+            for (const table of tables) {
+                const { error } = await window.supabaseClient.from(table).select('count').limit(1);
+                if (error) console.error(`  ✘ ${table}: ${error.message}`);
+                else console.log(`  ✔ ${table}: Accessible`);
+            }
+
+            // 5. Local Data Audit
+            console.log('5. Local Data Audit...');
+            const localCounts = {
+                prayers: await db.prayers.count(),
+                qada: await db.qada.count(),
+                points: await db.points.count(),
+                habits: await db.habits.count()
+            };
+            console.table(localCounts);
+
+        } catch (err) {
+            console.error('Diagnostic failed with unexpected error:', err);
+        } finally {
+            console.groupEnd();
         }
     }
 };
