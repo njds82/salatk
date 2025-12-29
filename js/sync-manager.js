@@ -286,6 +286,14 @@ const SyncManager = {
         }
     },
 
+    async removePoint(id) {
+        if (!await authCheck()) return;
+        const { error } = await window.supabaseClient.from('points_history').delete().eq('id', id);
+        if (error) {
+            console.error('Remove Point Error', error.message || error);
+        }
+    },
+
     // Push all local data to cloud (Force Sync / Recovery)
     async pushAllLocalData() {
         if (!await authCheck()) {
@@ -391,21 +399,22 @@ const SyncManager = {
                 console.log(`✔ ${historyUpdates.length} Habit actions pushed`);
             }
 
-            // 6. Points
+            // 6. Points (CRITICAL FIX: Use upsert and include ID to avoid duplicates)
             const allPoints = await db.points.toArray();
             if (allPoints.length > 0) {
                 const pointUpdates = allPoints.map(p => ({
+                    id: p.id, // Must include ID for upsert to work
                     user_id: user.id,
                     amount: p.amount,
                     reason: p.reason,
                     recorded_at: new Date(p.timestamp || Date.now()).toISOString()
                 }));
-                const { error } = await window.supabaseClient.from('points_history').insert(pointUpdates);
+                // Use upsert instead of insert
+                const { error } = await window.supabaseClient.from('points_history').upsert(pointUpdates, { onConflict: 'id' });
                 if (error) {
                     console.error('✘ Points push failed', error);
-                    console.dir(error);
                 }
-                else console.log(`✔ ${pointUpdates.length} Points pushed`);
+                else console.log(`✔ ${pointUpdates.length} Points pushed (Upserted)`);
             }
 
             // 7. Location

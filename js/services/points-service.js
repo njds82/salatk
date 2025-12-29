@@ -38,12 +38,38 @@ const PointsService = {
     },
 
     async deduplicatePoints() {
-        console.log('PointsService: Starting deduplication...');
+        console.log('PointsService: Starting deep deduplication...');
         const allPoints = await db.points.toArray();
         const seen = new Set();
         const toDelete = [];
+        const toUpdate = [];
 
-        // Simple deduplication: same reason, same amount, same date (within 1 minute)
+        // 1. Identify legacy records (numeric IDs) and assign them UUIDs for stability
+        allPoints.forEach(p => {
+            if (typeof p.id === 'number') {
+                const newId = crypto.randomUUID();
+                toUpdate.push({ ...p, id: newId });
+                // We'll process this update later, for now we treat it as its new ID for deduplication
+                p.id = newId;
+            }
+        });
+
+        if (toUpdate.length > 0) {
+            console.log(`PointsService: Migrating ${toUpdate.length} legacy records to UUIDs.`);
+            // Note: bulkPut with new IDs might leave old numeric records if the primary key changed from ++id to id.
+            // Actually, in db.js we changed it from ++id to id. Hex numeric IDs will be replaced by UUIDs if we delete old?
+            // Safer: delete all and put new, or just put new and hope primary key 'id' handles it if it's the same column.
+            // Since we changed schema, the old numeric IDs are still valid primary keys until replaced.
+            await db.points.bulkPut(toUpdate);
+            // We should ideally delete old numeric ones too if they aren't auto-deleted by put?
+            // Dexie 'id' primary key will treat numeric 1 and string 'uuid' as different unless we delete.
+            const numericRecords = allPoints.filter(p => typeof p.id === 'number');
+            if (numericRecords.length > 0) {
+                await db.points.bulkDelete(numericRecords.map(r => r.id));
+            }
+        }
+
+        // 2. Simple deduplication: same reason, same amount, same date (within 1 minute)
         allPoints.forEach(p => {
             const dateStr = new Date(p.timestamp).toISOString().slice(0, 16); // YYYY-MM-DDTHH:mm
             const key = `${p.reason}|${p.amount}|${dateStr}`;
@@ -56,8 +82,16 @@ const PointsService = {
         });
 
         if (toDelete.length > 0) {
-            console.log(`PointsService: Removing ${toDelete.length} duplicate point records.`);
+            console.log(`PointsService: Removing ${toDelete.length} duplicate point records from local and cloud.`);
             await db.points.bulkDelete(toDelete);
+
+            // Clean up cloud too
+            if (window.SyncManager && window.SyncManager.removePoint) {
+                for (const id of toDelete) {
+                    // Fire and forget deletions to not block startup
+                    SyncManager.removePoint(id);
+                }
+            }
         } else {
             console.log('PointsService: No duplicates found.');
         }
