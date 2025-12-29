@@ -3,7 +3,7 @@
 // ========================================
 
 async function renderHabitsPage() {
-    const habits = await getHabits();
+    const habits = await HabitService.getAll();
     const today = getCurrentDate();
     const hijriDate = getHijriDate(parseDate(selectedDate));
 
@@ -107,11 +107,14 @@ async function handleAddHabit() {
         return;
     }
 
-    const result = await addHabit(name, type);
-    if (result.success) {
+    try {
+        await HabitService.add(name, type);
         showToast(t('habit_added_message'), 'success');
         closeModal();
         navigateTo('habits');
+    } catch (error) {
+        console.error('Error adding habit:', error);
+        showToast(t('error_general'), 'error');
     }
 }
 
@@ -122,12 +125,10 @@ async function handleMarkHabit(habitId, action) {
             showToast(t('last_7_days_only'), 'error');
             return;
         }
-        const result = await markHabit(habitId, action, window.selectedDate);
-        if (result.success) {
-            showToast(t('habit_marked_message'), 'success');
-            await updatePointsDisplay();
-            await updateHabitCard(habitId);
-        }
+        await HabitService.logAction(habitId, window.selectedDate, action);
+        showToast(t('habit_marked_message'), 'success');
+        await updatePointsDisplay();
+        await updateHabitCard(habitId);
     } catch (error) {
         console.error('Error in handleMarkHabit:', error);
         showToast(t('error_general'), 'error');
@@ -137,10 +138,13 @@ async function handleMarkHabit(habitId, action) {
 // Handle delete habit
 function handleDeleteHabit(habitId) {
     confirmDialog(t('confirm_delete'), async () => {
-        const result = await deleteHabit(habitId);
-        if (result.success) {
+        try {
+            await HabitService.delete(habitId);
             showToast(t('habit_deleted_message'), 'success');
             navigateTo('habits');
+        } catch (error) {
+            console.error('Error deleting habit:', error);
+            showToast(t('error_general'), 'error');
         }
     });
 }
