@@ -165,7 +165,7 @@ function navigateToHash() {
 // Render page
 async function renderPage(page) {
     const content = document.getElementById('pageContent');
-    content.innerHTML = `<div class="loading-spinner">${t('loading_message')}</div>`;
+    content.innerHTML = `<div class="loading-spinner"></div>`;
 
     let html = '';
 

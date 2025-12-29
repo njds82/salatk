@@ -5,12 +5,21 @@
 const PRAYER_CACHE_KEY = 'salatk_prayer_location'; // Only caching location now, times are calc'd live
 
 const PrayerManager = {
+    // Cache for calculated times
+    cachedTimes: null,
+    cachedDate: null,
+
     // Initialize
     async init() {
         console.log('Initializing Prayer Manager...');
         this.isChecking = false;
+
+        // Initial calculation to populate cache
+        this.cachedTimes = await this.getPrayerTimesForToday();
+        this.cachedDate = getCurrentDate();
+
         await this.startMissedPrayersCheck();
-        return this.getPrayerTimesForToday();
+        return this.cachedTimes;
     },
 
     // Get user location (Manual or Default only)
@@ -130,11 +139,24 @@ const PrayerManager = {
         }
     },
 
+    // Clear internal cache
+    clearCache() {
+        this.cachedTimes = null;
+        this.cachedDate = null;
+    },
+
     // Get times for today
     async getPrayerTimesForToday() {
+        const today = getCurrentDate();
+        if (this.cachedTimes && this.cachedDate === today) {
+            return this.cachedTimes;
+        }
+
         // Needs location
         const location = await this.getUserLocation();
-        return await this.calculatePrayerTimes(location.lat, location.long);
+        this.cachedTimes = await this.calculatePrayerTimes(location.lat, location.long);
+        this.cachedDate = today;
+        return this.cachedTimes;
     },
 
     // Check for missed prayers

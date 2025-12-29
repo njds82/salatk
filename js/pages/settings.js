@@ -309,10 +309,7 @@ async function handleCalculationSettingsChange() {
 
     // Force recalculate/re-render to apply changes immediately
     if (window.currentPage === 'settings') {
-        // Stay on settings, or maybe auto-refresh?
-        // No need to refresh settings page itself as the dropdowns are already correct.
-        // But we should probably tell PrayerManager to clear any internal caches if it had them.
-        // PrayerManager doesn't cache times, it calculates live.
+        if (window.PrayerManager) PrayerManager.clearCache();
     }
 }
 
@@ -331,7 +328,10 @@ function handleSaveManualLocation() {
         return;
     }
 
-    PrayerManager.saveManualLocation(lat, long);
+    if (window.PrayerManager) {
+        PrayerManager.saveManualLocation(lat, long);
+        PrayerManager.clearCache();
+    }
     showToast(t('manual_mode_on'), 'success');
     navigateTo('settings');
 }

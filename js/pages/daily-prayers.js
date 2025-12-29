@@ -10,6 +10,7 @@ async function renderDailyPrayersPage() {
     // Get fetched times
     let prayerTimes = null;
     if (window.PrayerManager && isToday(selectedDate)) {
+        // Use cache if available, otherwise get (getPrayerTimesForToday now handles internal cache)
         prayerTimes = await PrayerManager.getPrayerTimesForToday();
     }
 
