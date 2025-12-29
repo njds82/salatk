@@ -1,0 +1,8 @@
+#هناك ثلاث مشاكل في المشروع:
+#1. أزرار الحذف و الإزالة لا تعمل و هذه كارثة
+#2. الخيارات الموجودة بالإعدادات لا تظهر لأنها بخص أبيض على خلفية بيضاء, بالإضافة لأنها غير متناسقة مع الواجهة
+#3. البيانات تخزن محلياً, بينما يجب أن تخزن في قاعدة البيانات:
+#Project URL: 
+#https://xdvnweeorbuqmrgbtxuu.supabase.co
+#anon public: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkdm53ZWVvcmJ1cW1yZ2J0eHV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODgyMjksImV4cCI6MjA4MjA2NDIyOX0.VBK6Be32w89FRJDEu8ypBsSji12CuwxZVX2Jp-5LyXA
+#service_role secret: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkdm53ZWVvcmJ1cW1yZ2J0eHV1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjQ4ODIyOSwiZXhwIjoyMDgyMDY0MjI5fQ.elstKzC3qX0mA1fh3cFy7crJpb7iT5_PgFAlJqhgOTk
