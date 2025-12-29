@@ -479,9 +479,10 @@ const SyncManager = {
                             timestamp: new Date(newRecord.recorded_at).getTime()
                         });
                     }
-                    if (window.currentPage === 'daily-prayers') renderPage('daily-prayers');
+                    if (window.currentPage === 'daily-prayers' && window.updatePrayerCard) {
+                        updatePrayerCard(eventType === 'DELETE' ? oldRecord.prayer_key : newRecord.prayer_key);
+                    }
                     break;
-
                 case 'qada_prayers':
                     if (eventType === 'DELETE') {
                         await db.qada.delete(oldRecord.id);
@@ -495,12 +496,14 @@ const SyncManager = {
                             manual: newRecord.is_manual
                         });
                     }
-                    if (window.currentPage === 'qada-prayers') renderPage('qada-prayers');
+                    if (window.currentPage === 'qada-prayers' && window.refreshQadaList) {
+                        refreshQadaList();
+                    }
                     break;
-
                 case 'habits':
                     if (eventType === 'DELETE') {
                         await db.habits.delete(oldRecord.id);
+                        if (window.currentPage === 'habits' && window.navigateTo) navigateTo('habits');
                     } else {
                         await db.habits.put({
                             id: newRecord.id,
@@ -508,34 +511,32 @@ const SyncManager = {
                             type: newRecord.type,
                             created: new Date(newRecord.created_at).getTime()
                         });
+                        if (window.currentPage === 'habits' && window.updateHabitCard) updateHabitCard(newRecord.id);
                     }
-                    if (window.currentPage === 'habits') renderPage('habits');
                     break;
-
                 case 'habit_history':
                     if (eventType === 'DELETE') {
                         await db.habit_history.delete([oldRecord.habit_id, oldRecord.date]);
+                        if (window.currentPage === 'habits' && window.updateHabitCard) updateHabitCard(oldRecord.habit_id);
                     } else {
                         await db.habit_history.put({
                             habitId: newRecord.habit_id,
                             date: newRecord.date,
                             action: newRecord.action
                         });
+                        if (window.currentPage === 'habits' && window.updateHabitCard) updateHabitCard(newRecord.id);
                     }
-                    if (window.currentPage === 'habits') renderPage('habits');
                     break;
-
                 case 'user_settings':
                     if (eventType !== 'DELETE') {
+                        const oldLang = getCurrentLanguage();
                         await db.settings.bulkPut([
                             { key: 'language', value: newRecord.language },
                             { key: 'theme', value: newRecord.theme }
                         ]);
-                        // Apply immediately if needed
                         if (newRecord.theme) handleThemeChange(newRecord.theme);
-                        if (newRecord.language && newRecord.language !== getCurrentLanguage()) {
+                        if (newRecord.language && newRecord.language !== oldLang) {
                             setLanguage(newRecord.language);
-                            renderPage(window.currentPage);
                         }
                     }
                     break;

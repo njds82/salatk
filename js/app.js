@@ -123,8 +123,10 @@ function setupEventListeners() {
     window.addEventListener('hashchange', navigateToHash);
 
     // Language changed event
-    window.addEventListener('languageChanged', () => {
-        navigateTo(currentPage);
+    window.addEventListener('languageChanged', (e) => {
+        // Only re-render if we are NOT currently rendering another page or if triggered externally
+        // But since LangToggle handles navigation, we can just let it be or bail if same lang.
+        console.log('Language changed to:', e.detail.language);
     });
 }
 

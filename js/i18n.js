@@ -545,6 +545,7 @@ function t(key) {
 
 // Set language
 function setLanguage(lang) {
+    if (lang === currentLanguage && document.documentElement.lang === lang) return;
     currentLanguage = lang;
     localStorage.setItem('salatk_language', lang);
     document.documentElement.lang = lang;

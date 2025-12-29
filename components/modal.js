@@ -77,3 +77,6 @@ function confirmDialog(message, onConfirm) {
         ]
     );
 }
+window.showModal = showModal;
+window.closeModal = closeModal;
+window.confirmDialog = confirmDialog;
