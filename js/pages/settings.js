@@ -37,7 +37,7 @@ async function renderSettingsPage() {
             </div>
 
             <!-- Profile Edit Form (Hidden by default) -->
-            <div id="profileEditForm" style="display: none; background: var(--color-bg-secondary); padding: var(--spacing-md); border-radius: 12px; margin-bottom: var(--spacing-md);">
+            <div id="profileEditForm" style="display: none; background: var(--color-bg-elevated); padding: var(--spacing-md); border-radius: 12px; margin-bottom: var(--spacing-md);">
                 <h4 style="margin: 0 0 var(--spacing-md) 0;">${t('edit_profile')}</h4>
                 <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
                     <div>
@@ -62,7 +62,7 @@ async function renderSettingsPage() {
             </div>
 
             <!-- Account Statistics -->
-            <div style="background: var(--color-bg-secondary); padding: var(--spacing-md); border-radius: 12px; margin-bottom: var(--spacing-md);">
+            <div style="background: var(--color-bg-elevated); padding: var(--spacing-md); border-radius: 12px; margin-bottom: var(--spacing-md);">
                 <h4 style="margin: 0 0 var(--spacing-md) 0; color: var(--color-primary);">📊 ${t('account_stats')}</h4>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: var(--spacing-sm);">
                     <div style="text-align: center; padding: var(--spacing-sm); background: var(--color-bg-primary); border-radius: 8px;">
@@ -95,7 +95,7 @@ async function renderSettingsPage() {
             </div>
 
             <!-- Password Change Form (Hidden by default) -->
-            <div id="passwordChangeForm" style="display: none; background: var(--color-bg-secondary); padding: var(--spacing-md); border-radius: 12px; margin-top: var(--spacing-md);">
+            <div id="passwordChangeForm" style="display: none; background: var(--color-bg-elevated); padding: var(--spacing-md); border-radius: 12px; margin-top: var(--spacing-md);">
                 <h4 style="margin: 0 0 var(--spacing-md) 0;">${t('change_password')}</h4>
                 <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
                     <div>
@@ -159,7 +159,7 @@ async function renderSettingsPage() {
                 <div>
                     <label style="display: block; font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 4px;">${t('calculation_method')}</label>
                     <select id="calcMethodSelect" class="form-control" onchange="handleCalculationSettingsChange()" 
-                            style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-bg-secondary); color: var(--color-text-primary);">
+                            style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-bg-elevated); color: var(--color-text-primary);">
                         <option value="UmmAlQura" ${settings.calculationMethod === 'UmmAlQura' ? 'selected' : ''}>${t('method_umm_al_qura')}</option>
                         <option value="MuslimWorldLeague" ${settings.calculationMethod === 'MuslimWorldLeague' ? 'selected' : ''}>${t('method_muslim_world_league')}</option>
                         <option value="Egyptian" ${settings.calculationMethod === 'Egyptian' ? 'selected' : ''}>${t('method_egyptian')}</option>
@@ -177,7 +177,7 @@ async function renderSettingsPage() {
                 <div>
                     <label style="display: block; font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 4px;">${t('madhab')}</label>
                     <select id="madhabSelect" class="form-control" onchange="handleCalculationSettingsChange()"
-                            style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-bg-secondary); color: var(--color-text-primary);">
+                            style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-bg-elevated); color: var(--color-text-primary);">
                         <option value="Shafi" ${settings.madhab === 'Shafi' ? 'selected' : ''}>${t('madhab_shafi')}</option>
                         <option value="Hanafi" ${settings.madhab === 'Hanafi' ? 'selected' : ''}>${t('madhab_hanafi')}</option>
                     </select>
@@ -193,7 +193,7 @@ async function renderSettingsPage() {
                 <div>
                     <label style="display: block; font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 4px;">${t('region')}</label>
                     <select id="regionSelect" class="form-control" onchange="handleRegionChange()" 
-                            style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-bg-secondary); color: var(--color-text-primary);">
+                            style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-bg-elevated); color: var(--color-text-primary);">
                         <option value="">${t('select_region')}</option>
                         ${Object.keys(LEVANT_REGIONS).map(country => `
                             <optgroup label="${country}">
@@ -208,11 +208,11 @@ async function renderSettingsPage() {
                 <div style="display: flex; gap: var(--spacing-sm);">
                     <div style="flex: 1;">
                         <label style="display: block; font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 4px;">${t('latitude')}</label>
-                        <input type="number" id="latInput" step="any" class="form-control" value="${PrayerManager.lastLoc?.lat || ''}" style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-bg-secondary); color: var(--color-text-primary);">
+                        <input type="number" id="latInput" step="any" class="form-control" value="${PrayerManager.lastLoc?.lat || ''}" style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-bg-elevated); color: var(--color-text-primary);">
                     </div>
                     <div style="flex: 1;">
                         <label style="display: block; font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 4px;">${t('longitude')}</label>
-                        <input type="number" id="longInput" step="any" class="form-control" value="${PrayerManager.lastLoc?.long || ''}" style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-bg-secondary); color: var(--color-text-primary);">
+                        <input type="number" id="longInput" step="any" class="form-control" value="${PrayerManager.lastLoc?.long || ''}" style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-bg-elevated); color: var(--color-text-primary);">
                     </div>
                 </div>
                 <div style="display: flex; gap: var(--spacing-sm);">
