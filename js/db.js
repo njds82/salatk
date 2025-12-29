@@ -10,7 +10,7 @@ db.version(1).stores({
     qada: 'id, prayer, date',
     habits: 'id, type',
     habit_history: '[habitId+date], habitId, date', // Compound Index
-    points: '++id, timestamp', // Auto-increment ID
+    points: 'id, timestamp', // Stable UUID ID
     locations: 'id' // Singleton (id='user_location')
 });
 

@@ -45,6 +45,11 @@ async function checkAuthAndInit() {
         await MigrationService.checkAndMigrate();
     }
 
+    // NEW: Clean up duplicate points from previous bugs
+    if (window.PointsService && window.PointsService.deduplicatePoints) {
+        await PointsService.deduplicatePoints();
+    }
+
     // Sync data if configured
     if (window.SyncManager) {
         // 1. Pull latest from cloud
