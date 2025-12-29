@@ -6,129 +6,41 @@ const PRAYER_CACHE_KEY = 'salatk_prayer_location'; // Only caching location now,
 
 const PrayerManager = {
     // Initialize
-    locationRequestPromise: null,
-
     async init() {
-        console.log('Initializing Prayer Manager (Adhan.js)...');
-
-        // Check permissions and get location if needed
-        // Then loop to check for missed prayers
+        console.log('Initializing Prayer Manager (Manual/Default Only)...');
         this.startMissedPrayersCheck();
-
         return this.getPrayerTimesForToday();
     },
 
-    // Get user location
-    getUserLocation() {
-        if (this.locationRequestPromise) {
-            return this.locationRequestPromise;
+    // Get user location (Manual or Default only)
+    async getUserLocation() {
+        const PRAYER_CACHE_KEY = 'salatk_prayer_location';
+
+        // 1. Try to get cached/manual location
+        const cached = localStorage.getItem(PRAYER_CACHE_KEY);
+        if (cached) {
+            const cachedData = JSON.parse(cached);
+            return cachedData;
         }
 
-        this.locationRequestPromise = new Promise((resolve) => {
-            const now = Date.now();
-            const FIVE_HOURS = 5 * 60 * 60 * 1000;
-
-            // 1. Check if manual mode is on
-            const cached = localStorage.getItem(PRAYER_CACHE_KEY);
-            let cachedData = null;
-            if (cached) {
-                cachedData = JSON.parse(cached);
-                if (cachedData.manualMode) {
-                    console.log('Using manual location mode:', cachedData);
-                    resolve(cachedData);
-                    return;
-                }
-            }
-
-            // Function to perform background GPS update
-            const updateLocationInBackground = () => {
-                const options = {
-                    enableHighAccuracy: true,
-                    timeout: 4000,
-                    maximumAge: 3600000
-                };
-
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const loc = {
-                            lat: position.coords.latitude,
-                            long: position.coords.longitude,
-                            lastUpdate: Date.now(),
-                            manualMode: false
-                        };
-                        localStorage.setItem(PRAYER_CACHE_KEY, JSON.stringify(loc));
-                        console.log('Background location update successful:', loc);
-                    },
-                    (error) => {
-                        console.warn('Background location update failed:', error.message);
-                    },
-                    options
-                );
-            };
-
-            // 2. If we have a cached location
-            if (cachedData && cachedData.lat && cachedData.long) {
-                const lastUpdate = cachedData.lastUpdate || 0;
-
-                // If it's been more than 5 hours, trigger background update
-                if (now - lastUpdate > FIVE_HOURS) {
-                    console.log('Location stale (>5h), updating in background...');
-                    updateLocationInBackground();
-                }
-
-                resolve(cachedData);
-                return;
-            }
-
-            // 3. No cache (First run): blocking GPS request
-            if (!navigator.geolocation) {
-                console.warn('Geolocation not supported, using default');
-                const defaultLoc = { lat: 21.3891, long: 39.8579, manualMode: false };
-                localStorage.setItem(PRAYER_CACHE_KEY, JSON.stringify(defaultLoc));
-                resolve(defaultLoc);
-                return;
-            }
-
-            const options = {
-                enableHighAccuracy: true,
-                timeout: 4000,
-                maximumAge: 3600000
-            };
-
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const loc = {
-                        lat: position.coords.latitude,
-                        long: position.coords.longitude,
-                        lastUpdate: Date.now(),
-                        manualMode: false
-                    };
-                    localStorage.setItem(PRAYER_CACHE_KEY, JSON.stringify(loc));
-                    resolve(loc);
-                },
-                (error) => {
-                    console.warn(`Initial geolocation error: ${error.message}`);
-                    if (window.showToast) {
-                        showToast(`${t('error_location')}. Using default (Mecca).`, 'warning');
-                    }
-                    const defaultLoc = { lat: 21.3891, long: 39.8579, manualMode: false };
-                    localStorage.setItem(PRAYER_CACHE_KEY, JSON.stringify(defaultLoc));
-                    resolve(defaultLoc);
-                },
-                options
-            );
-        }).finally(() => {
-            this.locationRequestPromise = null;
-        });
-
-        return this.locationRequestPromise;
+        // 2. Default to Jerusalem if nothing set
+        console.log('No location set, defaulting to Jerusalem');
+        const defaultLoc = {
+            lat: 31.7683,
+            long: 35.2137,
+            name: 'Jerusalem', // for UI display if needed
+            manualMode: true
+        };
+        localStorage.setItem(PRAYER_CACHE_KEY, JSON.stringify(defaultLoc));
+        return defaultLoc;
     },
 
     // Save manual location
-    saveManualLocation(lat, long) {
+    saveManualLocation(lat, long, name = '') {
         const loc = {
             lat: parseFloat(lat),
             long: parseFloat(long),
+            name: name,
             lastUpdate: Date.now(),
             manualMode: true
         };
@@ -136,7 +48,7 @@ const PrayerManager = {
         return loc;
     },
 
-    // Clear manual location and use auto-detect
+    // Clear manual location (Resets to default)
     clearManualLocation() {
         localStorage.removeItem(PRAYER_CACHE_KEY);
     },

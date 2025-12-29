@@ -188,6 +188,23 @@ async function renderSettingsPage() {
         <div class="card" style="margin-bottom: var(--spacing-lg);">
             <h3 style="margin-bottom: var(--spacing-md);">${t('location_settings')}</h3>
             <div style="display: flex; flex-direction: column; gap: var(--spacing-md);">
+                
+                <!-- Region Select -->
+                <div>
+                    <label style="display: block; font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 4px;">${t('region')}</label>
+                    <select id="regionSelect" class="form-control" onchange="handleRegionChange()" 
+                            style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-bg-secondary); color: var(--color-text-primary);">
+                        <option value="">${t('select_region')}</option>
+                        ${Object.keys(LEVANT_REGIONS).map(country => `
+                            <optgroup label="${country}">
+                                ${LEVANT_REGIONS[country].map(reg => `
+                                    <option value="${reg.lat},${reg.long}">${reg.name}</option>
+                                `).join('')}
+                            </optgroup>
+                        `).join('')}
+                    </select>
+                </div>
+
                 <div style="display: flex; gap: var(--spacing-sm);">
                     <div style="flex: 1;">
                         <label style="display: block; font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 4px;">${t('latitude')}</label>
@@ -202,9 +219,7 @@ async function renderSettingsPage() {
                     <button class="btn btn-primary" onclick="handleSaveManualLocation()" style="flex: 1;">
                         📍 ${t('save_location')}
                     </button>
-                    <button class="btn btn-secondary" onclick="handleAutoLocation()" style="flex: 1;">
-                        🛰️ ${t('auto_location')}
-                    </button>
+                    <!-- Auto location removed as requested -->
                 </div>
             </div>
         </div>
@@ -321,11 +336,14 @@ function handleSaveManualLocation() {
     navigateTo('settings');
 }
 
-// Handle auto location detection
-function handleAutoLocation() {
-    PrayerManager.clearManualLocation();
-    showToast(t('auto_mode_on'), 'info');
-    navigateTo('settings');
+// Handle region selection change
+function handleRegionChange() {
+    const select = document.getElementById('regionSelect');
+    if (select.value) {
+        const [lat, long] = select.value.split(',');
+        document.getElementById('latInput').value = lat;
+        document.getElementById('longInput').value = long;
+    }
 }
 
 // Handle import data

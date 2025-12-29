@@ -2,6 +2,59 @@
 // UI Update Helpers (Partial Updates)
 // ========================================
 
+const LEVANT_REGIONS = {
+    'Syria': [
+        { name: 'Damascus', lat: 33.5138, long: 36.2765 },
+        { name: 'Aleppo', lat: 36.2021, long: 37.1343 },
+        { name: 'Homs', lat: 34.7324, long: 36.7137 },
+        { name: 'Hama', lat: 35.1318, long: 36.7578 },
+        { name: 'Latakia', lat: 35.5317, long: 35.7901 },
+        { name: 'Tartus', lat: 34.8890, long: 35.8866 },
+        { name: 'Idlib', lat: 35.9306, long: 36.6339 },
+        { name: 'Daraa', lat: 32.6184, long: 36.1023 },
+        { name: 'Suwayda', lat: 32.7090, long: 36.5695 },
+        { name: 'Deir ez-Zor', lat: 35.3353, long: 40.1511 },
+        { name: 'Raqqa', lat: 35.9520, long: 39.0069 },
+        { name: 'Hasakah', lat: 36.4947, long: 40.7303 },
+        { name: 'Quneitra', lat: 33.1259, long: 35.8248 }
+    ],
+    'Lebanon': [
+        { name: 'Beirut', lat: 33.8938, long: 35.5018 },
+        { name: 'Tripoli', lat: 34.4367, long: 35.8497 },
+        { name: 'Sidon', lat: 33.5599, long: 35.3756 },
+        { name: 'Tyre', lat: 33.2733, long: 35.1939 },
+        { name: 'Zahle', lat: 33.8463, long: 35.9020 },
+        { name: 'Nabatieh', lat: 33.3667, long: 35.5500 },
+        { name: 'Baalbek', lat: 34.0049, long: 36.2109 }
+    ],
+    'Jordan': [
+        { name: 'Amman', lat: 31.9454, long: 35.9284 },
+        { name: 'Irbid', lat: 32.5568, long: 35.8469 },
+        { name: 'Zarqa', lat: 32.0728, long: 36.0880 },
+        { name: 'Mafraq', lat: 32.3392, long: 36.2023 },
+        { name: 'Balqa', lat: 32.0306, long: 35.7350 },
+        { name: 'Madaba', lat: 31.7197, long: 35.7925 },
+        { name: 'Karak', lat: 31.1856, long: 35.7051 },
+        { name: 'Tafilah', lat: 30.8384, long: 35.6171 },
+        { name: 'Ma\'an', lat: 30.1927, long: 35.7383 },
+        { name: 'Aqaba', lat: 29.5319, long: 35.0061 },
+        { name: 'Jerash', lat: 32.2747, long: 35.8973 },
+        { name: 'Ajloun', lat: 32.3323, long: 35.7513 }
+    ],
+    'Palestine': [
+        { name: 'Jerusalem', lat: 31.7683, long: 35.2137 },
+        { name: 'Gaza', lat: 31.5017, long: 34.4668 },
+        { name: 'Hebron', lat: 31.5326, long: 35.0998 },
+        { name: 'Nablus', lat: 32.2227, long: 35.2621 },
+        { name: 'Ramallah', lat: 31.9038, long: 35.2034 },
+        { name: 'Jenin', lat: 32.4607, long: 35.2974 },
+        { name: 'Jericho', lat: 31.8611, long: 35.4616 },
+        { name: 'Bethlehem', lat: 31.7057, long: 35.2007 },
+        { name: 'Tulkarm', lat: 32.3129, long: 35.0275 },
+        { name: 'Qalqilya', lat: 32.1960, long: 34.9815 }
+    ]
+};
+
 // Update a single prayer card without reloading the page
 async function updatePrayerCard(prayerKey) {
     const dailyPrayers = await PrayerService.getDailyPrayers(window.selectedDate);
