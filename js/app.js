@@ -176,13 +176,13 @@ async function renderPage(page) {
                 html = await renderDailyPrayersPage();
                 break;
             case 'qada-prayers':
-                html = renderQadaPrayersPage();
+                html = await renderQadaPrayersPage();
                 break;
             case 'habits':
-                html = renderHabitsPage();
+                html = await renderHabitsPage();
                 break;
             case 'statistics':
-                html = renderStatisticsPage();
+                html = await renderStatisticsPage();
                 break;
             case 'leaderboard':
                 html = await renderLeaderboardPage();
