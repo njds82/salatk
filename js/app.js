@@ -45,9 +45,13 @@ async function checkAuthAndInit() {
         await MigrationService.checkAndMigrate();
     }
 
-    // NEW: Clean up duplicate points from previous bugs
     if (window.PointsService && window.PointsService.deduplicatePoints) {
         await PointsService.deduplicatePoints();
+    }
+
+    // NEW: Clean up ghost Qada records
+    if (window.PrayerService && window.PrayerService.cleanupQada) {
+        await PrayerService.cleanupQada();
     }
 
     // Sync data if configured

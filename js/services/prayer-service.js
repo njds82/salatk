@@ -55,6 +55,10 @@ const PrayerService = {
 
         if (status === 'done') {
             pointsAmount = prayerDef.points;
+            // If it was previously missed, remove from Qada
+            if (existing && existing.status === 'missed' && prayerDef.required) {
+                await this.removeQada(date, key);
+            }
         } else if (status === 'missed' && prayerDef.required) {
             pointsAmount = -prayerDef.points;
             // Add Qada if missing
@@ -81,14 +85,17 @@ const PrayerService = {
 
         // Trigger Sync
         if (window.SyncManager) {
-            SyncManager.pushPrayerRecord(date, key, status);
+            await SyncManager.pushPrayerRecord(date, key, status);
         }
 
         return { success: true };
     },
 
     async addQada(originalDate, key, rakaat) {
-        // though deterministic IDs for Qada might also be good later)
+        // Check if already exists to avoid duplicates
+        const existing = await db.qada.where({ date: originalDate, prayer: key }).first();
+        if (existing) return;
+
         const qadaItem = {
             id: crypto.randomUUID(),
             prayer: key,
@@ -98,14 +105,14 @@ const PrayerService = {
             manual: false
         };
         await db.qada.add(qadaItem);
-        if (window.SyncManager) SyncManager.pushQadaRecord(qadaItem);
+        if (window.SyncManager) await SyncManager.pushQadaRecord(qadaItem);
     },
 
     async removeQada(originalDate, key) {
         const qada = await db.qada.where({ date: originalDate, prayer: key }).first();
         if (qada) {
             await db.qada.delete(qada.id);
-            if (window.SyncManager) SyncManager.removeQadaRecord(qada.id);
+            if (window.SyncManager) await SyncManager.removeQadaRecord(qada.id);
         }
     },
 
@@ -134,6 +141,29 @@ const PrayerService = {
         }
 
         return { success: true };
+    },
+
+    // Clean up ghost Qada records (prayers marked as done but still in Qada list)
+    async cleanupQada() {
+        try {
+            const qadaRecords = await db.qada.toArray();
+            let cleanedCount = 0;
+            for (const qada of qadaRecords) {
+                if (qada.date === 'unknown' || qada.manual) continue;
+
+                const prayer = await db.prayers.get({ date: qada.date, key: qada.prayer });
+                if (prayer && prayer.status === 'done') {
+                    await db.qada.delete(qada.id);
+                    if (window.SyncManager) await SyncManager.removeQadaRecord(qada.id);
+                    cleanedCount++;
+                }
+            }
+            if (cleanedCount > 0) {
+                console.log(`PrayerService: Cleaned up ${cleanedCount} ghost Qada records.`);
+            }
+        } catch (error) {
+            console.error('PrayerService: Error during cleanupQada:', error);
+        }
     }
 };
 
