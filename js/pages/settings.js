@@ -3,9 +3,9 @@
 // ========================================
 
 async function renderSettingsPage() {
-    const data = loadData();
-    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-    const currentLang = getCurrentLanguage();
+    const settings = await SettingsService.getSettings();
+    const currentTheme = settings.theme || 'light';
+    const currentLang = settings.language || 'ar'; // Use settings directly, getCurrentLanguage() might still rely on something else
 
     // Fetch current location info for display
     const loc = await PrayerManager.getUserLocation();
@@ -133,9 +133,9 @@ async function renderSettingsPage() {
 }
 
 // Handle theme change
-function handleThemeChange(theme) {
+async function handleThemeChange(theme) {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('salatk_theme', theme);
+    await SettingsService.set('theme', theme);
 
     // Update sun/moon icons
     const sunIcon = document.querySelector('.sun-icon');

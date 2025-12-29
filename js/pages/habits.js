@@ -2,8 +2,8 @@
 // Habits Page
 // ========================================
 
-function renderHabitsPage() {
-    const habits = getHabits();
+async function renderHabitsPage() {
+    const habits = await getHabits();
     const today = getCurrentDate();
     const hijriDate = getHijriDate(parseDate(selectedDate));
 
@@ -98,7 +98,7 @@ function showAddHabitModal() {
 }
 
 // Handle add habit
-function handleAddHabit() {
+async function handleAddHabit() {
     const name = document.getElementById('habitNameInput').value.trim();
     const type = document.getElementById('habitTypeSelect').value;
 
@@ -107,7 +107,7 @@ function handleAddHabit() {
         return;
     }
 
-    const result = addHabit(name, type);
+    const result = await addHabit(name, type);
     if (result.success) {
         showToast(t('habit_added_message'), 'success');
         closeModal();
@@ -116,12 +116,12 @@ function handleAddHabit() {
 }
 
 // Handle mark habit
-function handleMarkHabit(habitId, action) {
+async function handleMarkHabit(habitId, action) {
     if (!canEditDate(selectedDate)) {
         showToast(t('last_7_days_only'), 'error');
         return;
     }
-    const result = markHabit(habitId, action, selectedDate);
+    const result = await markHabit(habitId, action, selectedDate);
     if (result.success) {
         showToast(t('habit_marked_message'), 'success');
         updatePointsDisplay();
@@ -131,8 +131,8 @@ function handleMarkHabit(habitId, action) {
 
 // Handle delete habit
 function handleDeleteHabit(habitId) {
-    confirmDialog(t('confirm_delete'), () => {
-        const result = deleteHabit(habitId);
+    confirmDialog(t('confirm_delete'), async () => {
+        const result = await deleteHabit(habitId);
         if (result.success) {
             showToast(t('habit_deleted_message'), 'success');
             navigateTo('habits');

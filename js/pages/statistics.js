@@ -2,15 +2,25 @@
 // Statistics Page
 // ========================================
 
-function renderStatisticsPage() {
-    const stats = getStatistics();
-    const data = loadData();
+async function renderStatisticsPage() {
+    const stats = await getStatistics();
+    // const data = loadData(); // Deprecated
 
-    // Get weekly prayer data
+    // Get weekly prayer data (Async)
     const weekDates = getWeekDates();
+    // We need to fetch prayer status for these dates.
+    // Inefficient loop? Better to use db.prayers.where('date').anyOf(weekDates) if Dexie supports it easily,
+    // or just fetch all prayers (already done in getStatistics? No, getStatistics fetches ALL).
+    // Let's refactor: getStatistics could return the raw prayers array?
+    // Or we just re-fetch for this specific chart.
+
+    // Fetch all prayers for simplicity in calculation
+    const allPrayers = await db.prayers.toArray();
+
     const weeklyData = weekDates.map(date => {
-        if (!data.prayers[date]) return 0;
-        return Object.values(data.prayers[date]).filter(p => p.status === 'done').length;
+        const daysPrayers = allPrayers.filter(p => p.date === date);
+        if (!daysPrayers.length) return 0;
+        return daysPrayers.filter(p => p.status === 'done').length;
     });
 
     const weekLabels = weekDates.map(date => {
@@ -19,7 +29,14 @@ function renderStatisticsPage() {
     });
 
     // Calculate completion rate
-    const totalPossiblePrayers = Object.keys(data.prayers).length * 5; // 5 required prayers per day
+    // We assume 5 prayers a day * number of days tracked? 
+    // Or just total performed / (total performed + total missed)?
+    // Old logic: "totalPossiblePrayers = Object.keys(data.prayers).length * 5"
+    // This means "days tracked * 5".
+    // We can get unique dates from allPrayers.
+    const uniqueDates = [...new Set(allPrayers.map(p => p.date))].length;
+    const totalPossiblePrayers = uniqueDates * 5;
+
     const completionRate = totalPossiblePrayers > 0
         ? (stats.prayersPerformed / totalPossiblePrayers) * 100
         : 0;
