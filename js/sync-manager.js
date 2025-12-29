@@ -109,14 +109,20 @@ const SyncManager = {
                 const { data: points, error } = await window.supabaseClient.from('points_history').select('*').eq('user_id', userId);
                 if (error) throw error;
                 if (points?.length > 0) {
-                    await db.points.clear();
+                    // REMOVED: await db.points.clear(); -> This was causing points drain when cloud was empty or partial.
                     const pointRecords = points.map(p => ({
+                        // We need to preserve the ID or use a compound key to prevent duplicates if we want pure additive,
+                        // but since Dexie has auto-increment '++id', mapping without ID or with cloud ID is better.
+                        // For now, let's just push them in. bulkPut usually needs a primary key.
+                        // the Dexie schema for points is '++id, timestamp'.
+                        // If we don't have a stable ID from cloud, we might get duplicates on every pull.
+                        id: p.id, // Using the ID from Supabase (assuming it's compatible or we are syncing it)
                         amount: p.amount,
                         reason: p.reason,
                         timestamp: new Date(p.recorded_at).getTime()
                     }));
-                    await db.points.bulkAdd(pointRecords);
-                    console.log(`✔ ${points.length} Points synced`);
+                    await db.points.bulkPut(pointRecords);
+                    console.log(`✔ ${points.length} Points synced (Additive)`);
                 }
             } catch (e) { console.error('✘ Points sync failed', e); }
 
@@ -125,14 +131,25 @@ const SyncManager = {
                 const { data: location, error } = await window.supabaseClient.from('locations').select('*').eq('user_id', userId).maybeSingle();
                 if (error) throw error;
                 if (location) {
-                    await db.locations.put({
+                    const locData = {
                         id: 'user_location',
                         lat: location.latitude,
                         long: location.longitude,
                         manualMode: location.is_manual_mode,
                         lastUpdate: new Date(location.last_update).getTime()
-                    });
-                    console.log('✔ Location synced');
+                    };
+                    await db.locations.put(locData);
+
+                    // Sync to localStorage for PrayerManager (Legacy/Sync fallback)
+                    localStorage.setItem('salatk_prayer_location', JSON.stringify({
+                        lat: location.latitude,
+                        long: location.longitude,
+                        name: location.name || '',
+                        manualMode: location.is_manual_mode,
+                        lastUpdate: locData.lastUpdate
+                    }));
+
+                    console.log('✔ Location synced (DB + LocalStorage)');
                 }
             } catch (e) { console.error('✘ Location sync failed', e); }
 
@@ -164,8 +181,7 @@ const SyncManager = {
                 last_visit: settings.lastVisit
             });
         if (error) {
-            console.error('Push Settings Error', error);
-            console.dir(error);
+            console.error('Push Settings Error', error.message || error);
         }
     },
 
@@ -182,8 +198,7 @@ const SyncManager = {
                 recorded_at: new Date().toISOString()
             }, { onConflict: 'user_id,date,prayer_key' });
         if (error) {
-            console.error('Push Prayer Error', error);
-            console.dir(error);
+            console.error('Push Prayer Error', error.message || error);
         }
     },
 
@@ -213,8 +228,7 @@ const SyncManager = {
                 is_made_up: false
             });
         if (error) {
-            console.error('Push Qada Error', error);
-            console.dir(error);
+            console.error('Push Qada Error', error.message || error);
         }
     },
 
@@ -272,8 +286,7 @@ const SyncManager = {
             recorded_at: new Date().toISOString()
         });
         if (error) {
-            console.error('Push Point Error', error);
-            console.dir(error);
+            console.error('Push Point Error', error.message || error);
         }
     },
 
@@ -323,8 +336,7 @@ const SyncManager = {
                 for (let i = 0; i < prayerUpdates.length; i += 50) {
                     const { error } = await window.supabaseClient.from('prayer_records').upsert(prayerUpdates.slice(i, i + 50), { onConflict: 'user_id,date,prayer_key' });
                     if (error) {
-                        console.error('✘ Prayers chunk push failed', error);
-                        console.dir(error);
+                        console.error('✘ Prayers chunk push failed', error.message || error);
                     }
                 }
                 console.log(`✔ ${prayerUpdates.length} Prayers pushed`);

@@ -22,6 +22,7 @@ const PointsService = {
             reason: reason,
             timestamp: Date.now()
         };
+        console.log(`PointsService: Adding ${amount} points for "${reason}"`);
         await db.points.add(record);
 
         // Trigger UI update if needed (via Event or direct call?)

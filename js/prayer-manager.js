@@ -7,7 +7,8 @@ const PRAYER_CACHE_KEY = 'salatk_prayer_location'; // Only caching location now,
 const PrayerManager = {
     // Initialize
     async init() {
-        console.log('Initializing Prayer Manager (Manual/Default Only)...');
+        console.log('Initializing Prayer Manager...');
+        this.isChecking = false;
         await this.startMissedPrayersCheck();
         return this.getPrayerTimesForToday();
     },
@@ -16,7 +17,13 @@ const PrayerManager = {
     async getUserLocation() {
         const PRAYER_CACHE_KEY = 'salatk_prayer_location';
 
-        // 1. Try to get cached/manual location
+        // 0. Try to get from IndexedDB (New Primary Source)
+        if (window.db) {
+            const dbLoc = await db.locations.get('user_location');
+            if (dbLoc) return dbLoc;
+        }
+
+        // 1. Try to get cached/manual location from localStorage (Legacy Fallback)
         const cached = localStorage.getItem(PRAYER_CACHE_KEY);
         if (cached) {
             const cachedData = JSON.parse(cached);
@@ -132,46 +139,55 @@ const PrayerManager = {
 
     // Check for missed prayers
     async checkAndMarkMissedPrayers() {
-        const times = await this.getPrayerTimesForToday();
-        if (!times) return;
+        if (this.isChecking) return;
+        this.isChecking = true;
 
-        const now = new Date();
-        const currentTimeStr = formatTime(now); // HH:MM from date-utils
+        try {
+            const times = await this.getPrayerTimesForToday();
+            if (!times) return;
 
-        // Helper to convert time "HH:MM" to minutes for comparison
-        const timeToMinutes = (timeStr) => {
-            const [h, m] = timeStr.split(':').map(Number);
-            return h * 60 + m;
-        };
+            const now = new Date();
+            const currentTimeStr = formatTime(now); // HH:MM from date-utils
 
-        const currentMinutes = timeToMinutes(currentTimeStr);
+            // Helper to convert time "HH:MM" to minutes for comparison
+            const timeToMinutes = (timeStr) => {
+                const [h, m] = timeStr.split(':').map(Number);
+                return h * 60 + m;
+            };
 
-        // Define windows (Start -> End)
-        const schedule = [
-            { key: 'fajr', start: times.fajr, end: times.duha },
-            { key: 'duha', start: times.duha, end: times.dhuhr },
-            { key: 'dhuhr', start: times.dhuhr, end: times.asr },
-            { key: 'asr', start: times.asr, end: times.maghrib },
-            { key: 'maghrib', start: times.maghrib, end: times.isha },
-            { key: 'isha', start: times.isha, end: '23:59' }
-        ];
+            const currentMinutes = timeToMinutes(currentTimeStr);
 
-        const today = getCurrentDate();
-        const dailyPrayers = await getDailyPrayers(today);
+            // Define windows (Start -> End)
+            const schedule = [
+                { key: 'fajr', start: times.fajr, end: times.duha },
+                { key: 'duha', start: times.duha, end: times.dhuhr },
+                { key: 'dhuhr', start: times.dhuhr, end: times.asr },
+                { key: 'asr', start: times.asr, end: times.maghrib },
+                { key: 'maghrib', start: times.maghrib, end: times.isha },
+                { key: 'isha', start: times.isha, end: '23:59' }
+            ];
 
-        for (const slot of schedule) {
-            const startMinutes = timeToMinutes(slot.start);
-            const endMinutes = timeToMinutes(slot.end);
+            const today = getCurrentDate();
+            const dailyPrayers = await getDailyPrayers(today);
 
-            // If current time is PAST the end time
-            if (currentMinutes > endMinutes) {
-                // Check if not performed yet
-                if (!dailyPrayers[slot.key]?.status) {
-                    // Not done and not already missed
-                    console.log(`Auto-marking missed: ${slot.key}`);
-                    await markPrayerMissed(slot.key, today);
+            for (const slot of schedule) {
+                const startMinutes = timeToMinutes(slot.start);
+                const endMinutes = timeToMinutes(slot.end);
+
+                // If current time is PAST the end time
+                if (currentMinutes > endMinutes) {
+                    // Check if not performed yet
+                    if (!dailyPrayers[slot.key]?.status) {
+                        // Not done and not already missed
+                        console.log(`Auto-marking missed: ${slot.key}`);
+                        await markPrayerMissed(slot.key, today);
+                    }
                 }
             }
+        } catch (error) {
+            console.error('PrayerManager: Check failed', error);
+        } finally {
+            this.isChecking = false;
         }
     },
 
