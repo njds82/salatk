@@ -62,7 +62,41 @@ async function renderSettingsPage() {
             </div>
         </div>
         
-        <!-- Location Settings -->
+        <!-- Calculation Settings -->
+        <div class="card" style="margin-bottom: var(--spacing-lg);">
+            <h3 style="margin-bottom: var(--spacing-md);">${t('calculation_settings')}</h3>
+            <div style="display: flex; flex-direction: column; gap: var(--spacing-md);">
+                
+                <!-- Method -->
+                <div>
+                    <label style="display: block; font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 4px;">${t('calculation_method')}</label>
+                    <select id="calcMethodSelect" class="form-control" onchange="handleCalculationSettingsChange()" 
+                            style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-bg-secondary); color: var(--color-text-primary);">
+                        <option value="UmmAlQura" ${settings.calculationMethod === 'UmmAlQura' ? 'selected' : ''}>${t('method_umm_al_qura')}</option>
+                        <option value="MuslimWorldLeague" ${settings.calculationMethod === 'MuslimWorldLeague' ? 'selected' : ''}>${t('method_muslim_world_league')}</option>
+                        <option value="Egyptian" ${settings.calculationMethod === 'Egyptian' ? 'selected' : ''}>${t('method_egyptian')}</option>
+                        <option value="Karachi" ${settings.calculationMethod === 'Karachi' ? 'selected' : ''}>${t('method_karachi')}</option>
+                        <option value="Dubai" ${settings.calculationMethod === 'Dubai' ? 'selected' : ''}>${t('method_uae')}</option>
+                        <option value="Kuwait" ${settings.calculationMethod === 'Kuwait' ? 'selected' : ''}>${t('method_kuwait')}</option>
+                        <option value="Qatar" ${settings.calculationMethod === 'Qatar' ? 'selected' : ''}>${t('method_qatar')}</option>
+                        <option value="Singapore" ${settings.calculationMethod === 'Singapore' ? 'selected' : ''}>${t('method_singapore')}</option>
+                        <option value="NorthAmerica" ${settings.calculationMethod === 'NorthAmerica' ? 'selected' : ''}>${t('method_north_america')}</option>
+                        <option value="Other" ${settings.calculationMethod === 'Other' ? 'selected' : ''}>${t('method_other')}</option>
+                    </select>
+                </div>
+
+                <!-- Madhab -->
+                <div>
+                    <label style="display: block; font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 4px;">${t('madhab')}</label>
+                    <select id="madhabSelect" class="form-control" onchange="handleCalculationSettingsChange()"
+                            style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-bg-secondary); color: var(--color-text-primary);">
+                        <option value="Shafi" ${settings.madhab === 'Shafi' ? 'selected' : ''}>${t('madhab_shafi')}</option>
+                        <option value="Hanafi" ${settings.madhab === 'Hanafi' ? 'selected' : ''}>${t('madhab_hanafi')}</option>
+                    </select>
+                </div>
+
+            </div>
+        </div>
         <div class="card" style="margin-bottom: var(--spacing-lg);">
             <h3 style="margin-bottom: var(--spacing-md);">${t('location_settings')}</h3>
             <div style="display: flex; flex-direction: column; gap: var(--spacing-md);">
@@ -158,6 +192,19 @@ async function handleThemeChange(theme) {
 function handleLanguageChange(lang) {
     setLanguage(lang);
     navigateTo('settings');
+}
+
+// Handle calculation settings change
+async function handleCalculationSettingsChange() {
+    const method = document.getElementById('calcMethodSelect').value;
+    const madhab = document.getElementById('madhabSelect').value;
+
+    await SettingsService.set('calculationMethod', method);
+    await SettingsService.set('madhab', madhab);
+
+    showToast(t('save_settings'), 'success');
+
+    // Force recalculate if needed (optional, effectively done on reload/nav)
 }
 
 // Handle export data

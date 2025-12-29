@@ -144,7 +144,7 @@ const SyncManager = {
     // ... Keeping individual push methods as they are sufficient for "Write-Through" cache strategy ...
 
     async pushSettings(settings) {
-        if (!authCheck()) return;
+        if (!await authCheck()) return;
         const user = await getUser();
         const { error } = await window.supabaseClient
             .from('user_settings')
@@ -159,7 +159,7 @@ const SyncManager = {
     },
 
     async pushPrayerRecord(date, prayerKey, status) {
-        if (!authCheck()) return;
+        if (!await authCheck()) return;
         const user = await getUser();
         const { error } = await window.supabaseClient
             .from('prayer_records')
@@ -174,7 +174,7 @@ const SyncManager = {
     },
 
     async deletePrayerRecord(date, prayerKey) {
-        if (!authCheck()) return;
+        if (!await authCheck()) return;
         const user = await getUser();
         const { error } = await window.supabaseClient
             .from('prayer_records')
@@ -184,7 +184,7 @@ const SyncManager = {
     },
 
     async pushQadaRecord(qadaItem) {
-        if (!authCheck()) return;
+        if (!await authCheck()) return;
         const user = await getUser();
         const { error } = await window.supabaseClient
             .from('qada_prayers')
@@ -202,13 +202,13 @@ const SyncManager = {
     },
 
     async removeQadaRecord(qadaId) {
-        if (!authCheck()) return;
+        if (!await authCheck()) return;
         const { error } = await window.supabaseClient.from('qada_prayers').delete().eq('id', qadaId);
         if (error) console.error('Remove Qada Error', error);
     },
 
     async pushHabit(habit) {
-        if (!authCheck()) return;
+        if (!await authCheck()) return;
         const user = await getUser();
         const { error } = await window.supabaseClient.from('habits').upsert({
             id: habit.id,
@@ -221,13 +221,13 @@ const SyncManager = {
     },
 
     async deleteHabit(habitId) {
-        if (!authCheck()) return;
+        if (!await authCheck()) return;
         const { error } = await window.supabaseClient.from('habits').delete().eq('id', habitId);
         if (error) console.error('Delete Habit Error', error);
     },
 
     async pushHabitAction(habitId, date, action) {
-        if (!authCheck()) return;
+        if (!await authCheck()) return;
         const user = await getUser();
         const { error } = await window.supabaseClient.from('habit_history').upsert({
             user_id: user.id,
@@ -240,13 +240,13 @@ const SyncManager = {
     },
 
     async removeHabitAction(habitId, date) {
-        if (!authCheck()) return;
+        if (!await authCheck()) return;
         const { error } = await window.supabaseClient.from('habit_history').delete().match({ habit_id: habitId, date: date });
         if (error) console.error('Remove HabitAction Error', error);
     },
 
     async pushPoint(amount, reason) {
-        if (!authCheck()) return;
+        if (!await authCheck()) return;
         const user = await getUser();
         const { error } = await window.supabaseClient.from('points_history').insert({
             user_id: user.id,
@@ -257,16 +257,125 @@ const SyncManager = {
         if (error) console.error('Push Point Error', error);
     },
 
-    // Legacy support for "Push All" during migration (if needed)
+    // Push all local data to cloud (Force Sync / Recovery)
     async pushAllLocalData() {
-        console.warn('SyncManager: pushAllLocalData not implemented for massive push. Use live sync.');
-        return true;
+        if (!await authCheck()) {
+            console.warn('SyncManager: Cannot push, not logged in');
+            return false;
+        }
+
+        console.log('SyncManager: Pushing all local data...');
+        const user = await getUser();
+
+        try {
+            // 1. Settings
+            const allSettings = await db.settings.toArray();
+            if (allSettings.length > 0) {
+                const settingsObj = {};
+                allSettings.forEach(s => settingsObj[s.key] = s.value);
+
+                await window.supabaseClient.from('user_settings').upsert({
+                    user_id: user.id,
+                    language: settingsObj.language || 'ar',
+                    theme: settingsObj.theme || 'light',
+                    last_visit: settingsObj.lastVisit || new Date().toISOString().split('T')[0],
+                    updated_at: new Date().toISOString()
+                });
+            }
+
+            // 2. Prayers
+            const allPrayers = await db.prayers.toArray();
+            if (allPrayers.length > 0) {
+                const prayerUpdates = allPrayers.map(p => ({
+                    user_id: user.id,
+                    date: p.date,
+                    prayer_key: p.key,
+                    status: p.status,
+                    timestamp: new Date(p.timestamp || Date.now()).toISOString()
+                }));
+                // Process in chunks of 50 to avoid payload limits
+                for (let i = 0; i < prayerUpdates.length; i += 50) {
+                    const chunk = prayerUpdates.slice(i, i + 50);
+                    await window.supabaseClient
+                        .from('prayer_records')
+                        .upsert(chunk, { onConflict: 'user_id, date, prayer_key' });
+                }
+            }
+
+            // 3. Qada
+            const allQada = await db.qada.toArray();
+            if (allQada.length > 0) {
+                const qadaUpdates = allQada.map(q => ({
+                    id: q.id,
+                    user_id: user.id,
+                    prayer_key: q.prayer,
+                    original_date: q.date,
+                    rakaat: q.rakaat,
+                    timestamp: new Date(q.timestamp || Date.now()).toISOString(),
+                    is_manual: q.manual || false,
+                    is_made_up: false
+                }));
+                for (let i = 0; i < qadaUpdates.length; i += 50) {
+                    await window.supabaseClient.from('qada_prayers').upsert(qadaUpdates.slice(i, i + 50));
+                }
+            }
+
+            // 4. Habits
+            const allHabits = await db.habits.toArray();
+            if (allHabits.length > 0) {
+                const habitUpdates = allHabits.map(h => ({
+                    id: h.id,
+                    user_id: user.id,
+                    name: h.name,
+                    type: h.type,
+                    created_at: new Date(h.created || Date.now()).toISOString()
+                }));
+                await window.supabaseClient.from('habits').upsert(habitUpdates);
+            }
+
+            // 5. Habit History
+            const allHabitHistory = await db.habit_history.toArray();
+            if (allHabitHistory.length > 0) {
+                const historyUpdates = allHabitHistory.map(h => ({
+                    user_id: user.id,
+                    habit_id: h.habitId,
+                    date: h.date,
+                    action: h.action,
+                    timestamp: new Date().toISOString()
+                }));
+                for (let i = 0; i < historyUpdates.length; i += 50) {
+                    await window.supabaseClient
+                        .from('habit_history')
+                        .upsert(historyUpdates.slice(i, i + 50), { onConflict: 'user_id, habit_id, date' });
+                }
+            }
+
+            // 6. Location
+            const location = await db.locations.get('user_location');
+            if (location) {
+                await window.supabaseClient.from('locations').upsert({
+                    user_id: user.id,
+                    latitude: location.lat,
+                    longitude: location.long,
+                    is_manual_mode: location.manualMode,
+                    last_update: new Date(location.lastUpdate).toISOString()
+                });
+            }
+
+            console.log('SyncManager: Push complete.');
+            return true;
+
+        } catch (error) {
+            console.error('SyncManager: Push failed', error);
+            return false;
+        }
     }
 };
 
 // Helpers
-function authCheck() {
-    return !!window.supabaseClient.auth.getSession();
+async function authCheck() {
+    const { data: { session } } = await window.supabaseClient.auth.getSession();
+    return !!session;
 }
 
 async function getUser() {

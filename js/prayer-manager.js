@@ -142,7 +142,7 @@ const PrayerManager = {
     },
 
     // Calculate prayer times using Adhan.js
-    calculatePrayerTimes(lat, long) {
+    async calculatePrayerTimes(lat, long) {
         if (!window.adhan) {
             console.error('Adhan.js library not loaded!');
             return null;
@@ -151,8 +151,42 @@ const PrayerManager = {
         try {
             const coordinates = new adhan.Coordinates(lat, long);
             const date = new Date();
-            const params = adhan.CalculationMethod.UmmAlQura();
-            params.madhab = adhan.Madhab.Shafi;
+
+            // Get settings
+            let methodStr = 'UmmAlQura';
+            let madhabStr = 'Shafi';
+
+            // Try to get from SettingsService if available, otherwise fallback or sync
+            if (window.SettingsService) {
+                // If this is called in loop, might be expensive to query indexedDB every time?
+                // But SettingsService.get is async. 
+                // We should cache this or make calculatePrayerTimes async.
+                // It IS accessed async in getPrayerTimesForToday, so we are good to await.
+                methodStr = await SettingsService.get('calculationMethod', 'UmmAlQura');
+                madhabStr = await SettingsService.get('madhab', 'Shafi');
+            }
+
+            // Map string to Adhan constant
+            let params;
+            switch (methodStr) {
+                case 'MuslimWorldLeague': params = adhan.CalculationMethod.MuslimWorldLeague(); break;
+                case 'Egyptian': params = adhan.CalculationMethod.Egyptian(); break;
+                case 'Karachi': params = adhan.CalculationMethod.Karachi(); break;
+                case 'UmmAlQura': params = adhan.CalculationMethod.UmmAlQura(); break;
+                case 'Dubai': params = adhan.CalculationMethod.Dubai(); break;
+                case 'Kuwait': params = adhan.CalculationMethod.Kuwait(); break;
+                case 'Qatar': params = adhan.CalculationMethod.Qatar(); break;
+                case 'Singapore': params = adhan.CalculationMethod.Singapore(); break;
+                case 'NorthAmerica': params = adhan.CalculationMethod.NorthAmerica(); break;
+                case 'Other': params = adhan.CalculationMethod.Other(); break;
+                default: params = adhan.CalculationMethod.UmmAlQura();
+            }
+
+            if (madhabStr === 'Hanafi') {
+                params.madhab = adhan.Madhab.Hanafi;
+            } else {
+                params.madhab = adhan.Madhab.Shafi;
+            }
 
             const prayerTimes = new adhan.PrayerTimes(coordinates, date, params);
 
@@ -181,7 +215,7 @@ const PrayerManager = {
     async getPrayerTimesForToday() {
         // Needs location
         const location = await this.getUserLocation();
-        return this.calculatePrayerTimes(location.lat, location.long);
+        return await this.calculatePrayerTimes(location.lat, location.long);
     },
 
     // Check for missed prayers

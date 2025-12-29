@@ -9,6 +9,8 @@ const SettingsService = {
         const settings = {
             language: 'ar',
             theme: 'light',
+            calculationMethod: 'UmmAlQura',
+            madhab: 'Shafi',
             lastVisit: new Date().toISOString().split('T')[0],
             initialized: Date.now()
         };
