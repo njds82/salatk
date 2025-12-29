@@ -72,10 +72,21 @@ const PrayerService = {
             reason = `${t(prayerDef.nameKey)} - ${t('performed')}`;
         } else if (status === 'missed') {
             if (prayerDef.required) {
-                pointsChange -= prayerDef.points;
-                reason = `${t(prayerDef.nameKey)} - ${t('missed')}`;
-                // Add Qada
-                await this.addQada(date, key, prayerDef.rakaat);
+                // NEW: Idempotency Check
+                // Before penalizing, check if we already penalized for this prayer today.
+                const checkReason = `${t(prayerDef.nameKey)} - ${t('missed')}`;
+                const startOfDay = new Date(date + 'T00:00:00').getTime();
+                const dailyPoints = await db.points.where('timestamp').above(startOfDay).toArray();
+                const alreadyPenalized = dailyPoints.some(p => p.reason === checkReason && p.amount < 0);
+
+                if (!alreadyPenalized) {
+                    pointsChange -= prayerDef.points;
+                    reason = checkReason;
+                    // Add Qada
+                    await this.addQada(date, key, prayerDef.rakaat);
+                } else {
+                    console.log('PrayerService: Skipping duplicate penalty for', checkReason);
+                }
             }
         }
 

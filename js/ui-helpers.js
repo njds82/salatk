@@ -175,107 +175,10 @@ async function refreshQadaList() {
 }
 
 
+
 window.updatePrayerCard = updatePrayerCard;
 window.updateHabitCard = updateHabitCard;
 window.refreshQadaList = refreshQadaList;
-
-// ========================================
-// Modal Functions
-// ========================================
-
-// Show modal dialog
-function showModal(title, content, buttons = []) {
-    // Remove existing modal if any
-    closeModal();
-
-    const modal = document.createElement('div');
-    modal.id = 'customModal';
-    modal.className = 'modal-overlay';
-
-    const buttonsHTML = buttons.map(btn => `
-        <button class="btn ${btn.className || 'btn-primary'}" 
-                onclick="${btn.onclick ? `(${btn.onclick.toString()})()` : 'closeModal()'}">
-            ${btn.label}
-        </button>
-    `).join('');
-
-    modal.innerHTML = `
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>${title}</h3>
-                <button class="modal-close" onclick="closeModal()">
-                    <svg width="24" height="24" viewBox="0 0 24 24">
-                        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-body">
-                ${content}
-            </div>
-            <div class="modal-footer">
-                ${buttonsHTML}
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    // Trigger animation
-    setTimeout(() => modal.classList.add('active'), 10);
-
-    // Close on overlay click
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) closeModal();
-    });
-
-    // Close on Escape key
-    const escapeHandler = (e) => {
-        if (e.key === 'Escape') {
-            closeModal();
-            document.removeEventListener('keydown', escapeHandler);
-        }
-    };
-    document.addEventListener('keydown', escapeHandler);
-}
-
-// Close modal
-function closeModal() {
-    const modal = document.getElementById('customModal');
-    if (modal) {
-        modal.classList.remove('active');
-        setTimeout(() => modal.remove(), 300);
-    }
-}
-
-// Confirmation dialog
-function confirmDialog(message, onConfirm, onCancel = null) {
-    showModal(
-        t('confirm') || 'تأكيد',
-        `<p style="text-align: center; padding: var(--spacing-md);">${message}</p>`,
-        [
-            {
-                label: t('cancel') || 'إلغاء',
-                className: 'btn-secondary',
-                onclick: () => {
-                    closeModal();
-                    if (onCancel) onCancel();
-                }
-            },
-            {
-                label: t('confirm') || 'تأكيد',
-                className: 'btn-danger',
-                onclick: async () => {
-                    closeModal();
-                    if (onConfirm) await onConfirm();
-                }
-            }
-        ]
-    );
-}
-
-window.showModal = showModal;
-window.closeModal = closeModal;
-window.confirmDialog = confirmDialog;
 
 // ========================================
 // Global Event Listeners (Dropdowns)
