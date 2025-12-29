@@ -17,20 +17,49 @@ const PointsService = {
         return await db.points.orderBy('timestamp').reverse().toArray();
     },
 
-    async addPoints(amount, reason) {
+    async addPoints(amount, reason, providedId = null) {
+        const id = providedId || crypto.randomUUID();
         const record = {
+            id: id,
             amount: amount,
             reason: reason,
             timestamp: Date.now()
         };
-        console.log(`PointsService: Adding ${amount} points for "${reason}"`);
-        await db.points.add(record);
+        console.log(`PointsService: Adding ${amount} points for "${reason}" (ID: ${id})`);
 
-        // Trigger UI update if needed (via Event or direct call?)
-        // For now, pages update themselves on render.
+        // Use put instead of add to handle potential upserts/duplicates gracefully
+        await db.points.put(record);
 
         if (window.SyncManager) {
-            await SyncManager.pushPoint(amount, reason);
+            // We pass the amount and reason for backward compatibility, 
+            // but we should also pass the id if SyncManager is updated.
+            await SyncManager.pushPoint(amount, reason, id);
+        }
+    },
+
+    async deduplicatePoints() {
+        console.log('PointsService: Starting deduplication...');
+        const allPoints = await db.points.toArray();
+        const seen = new Set();
+        const toDelete = [];
+
+        // Simple deduplication: same reason, same amount, same date (within 1 minute)
+        allPoints.forEach(p => {
+            const dateStr = new Date(p.timestamp).toISOString().slice(0, 16); // YYYY-MM-DDTHH:mm
+            const key = `${p.reason}|${p.amount}|${dateStr}`;
+
+            if (seen.has(key)) {
+                toDelete.push(p.id);
+            } else {
+                seen.add(key);
+            }
+        });
+
+        if (toDelete.length > 0) {
+            console.log(`PointsService: Removing ${toDelete.length} duplicate point records.`);
+            await db.points.bulkDelete(toDelete);
+        } else {
+            console.log('PointsService: No duplicates found.');
         }
     }
 };

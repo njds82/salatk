@@ -111,19 +111,13 @@ const SyncManager = {
                 if (points?.length > 0) {
                     // REMOVED: await db.points.clear(); -> This was causing points drain when cloud was empty or partial.
                     const pointRecords = points.map(p => ({
-                        // We need to preserve the ID or use a compound key to prevent duplicates if we want pure additive,
-                        // but since Dexie has auto-increment '++id', mapping without ID or with cloud ID is better.
-                        // For now, let's just push them in. bulkPut usually needs a primary key.
-                        // the Dexie schema for points is '++id, timestamp'.
-                        // If we don't have a stable ID from cloud, we might get duplicates on every pull.
-                        // Let's assume 'recorded_at' (timestamp) is unique enough for a basic check or just use bulkPut if we had IDs.
-                        id: p.id, // Using the ID from Supabase (assuming it's compatible or we are syncing it)
+                        id: p.id, // Stable UUID from Supabase
                         amount: p.amount,
                         reason: p.reason,
                         timestamp: new Date(p.recorded_at).getTime()
                     }));
                     await db.points.bulkPut(pointRecords);
-                    console.log(`✔ ${points.length} Points synced (Additive)`);
+                    console.log(`✔ ${points.length} Points synced (Deduplicated via ID)`);
                 }
             } catch (e) { console.error('✘ Points sync failed', e); }
 
@@ -277,10 +271,11 @@ const SyncManager = {
         if (error) console.error('Remove HabitAction Error', error);
     },
 
-    async pushPoint(amount, reason) {
+    async pushPoint(amount, reason, id) {
         if (!await authCheck()) return;
         const user = await getUser();
-        const { error } = await window.supabaseClient.from('points_history').insert({
+        const { error } = await window.supabaseClient.from('points_history').upsert({
+            id: id, // Use the provided UUID
             user_id: user.id,
             amount: amount,
             reason: reason,
@@ -551,8 +546,9 @@ const SyncManager = {
                         // This is local total, we might need to invalidate cache?
                         // PointsService calculates from db.points.
                         // So we must insert into db.points.
-                        if (eventType === 'INSERT') {
-                            await db.points.add({
+                        if (eventType === 'INSERT' || eventType === 'UPDATE') {
+                            await db.points.put({
+                                id: newRecord.id,
                                 amount: newRecord.amount,
                                 reason: newRecord.reason,
                                 timestamp: new Date(newRecord.recorded_at).getTime()
