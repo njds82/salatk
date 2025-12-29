@@ -22,10 +22,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Set up event listeners
     setupEventListeners();
 
-    // Initialize data
-    loadData();
+    // Initialize data (Async)
+    // loadData(); // Deprecated
 
-    // Check for authentication
+    // Check for authentication & Initialize
     checkAuthAndInit();
 
     // Initialize notification badge
@@ -37,6 +37,11 @@ async function checkAuthAndInit() {
     // Initialize prayer manager
     if (window.PrayerManager) {
         await PrayerManager.init();
+    }
+
+    // Run Migration (LocalStorage -> IndexedDB)
+    if (window.MigrationService) {
+        await MigrationService.checkAndMigrate();
     }
 
     // Sync data if configured

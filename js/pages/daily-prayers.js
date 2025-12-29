@@ -5,7 +5,7 @@
 async function renderDailyPrayersPage() {
     const today = getCurrentDate();
     const hijriDate = getHijriDate(parseDate(selectedDate));
-    const dailyPrayers = getDailyPrayers(selectedDate);
+    const dailyPrayers = await PrayerService.getDailyPrayers(selectedDate);
 
     // Get fetched times
     let prayerTimes = null;
@@ -82,12 +82,12 @@ function handleNextDay() {
 }
 
 // Handle prayer performed
-function handlePrayerPerformed(prayerKey) {
+async function handlePrayerPerformed(prayerKey) {
     if (!canEditDate(selectedDate)) {
         showToast(t('last_7_days_only'), 'error');
         return;
     }
-    const result = markPrayerPerformed(prayerKey, selectedDate);
+    const result = await PrayerService.markPrayer(prayerKey, selectedDate, 'done');
     if (result.success) {
         showToast(t('prayer_performed_message'), 'success');
         updatePointsDisplay();
@@ -96,12 +96,12 @@ function handlePrayerPerformed(prayerKey) {
 }
 
 // Handle prayer missed
-function handlePrayerMissed(prayerKey) {
+async function handlePrayerMissed(prayerKey) {
     if (!canEditDate(selectedDate)) {
         showToast(t('last_7_days_only'), 'error');
         return;
     }
-    const result = markPrayerMissed(prayerKey, selectedDate);
+    const result = await PrayerService.markPrayer(prayerKey, selectedDate, 'missed');
     if (result.success) {
         showToast(t('prayer_missed_message'), 'error');
         updatePointsDisplay();
