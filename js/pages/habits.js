@@ -117,15 +117,20 @@ async function handleAddHabit() {
 
 // Handle mark habit
 async function handleMarkHabit(habitId, action) {
-    if (!canEditDate(selectedDate)) {
-        showToast(t('last_7_days_only'), 'error');
-        return;
-    }
-    const result = await markHabit(habitId, action, selectedDate);
-    if (result.success) {
-        showToast(t('habit_marked_message'), 'success');
-        updatePointsDisplay();
-        renderPage(currentPage);
+    try {
+        if (!canEditDate(window.selectedDate)) {
+            showToast(t('last_7_days_only'), 'error');
+            return;
+        }
+        const result = await markHabit(habitId, action, window.selectedDate);
+        if (result.success) {
+            showToast(t('habit_marked_message'), 'success');
+            updatePointsDisplay();
+            renderPage(window.currentPage);
+        }
+    } catch (error) {
+        console.error('Error in handleMarkHabit:', error);
+        showToast(t('error_general'), 'error');
     }
 }
 

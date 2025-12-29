@@ -83,28 +83,38 @@ function handleNextDay() {
 
 // Handle prayer performed
 async function handlePrayerPerformed(prayerKey) {
-    if (!canEditDate(selectedDate)) {
-        showToast(t('last_7_days_only'), 'error');
-        return;
-    }
-    const result = await PrayerService.markPrayer(prayerKey, selectedDate, 'done');
-    if (result.success) {
-        showToast(t('prayer_performed_message'), 'success');
-        updatePointsDisplay();
-        renderPage(currentPage);
+    try {
+        if (!canEditDate(window.selectedDate)) {
+            showToast(t('last_7_days_only'), 'error');
+            return;
+        }
+        const result = await PrayerService.markPrayer(prayerKey, window.selectedDate, 'done');
+        if (result.success) {
+            showToast(t('prayer_performed_message'), 'success');
+            updatePointsDisplay();
+            renderPage(window.currentPage);
+        }
+    } catch (error) {
+        console.error('Error in handlePrayerPerformed:', error);
+        showToast(t('error_general'), 'error');
     }
 }
 
 // Handle prayer missed
 async function handlePrayerMissed(prayerKey) {
-    if (!canEditDate(selectedDate)) {
-        showToast(t('last_7_days_only'), 'error');
-        return;
-    }
-    const result = await PrayerService.markPrayer(prayerKey, selectedDate, 'missed');
-    if (result.success) {
-        showToast(t('prayer_missed_message'), 'error');
-        updatePointsDisplay();
-        renderPage(currentPage);
+    try {
+        if (!canEditDate(window.selectedDate)) {
+            showToast(t('last_7_days_only'), 'error');
+            return;
+        }
+        const result = await PrayerService.markPrayer(prayerKey, window.selectedDate, 'missed');
+        if (result.success) {
+            showToast(t('prayer_missed_message'), 'warning'); // Changed error to warning (yellow) for UI feel
+            updatePointsDisplay();
+            renderPage(window.currentPage);
+        }
+    } catch (error) {
+        console.error('Error in handlePrayerMissed:', error);
+        showToast(t('error_general'), 'error');
     }
 }

@@ -2,8 +2,9 @@
 // Main App Controller
 // ========================================
 
-let currentPage = 'daily-prayers';
-let selectedDate = getCurrentDate();
+// App State
+window.currentPage = 'daily-prayers';
+window.selectedDate = getCurrentDate();
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
