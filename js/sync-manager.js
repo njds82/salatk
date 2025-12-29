@@ -18,6 +18,9 @@ const SyncManager = {
         }
         const userId = session.user.id;
 
+        // Ensure profile exists (Self-Repair)
+        await this.ensureProfileExists(session.user);
+
         try {
             console.group('SyncManager: Pull Operations');
 
@@ -160,7 +163,10 @@ const SyncManager = {
                 theme: settings.theme,
                 last_visit: settings.lastVisit
             });
-        if (error) console.error('Push Settings Error', error);
+        if (error) {
+            console.error('Push Settings Error', error);
+            console.dir(error);
+        }
     },
 
     async pushPrayerRecord(date, prayerKey, status) {
@@ -174,8 +180,11 @@ const SyncManager = {
                 prayer_key: prayerKey,
                 status: status,
                 recorded_at: new Date().toISOString()
-            }, { onConflict: 'user_id, date, prayer_key' });
-        if (error) console.error('Push Prayer Error', error);
+            }, { onConflict: 'user_id,date,prayer_key' });
+        if (error) {
+            console.error('Push Prayer Error', error);
+            console.dir(error);
+        }
     },
 
     async deletePrayerRecord(date, prayerKey) {
@@ -203,7 +212,10 @@ const SyncManager = {
                 is_manual: qadaItem.manual || false,
                 is_made_up: false
             });
-        if (error) console.error('Push Qada Error', error);
+        if (error) {
+            console.error('Push Qada Error', error);
+            console.dir(error);
+        }
     },
 
     async removeQadaRecord(qadaId) {
@@ -259,7 +271,10 @@ const SyncManager = {
             reason: reason,
             recorded_at: new Date().toISOString()
         });
-        if (error) console.error('Push Point Error', error);
+        if (error) {
+            console.error('Push Point Error', error);
+            console.dir(error);
+        }
     },
 
     // Push all local data to cloud (Force Sync / Recovery)
@@ -271,6 +286,9 @@ const SyncManager = {
 
         try {
             console.group('SyncManager: Push Operations');
+            const { data: { session } } = await window.supabaseClient.auth.getSession();
+            if (session) await this.ensureProfileExists(session.user);
+
             const user = await getUser();
 
             // 1. Settings
@@ -285,7 +303,10 @@ const SyncManager = {
                     theme: settingsObj.theme || 'light',
                     last_visit: settingsObj.lastVisit || new Date().toISOString().split('T')[0]
                 });
-                if (error) console.error('✘ Settings push failed', error);
+                if (error) {
+                    console.error('✘ Settings push failed', error);
+                    console.dir(error);
+                }
                 else console.log('✔ Settings pushed');
             }
 
@@ -300,8 +321,11 @@ const SyncManager = {
                     recorded_at: new Date(p.timestamp || Date.now()).toISOString()
                 }));
                 for (let i = 0; i < prayerUpdates.length; i += 50) {
-                    const { error } = await window.supabaseClient.from('prayer_records').upsert(prayerUpdates.slice(i, i + 50), { onConflict: 'user_id, date, prayer_key' });
-                    if (error) console.error('✘ Prayers chunk push failed', error);
+                    const { error } = await window.supabaseClient.from('prayer_records').upsert(prayerUpdates.slice(i, i + 50), { onConflict: 'user_id,date,prayer_key' });
+                    if (error) {
+                        console.error('✘ Prayers chunk push failed', error);
+                        console.dir(error);
+                    }
                 }
                 console.log(`✔ ${prayerUpdates.length} Prayers pushed`);
             }
@@ -320,7 +344,10 @@ const SyncManager = {
                     is_made_up: false
                 }));
                 const { error } = await window.supabaseClient.from('qada_prayers').upsert(qadaUpdates);
-                if (error) console.error('✘ Qada push failed', error);
+                if (error) {
+                    console.error('✘ Qada push failed', error);
+                    console.dir(error);
+                }
                 else console.log(`✔ ${qadaUpdates.length} Qada records pushed`);
             }
 
@@ -366,7 +393,10 @@ const SyncManager = {
                     recorded_at: new Date(p.timestamp || Date.now()).toISOString()
                 }));
                 const { error } = await window.supabaseClient.from('points_history').insert(pointUpdates);
-                if (error) console.error('✘ Points push failed', error);
+                if (error) {
+                    console.error('✘ Points push failed', error);
+                    console.dir(error);
+                }
                 else console.log(`✔ ${pointUpdates.length} Points pushed`);
             }
 
@@ -574,6 +604,31 @@ const SyncManager = {
             console.error('Diagnostic failed with unexpected error:', err);
         } finally {
             console.groupEnd();
+        }
+    },
+
+    // Helper: Ensure profile record exists
+    async ensureProfileExists(user) {
+        try {
+            const { data: profile, error } = await window.supabaseClient
+                .from('profiles')
+                .select('id')
+                .eq('id', user.id)
+                .maybeSingle();
+
+            if (error && error.code !== 'PGRST116') throw error; // PGRST116 is unexpected but maybeSingle usually handles it.
+
+            if (!profile) {
+                console.warn('SyncManager: Profile missing, attempting self-repair...');
+                await window.supabaseClient.from('profiles').upsert({
+                    id: user.id,
+                    email: user.email,
+                    full_name: user.user_metadata?.full_name || 'User'
+                });
+                console.log('✔ Profile repaired');
+            }
+        } catch (e) {
+            console.error('SyncManager: Profile repair failed', e);
         }
     }
 };
