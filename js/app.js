@@ -47,9 +47,16 @@ async function checkAuthAndInit() {
 
     // Sync data if configured
     if (window.SyncManager) {
+        // 1. Pull latest from cloud
         await SyncManager.pullAllData();
-        // Since we pulled new data, reload in-memory structures if needed 
-        // (pullAllData writes to localStorage, so next reads are fine)
+
+        // 2. Push any local data that might be missing in cloud (Recovery/Migration)
+        // This ensures data created offline or before login is safe.
+        // Note: In case of conflict, SyncManager typically favors Cloud or Merges.
+        // For 'pushAllLocalData', it uses upsert, so local values might overwrite cloud if newer.
+        await SyncManager.pushAllLocalData();
+
+        // Reload in-memory structures if needed is handled effectively by the services reading from DB
     }
 
     // Update points display after potential sync
