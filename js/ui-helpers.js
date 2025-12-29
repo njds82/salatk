@@ -277,3 +277,28 @@ window.showModal = showModal;
 window.closeModal = closeModal;
 window.confirmDialog = confirmDialog;
 
+// ========================================
+// Global Event Listeners (Dropdowns)
+// ========================================
+
+document.addEventListener('click', (e) => {
+    // Handle Dropdown Toggles
+    if (e.target.closest('.options-btn')) {
+        const btn = e.target.closest('.options-btn');
+        const menu = btn.nextElementSibling;
+        if (menu && menu.classList.contains('dropdown-menu')) {
+            // Close all other open dropdowns
+            document.querySelectorAll('.dropdown-menu.active').forEach(m => {
+                if (m !== menu) m.classList.remove('active');
+            });
+            menu.classList.toggle('active');
+            e.stopPropagation();
+        }
+    } else {
+        // Close all dropdowns when clicking outside
+        document.querySelectorAll('.dropdown-menu.active').forEach(menu => {
+            menu.classList.remove('active');
+        });
+    }
+});
+
