@@ -287,7 +287,7 @@ async function handleThemeChange(theme) {
 
     // Only refresh settings page if we are on it
     if (currentPage === 'settings') {
-        renderPage('settings');
+        renderPage('settings', true);
     }
 }
 
@@ -396,7 +396,7 @@ async function handleForceSync() {
                 showToast(t('sync_success') || 'Sync complete', 'success');
                 // Refresh data
                 await SyncManager.pullAllData();
-                renderPage('settings');
+                renderPage('settings', true);
             } else {
                 showToast(t('sync_error') || 'Sync failed', 'error');
             }
@@ -443,7 +443,7 @@ async function handleSaveProfile() {
         await AuthManager.updateProfile({ full_name: name, bio: bio });
         showToast(t('profile_updated'), 'success');
         toggleProfileEdit();
-        renderPage('settings');
+        renderPage('settings', true);
     } catch (error) {
         console.error('Error updating profile:', error);
         showToast(t('error_general'), 'error');

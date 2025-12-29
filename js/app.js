@@ -172,7 +172,7 @@ function navigateToHash() {
 }
 
 // Render page
-async function renderPage(page) {
+async function renderPage(page, noScroll = false) {
     const content = document.getElementById('pageContent');
     content.innerHTML = `<div class="loading-spinner"></div>`;
 
@@ -221,13 +221,16 @@ async function renderPage(page) {
         if (page === 'login' || page === 'signup') {
             setupAuthFormListeners(page);
         }
+
+        // Trigger pageRendered event
+        window.dispatchEvent(new CustomEvent('pageRendered', { detail: { page } }));
     } catch (error) {
         console.error('Error rendering page:', error);
         content.innerHTML = `<p class="error-message">${t('error_calculation')}</p>`;
     }
 
-    // Scroll to top only if navigating to a different page
-    if (window.location.hash.replace('#', '') !== page) {
+    // Scroll to top only if navigating to a different page or forced
+    if (!noScroll && window.location.hash.replace('#', '') !== page) {
         window.scrollTo(0, 0);
     }
 }
