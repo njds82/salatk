@@ -369,6 +369,134 @@ const SyncManager = {
             console.error('SyncManager: Push failed', error);
             return false;
         }
+    },
+    // ========================================
+    // Realtime Subscriptions
+    // ========================================
+    subscribeToChanges() {
+        if (!window.supabaseClient) return;
+
+        console.log('SyncManager: Subscribing to realtime changes...');
+
+        window.supabaseClient
+            .channel('public:db_changes')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public' },
+                async (payload) => {
+                    console.log('Realtime Change:', payload);
+                    await this.handleRealtimeEvent(payload);
+                }
+            )
+            .subscribe((status) => {
+                console.log('Realtime Subscription Status:', status);
+            });
+    },
+
+    async handleRealtimeEvent(payload) {
+        const { table, eventType, new: newRecord, old: oldRecord } = payload;
+
+        // We only care about ensuring our local DB matches cloud.
+        // Identify table and update IndexedDB.
+
+        try {
+            switch (table) {
+                case 'prayer_records':
+                    if (eventType === 'DELETE') {
+                        await db.prayers.delete([oldRecord.date, oldRecord.prayer_key]);
+                    } else {
+                        await db.prayers.put({
+                            date: newRecord.date,
+                            key: newRecord.prayer_key,
+                            status: newRecord.status,
+                            timestamp: new Date(newRecord.timestamp).getTime()
+                        });
+                    }
+                    if (window.currentPage === 'daily-prayers') renderPage('daily-prayers');
+                    break;
+
+                case 'qada_prayers':
+                    if (eventType === 'DELETE') {
+                        await db.qada.delete(oldRecord.id);
+                    } else {
+                        await db.qada.put({
+                            id: newRecord.id,
+                            prayer: newRecord.prayer_key,
+                            date: newRecord.original_date,
+                            rakaat: newRecord.rakaat,
+                            timestamp: new Date(newRecord.timestamp).getTime(),
+                            manual: newRecord.is_manual
+                        });
+                    }
+                    if (window.currentPage === 'qada-prayers') renderPage('qada-prayers');
+                    break;
+
+                case 'habits':
+                    if (eventType === 'DELETE') {
+                        await db.habits.delete(oldRecord.id);
+                    } else {
+                        await db.habits.put({
+                            id: newRecord.id,
+                            name: newRecord.name,
+                            type: newRecord.type,
+                            created: new Date(newRecord.created_at).getTime()
+                        });
+                    }
+                    if (window.currentPage === 'habits') renderPage('habits');
+                    break;
+
+                case 'habit_history':
+                    if (eventType === 'DELETE') {
+                        await db.habit_history.delete([oldRecord.habit_id, oldRecord.date]);
+                    } else {
+                        await db.habit_history.put({
+                            habitId: newRecord.habit_id,
+                            date: newRecord.date,
+                            action: newRecord.action
+                        });
+                    }
+                    if (window.currentPage === 'habits') renderPage('habits');
+                    break;
+
+                case 'user_settings':
+                    if (eventType !== 'DELETE') {
+                        await db.settings.bulkPut([
+                            { key: 'language', value: newRecord.language },
+                            { key: 'theme', value: newRecord.theme }
+                        ]);
+                        // Apply immediately if needed
+                        if (newRecord.theme) handleThemeChange(newRecord.theme);
+                        if (newRecord.language && newRecord.language !== getCurrentLanguage()) {
+                            setLanguage(newRecord.language);
+                            renderPage(window.currentPage);
+                        }
+                    }
+                    break;
+
+                case 'points_history':
+                    // Points are additive logs. 
+                    // Best strategy for realtime points: Just re-pull or add the new record?
+                    // Pulling total is safer but expensive.
+                    // Let's just update points display globally.
+                    if (window.PointsService) {
+                        const total = await window.PointsService.getTotal();
+                        // This is local total, we might need to invalidate cache?
+                        // PointsService calculates from db.points.
+                        // So we must insert into db.points.
+                        if (eventType === 'INSERT') {
+                            await db.points.add({
+                                amount: newRecord.amount,
+                                reason: newRecord.reason,
+                                timestamp: new Date(newRecord.timestamp).getTime()
+                            });
+                        }
+                        updatePointsDisplay();
+                    }
+                    break;
+            }
+        } catch (err) {
+            console.error('Error handling realtime event:', err);
+        }
     }
 };
 

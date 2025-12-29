@@ -56,6 +56,9 @@ async function checkAuthAndInit() {
         // For 'pushAllLocalData', it uses upsert, so local values might overwrite cloud if newer.
         await SyncManager.pushAllLocalData();
 
+        // 3. Enable Realtime Sync
+        SyncManager.subscribeToChanges();
+
         // Reload in-memory structures if needed is handled effectively by the services reading from DB
     }
 
