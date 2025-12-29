@@ -204,7 +204,13 @@ async function handleCalculationSettingsChange() {
 
     showToast(t('save_settings'), 'success');
 
-    // Force recalculate if needed (optional, effectively done on reload/nav)
+    // Force recalculate/re-render to apply changes immediately
+    if (window.currentPage === 'settings') {
+        // Stay on settings, or maybe auto-refresh?
+        // No need to refresh settings page itself as the dropdowns are already correct.
+        // But we should probably tell PrayerManager to clear any internal caches if it had them.
+        // PrayerManager doesn't cache times, it calculates live.
+    }
 }
 
 // Handle export data
