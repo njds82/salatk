@@ -46,7 +46,7 @@ const SettingsService = {
             // We need to fetch full object to push? Or update SyncManager to accept key/val?
             // SyncManager.pushSettings expects an object.
             const fullSettings = await this.getSettings();
-            SyncManager.pushSettings(fullSettings);
+            await SyncManager.pushSettings(fullSettings);
         }
     },
 

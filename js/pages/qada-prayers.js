@@ -181,7 +181,7 @@ async function handleRemoveQada(qadaId) {
     confirmDialog(t('confirm_delete'), async () => {
         await db.qada.delete(qadaId);
         if (window.SyncManager) {
-            SyncManager.removeQadaRecord(qadaId);
+            await SyncManager.removeQadaRecord(qadaId);
         }
         showToast(t('habit_deleted_message'), 'info');
         await refreshQadaList();

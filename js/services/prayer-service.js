@@ -160,7 +160,7 @@ const PrayerService = {
 
         // Sync
         if (window.SyncManager) {
-            SyncManager.deletePrayerRecord(date, key);
+            await SyncManager.deletePrayerRecord(date, key);
         }
 
         return { success: true };

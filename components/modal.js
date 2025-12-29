@@ -68,9 +68,10 @@ function confirmDialog(message, onConfirm) {
                 label: t('confirm'),
                 className: 'btn-primary',
                 onclick: async () => {
+                    const callback = _currentConfirmCallback;
                     closeModal();
-                    if (_currentConfirmCallback) {
-                        await _currentConfirmCallback();
+                    if (callback) {
+                        await callback();
                     }
                 }
             }

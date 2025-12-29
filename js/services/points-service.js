@@ -29,7 +29,7 @@ const PointsService = {
         // For now, pages update themselves on render.
 
         if (window.SyncManager) {
-            SyncManager.pushPoint(amount, reason);
+            await SyncManager.pushPoint(amount, reason);
         }
     }
 };

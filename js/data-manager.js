@@ -53,7 +53,7 @@ async function makeUpQadaPrayer(qadaId) {
     await db.qada.delete(qadaId);
     await PointsService.addPoints(3, t('made_up'));
 
-    if (window.SyncManager) SyncManager.removeQadaRecord(qadaId);
+    if (window.SyncManager) await SyncManager.removeQadaRecord(qadaId);
     return { success: true };
 }
 
@@ -69,7 +69,7 @@ async function addManualQadaPrayer(prayerKey, count = 1, date = null) {
             manual: true
         };
         await db.qada.add(item);
-        if (window.SyncManager) SyncManager.pushQadaRecord(item);
+        if (window.SyncManager) await SyncManager.pushQadaRecord(item);
     }
     return { success: true };
 }

@@ -24,7 +24,7 @@ const HabitService = {
         await db.habits.delete(id);
         await db.habit_history.where({ habitId: id }).delete();
 
-        if (window.SyncManager) SyncManager.deleteHabit(id);
+        if (window.SyncManager) await SyncManager.deleteHabit(id);
     },
 
     async getHistory(habitId) {
