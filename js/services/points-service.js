@@ -17,6 +17,16 @@ const PointsService = {
     },
 
     async addPoints(amount, reason, providedId = null) {
+        // If amount is 0, we should remove the record if it exists with that ID
+        if (amount === 0 && providedId) {
+            console.log(`PointsService: Removing point record for "${reason}" (ID: ${providedId})`);
+            await db.points.delete(providedId);
+            if (window.SyncManager) {
+                await SyncManager.removePoint(providedId);
+            }
+            return;
+        }
+
         const id = providedId || crypto.randomUUID();
         const record = {
             id: id,
@@ -30,8 +40,6 @@ const PointsService = {
         await db.points.put(record);
 
         if (window.SyncManager) {
-            // We pass the amount and reason for backward compatibility, 
-            // but we should also pass the id if SyncManager is updated.
             await SyncManager.pushPoint(amount, reason, id);
         }
     },
@@ -39,53 +47,60 @@ const PointsService = {
     async deduplicatePoints() {
         console.log('PointsService: Starting deep deduplication...');
         const allPoints = await db.points.toArray();
-        const seen = new Set();
-        const toDelete = [];
+        const seen = new Map(); // Use Map to keep the "best" record
+        const toDeleteIDs = [];
         const toUpdate = [];
 
-        // 1. Identify legacy records (numeric IDs) and assign them UUIDs for stability
+        // 1. Identification and Normalization
         allPoints.forEach(p => {
+            // Normalize legacy records (numeric IDs)
             if (typeof p.id === 'number') {
-                const newId = crypto.randomUUID();
-                toUpdate.push({ ...p, id: newId });
-                p.id = newId;
+                const legacyId = p.id;
+                // If we can generate a deterministic ID for it (e.g. from reason), we might.
+                p.id = crypto.randomUUID();
+                toUpdate.push(p);
+                toDeleteIDs.push(legacyId);
             }
         });
 
         if (toUpdate.length > 0) {
-            console.log(`PointsService: Migrating ${toUpdate.length} legacy records to UUIDs.`);
-            // Note: bulkPut with new IDs might leave old numeric records if the primary key changed from ++id to id.
-            // Safer: delete all and put new, or just put new and hope primary key 'id' handles it if it's the same column.
-            // Since we changed schema, the old numeric IDs are still valid primary keys until replaced.
+            console.log(`PointsService: Migrating ${toUpdate.length} legacy records.`);
             await db.points.bulkPut(toUpdate);
-            // We should ideally delete old numeric ones too if they aren't auto-deleted by put?
-            // Dexie 'id' primary key will treat numeric 1 and string 'uuid' as different unless we delete.
-            const numericRecords = allPoints.filter(p => typeof p.id === 'number');
-            if (numericRecords.length > 0) {
-                await db.points.bulkDelete(numericRecords.map(r => r.id));
-            }
+            await db.points.bulkDelete(toDeleteIDs);
         }
 
-        // 2. Simple deduplication: same reason, same amount, same date (within 1 minute)
-        allPoints.forEach(p => {
-            const dateStr = new Date(p.timestamp).toISOString().slice(0, 16); // YYYY-MM-DDTHH:mm
+        // 2. Advanced deduplication by content (for records without deterministic IDs)
+        // We re-query all points after normalization
+        const currentPoints = await db.points.toArray();
+        const finalToDelete = [];
+
+        currentPoints.forEach(p => {
+            // Criteria: Same reason, same amount, same date (within 10 minutes)
+            const dateStr = new Date(p.timestamp).toISOString().slice(0, 15); // YYYY-MM-DDTHH:m (10 min buckets approx)
             const key = `${p.reason}|${p.amount}|${dateStr}`;
 
             if (seen.has(key)) {
-                toDelete.push(p.id);
+                // Keep the one that already has a deterministic-looking ID (non-UUID-v4 usually contains :)
+                const existing = seen.get(key);
+                const isDeterministic = (id) => id.includes(':');
+
+                if (isDeterministic(p.id) && !isDeterministic(existing.id)) {
+                    finalToDelete.push(existing.id);
+                    seen.set(key, p);
+                } else {
+                    finalToDelete.push(p.id);
+                }
             } else {
-                seen.add(key);
+                seen.set(key, p);
             }
         });
 
-        if (toDelete.length > 0) {
-            console.log(`PointsService: Removing ${toDelete.length} duplicate point records from local and cloud.`);
-            await db.points.bulkDelete(toDelete);
+        if (finalToDelete.length > 0) {
+            console.log(`PointsService: Removing ${finalToDelete.length} duplicate point records.`);
+            await db.points.bulkDelete(finalToDelete);
 
-            // Clean up cloud too
-            if (window.SyncManager && window.SyncManager.removePoint) {
-                for (const id of toDelete) {
-                    // Fire and forget deletions to not block startup
+            if (window.SyncManager) {
+                for (const id of finalToDelete) {
                     SyncManager.removePoint(id);
                 }
             }

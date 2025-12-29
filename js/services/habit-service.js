@@ -51,29 +51,20 @@ const HabitService = {
 
         if (existing && existing.action === action) return; // No change
 
-        // Calculate points
-        let pointsChange = 0;
+        // Logic for points needs to be handled via Deterministic IDs
+        const pointId = `habit:${habitId}:${date}`;
+        let pointsAmount = 0;
         let reason = '';
 
-        // Revert old
-        if (existing) {
-            if (habit.type === 'worship' && existing.action === 'done') pointsChange -= 1;
-            else if (habit.type === 'sin') {
-                if (existing.action === 'committed') pointsChange += 10; // Refund penalty
-                if (existing.action === 'avoided') pointsChange -= 1;
-            }
-        }
-
-        // Apply new
         if (habit.type === 'worship' && action === 'done') {
-            pointsChange += 1;
+            pointsAmount = 1;
             reason = `${habit.name}`;
         } else if (habit.type === 'sin') {
             if (action === 'committed') {
-                pointsChange -= 10;
+                pointsAmount = -10;
                 reason = `${habit.name} - ${t('mark_committed')}`;
             } else if (action === 'avoided') {
-                pointsChange += 1;
+                pointsAmount = 1;
                 reason = `${habit.name} - ${t('mark_avoided')}`;
             }
         }
@@ -85,34 +76,23 @@ const HabitService = {
             timestamp: Date.now()
         });
 
-        if (pointsChange !== 0) {
-            await PointsService.addPoints(pointsChange, reason);
-        }
+        // Update Points with deterministic ID
+        // Note: Even if pointsAmount is 0 (optional action), we call it to ensure old records with this ID are cleared.
+        await PointsService.addPoints(pointsAmount, reason, pointId);
 
         if (window.SyncManager) SyncManager.pushHabitAction(habitId, date, action);
     },
 
     async removeAction(habitId, date) {
         // Logic to remove action (Undo) and revert points
-        const habit = await db.habits.get(habitId);
-        const existing = await db.habit_history.get({ habitId, date });
-
-        if (!existing) return;
-
-        let pointsChange = 0;
-        if (habit.type === 'worship' && existing.action === 'done') pointsChange -= 1;
-        else if (habit.type === 'sin') {
-            if (existing.action === 'committed') pointsChange += 10;
-            if (existing.action === 'avoided') pointsChange -= 1;
-        }
+        const pointId = `habit:${habitId}:${date}`;
 
         await db.habit_history.where({ habitId, date }).delete();
 
-        if (pointsChange !== 0) {
-            await PointsService.addPoints(pointsChange, `${habit.name} - ${t('reset_decision')}`);
-        }
+        // Remove points (amount 0 + ID = delete)
+        await PointsService.addPoints(0, `Reset habit action`, pointId);
 
-        if (window.SyncManager) SyncManager.removeHabitAction(habitId, date);
+        if (window.SyncManager) window.SyncManager.removeHabitAction(habitId, date);
     },
 
     // Get habit streak (consecutive days)

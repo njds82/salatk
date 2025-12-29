@@ -51,7 +51,8 @@ async function makeUpQadaPrayer(qadaId) {
     if (!qada) return { success: false };
 
     await db.qada.delete(qadaId);
-    await PointsService.addPoints(3, t('made_up'));
+    // Use deterministic ID for qada makeup
+    await PointsService.addPoints(3, t('made_up'), `qada:${qadaId}`);
 
     if (window.SyncManager) await SyncManager.removeQadaRecord(qadaId);
     return { success: true };

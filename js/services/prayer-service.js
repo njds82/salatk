@@ -48,44 +48,22 @@ const PrayerService = {
             return { success: false, message: 'no_change' };
         }
 
-        // Logic for points needs to be handled.
-        // If changing status, we might need to revert previous points.
+        // Logic for points needs to be handled via Deterministic IDs
+        const pointId = `prayer:${date}:${key}`;
+        let pointsAmount = 0;
+        let reason = `${t(prayerDef.nameKey)} - ${t(status === 'done' ? 'performed' : 'missed')}`;
 
-        let pointsChange = 0;
-        let reason = '';
-
-        // 1. Revert previous calculations
-        if (existing) {
-            if (existing.status === 'done') {
-                pointsChange -= prayerDef.points; // Remove points
-            } else if (existing.status === 'missed' && prayerDef.required) {
-                pointsChange += prayerDef.points; // Give back penalty
-                // Also remove Qada if it exists
-                await this.removeQada(date, key);
-            }
-        }
-
-        // 2. Apply new status calculations
         if (status === 'done') {
-            pointsChange += prayerDef.points;
-            reason = `${t(prayerDef.nameKey)} - ${t('performed')}`;
-        } else if (status === 'missed') {
-            if (prayerDef.required) {
-                // NEW: Idempotency Check
-                // Before penalizing, check if we already penalized for this prayer today.
-                const checkReason = `${t(prayerDef.nameKey)} - ${t('missed')}`;
-                const startOfDay = new Date(date + 'T00:00:00').getTime();
-                const dailyPoints = await db.points.where('timestamp').above(startOfDay).toArray();
-                const alreadyPenalized = dailyPoints.some(p => p.reason === checkReason && p.amount < 0);
-
-                if (!alreadyPenalized) {
-                    pointsChange -= prayerDef.points;
-                    reason = checkReason;
-                    // Add Qada
-                    await this.addQada(date, key, prayerDef.rakaat);
-                } else {
-                    console.log('PrayerService: Skipping duplicate penalty for', checkReason);
-                }
+            pointsAmount = prayerDef.points;
+        } else if (status === 'missed' && prayerDef.required) {
+            pointsAmount = -prayerDef.points;
+            // Add Qada if missing
+            await this.addQada(date, key, prayerDef.rakaat);
+        } else {
+            // If status is 'none' (reset) or optional missed, we just remove points for this ID
+            pointsAmount = 0;
+            if (existing && existing.status === 'missed' && prayerDef.required) {
+                await this.removeQada(date, key);
             }
         }
 
@@ -97,14 +75,11 @@ const PrayerService = {
             timestamp: Date.now()
         });
 
-        // Update Points
-        if (pointsChange !== 0) {
-            await PointsService.addPoints(pointsChange, reason);
-        }
+        // Update Points with deterministic ID
+        // If pointsAmount is 0, addPoints handles deletion
+        await PointsService.addPoints(pointsAmount, reason, pointId);
 
-        // Trigger Sync (Fire and forget, or managed by caller?)
-        // Better to have SyncManager listen or be called explicitly.
-        // We will call SyncManager here to maintain current behavior.
+        // Trigger Sync
         if (window.SyncManager) {
             SyncManager.pushPrayerRecord(date, key, status);
         }
@@ -113,6 +88,7 @@ const PrayerService = {
     },
 
     async addQada(originalDate, key, rakaat) {
+        // though deterministic IDs for Qada might also be good later)
         const qadaItem = {
             id: crypto.randomUUID(),
             prayer: key,
@@ -139,24 +115,18 @@ const PrayerService = {
         if (!existing) return { success: false, message: 'no_record' };
 
         const prayerDef = PRAYERS[key];
-        let pointsChange = 0;
+        const pointId = `prayer:${date}:${key}`;
 
-        // Revert previous points
-        if (existing.status === 'done') {
-            pointsChange -= prayerDef.points;
-        } else if (existing.status === 'missed' && prayerDef.required) {
-            pointsChange += prayerDef.points;
-            // Remove qada entry
+        // If it was missed and required, remove Qada
+        if (existing.status === 'missed' && prayerDef.required) {
             await this.removeQada(date, key);
         }
 
         // Delete the prayer record
         await db.prayers.delete([date, key]);
 
-        // Update points
-        if (pointsChange !== 0) {
-            await PointsService.addPoints(pointsChange, `${t('reset_decision')} - ${t(prayerDef.nameKey)}`);
-        }
+        // Remove points (amount 0 + ID = delete)
+        await PointsService.addPoints(0, `Reset ${key}`, pointId);
 
         // Sync
         if (window.SyncManager) {
