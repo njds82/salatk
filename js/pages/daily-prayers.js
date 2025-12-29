@@ -47,7 +47,7 @@ async function renderDailyPrayersPage() {
     `;
 
     // Render all prayers
-    Object.keys(PRAYERS).forEach(prayerKey => {
+    for (const prayerKey of Object.keys(PRAYERS)) {
         const status = dailyPrayers[prayerKey]?.status || null;
         let timeDisplay = null;
         if (prayerTimes && prayerTimes[prayerKey]) {
@@ -55,7 +55,7 @@ async function renderDailyPrayersPage() {
         }
 
         html += createPrayerCard(prayerKey, status, timeDisplay);
-    });
+    }
 
     html += `</div>`;
 

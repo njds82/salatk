@@ -40,7 +40,7 @@ async function renderQadaPrayersPage() {
             <div class="card-grid">
         `;
 
-        qadaPrayers.forEach(qadaPrayer => {
+        for (const qadaPrayer of qadaPrayers) {
             const prayer = PRAYERS[qadaPrayer.prayer];
             const displayDate = qadaPrayer.date === 'unknown'
                 ? t('date_unknown')
@@ -78,7 +78,7 @@ async function renderQadaPrayersPage() {
                     </button>
                 </div>
             `;
-        });
+        }
 
         html += `</div>`;
     }
