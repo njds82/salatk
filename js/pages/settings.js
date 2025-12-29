@@ -21,14 +21,102 @@ async function renderSettingsPage() {
         </div>
 
         <!-- Account Settings -->
-        <div class="card" style="margin-bottom: var(--spacing-lg); border: 1px solid var(--color-primary);">
-            <h3 style="margin-bottom: var(--spacing-md); color: var(--color-primary);">${t('account_settings')}</h3>
+        <div class="card" style="margin-bottom: var(--spacing-lg); background: linear-gradient(135deg, hsla(262, 77%, 70%, 0.1), hsla(262, 47%, 55%, 0.1)); border: 2px solid var(--color-primary);">
+            <div style="display: flex; align-items: center; gap: var(--spacing-md); margin-bottom: var(--spacing-lg);">
+                <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light)); display: flex; align-items: center; justify-content: center; font-size: 2.5em; color: white; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
+                    ${(profile?.full_name || user?.email || 'U').charAt(0).toUpperCase()}
+                </div>
+                <div style="flex: 1;">
+                    <h2 style="margin: 0 0 4px 0; color: var(--color-primary); font-size: 1.5em;">${profile?.full_name || user?.email}</h2>
+                    <p style="margin: 0; color: var(--color-text-secondary); font-size: 0.9em;">${user?.email || ''}</p>
+                    ${profile?.bio ? `<p style="margin: 8px 0 0 0; color: var(--color-text-tertiary); font-size: 0.875em; font-style: italic;">"${profile.bio}"</p>` : ''}
+                </div>
+                <button class="btn btn-secondary" onclick="toggleProfileEdit()" style="padding: 8px 16px;">
+                    ✏️ ${t('edit_profile')}
+                </button>
+            </div>
+
+            <!-- Profile Edit Form (Hidden by default) -->
+            <div id="profileEditForm" style="display: none; background: var(--color-bg-secondary); padding: var(--spacing-md); border-radius: 12px; margin-bottom: var(--spacing-md);">
+                <h4 style="margin: 0 0 var(--spacing-md) 0;">${t('edit_profile')}</h4>
+                <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
+                    <div>
+                        <label style="display: block; font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 4px;">${t('full_name')}</label>
+                        <input type="text" id="profileNameInput" value="${profile?.full_name || ''}" 
+                               style="width: 100%; padding: 10px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-bg-primary); color: var(--color-text-primary);">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 4px;">${t('bio')}</label>
+                        <textarea id="profileBioInput" rows="3" 
+                                  style="width: 100%; padding: 10px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-bg-primary); color: var(--color-text-primary); resize: vertical;">${profile?.bio || ''}</textarea>
+                    </div>
+                    <div style="display: flex; gap: var(--spacing-sm); margin-top: var(--spacing-sm);">
+                        <button class="btn btn-primary" onclick="handleSaveProfile()" style="flex: 1;">
+                            💾 ${t('save_profile')}
+                        </button>
+                        <button class="btn btn-secondary" onclick="toggleProfileEdit()" style="flex: 1;">
+                            ${t('cancel')}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Account Statistics -->
+            <div style="background: var(--color-bg-secondary); padding: var(--spacing-md); border-radius: 12px; margin-bottom: var(--spacing-md);">
+                <h4 style="margin: 0 0 var(--spacing-md) 0; color: var(--color-primary);">📊 ${t('account_stats')}</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: var(--spacing-sm);">
+                    <div style="text-align: center; padding: var(--spacing-sm); background: var(--color-bg-primary); border-radius: 8px;">
+                        <div style="font-size: 1.5em; font-weight: bold; color: var(--color-primary);" id="accountTotalPrayers">0</div>
+                        <div style="font-size: 0.75em; color: var(--color-text-secondary); margin-top: 4px;">${t('total_prayers')}</div>
+                    </div>
+                    <div style="text-align: center; padding: var(--spacing-sm); background: var(--color-bg-primary); border-radius: 8px;">
+                        <div style="font-size: 1.5em; font-weight: bold; color: var(--color-success);" id="accountTotalHabits">0</div>
+                        <div style="font-size: 0.75em; color: var(--color-text-secondary); margin-top: 4px;">${t('total_habits')}</div>
+                    </div>
+                    <div style="text-align: center; padding: var(--spacing-sm); background: var(--color-bg-primary); border-radius: 8px;">
+                        <div style="font-size: 1.5em; font-weight: bold; color: var(--color-warning);" id="accountCurrentStreak">0</div>
+                        <div style="font-size: 0.75em; color: var(--color-text-secondary); margin-top: 4px;">${t('current_streak')}</div>
+                    </div>
+                    <div style="text-align: center; padding: var(--spacing-sm); background: var(--color-bg-primary); border-radius: 8px;">
+                        <div style="font-size: 1.5em; font-weight: bold; color: var(--color-info);" id="accountMemberSince">-</div>
+                        <div style="font-size: 0.75em; color: var(--color-text-secondary); margin-top: 4px;">${t('member_since')}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Account Actions -->
             <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
-                <p><strong>${t('logged_in_as')}:</strong> ${profile?.full_name || user?.email}</p>
-                <p style="font-size: 0.875rem; color: var(--color-text-tertiary);">${user?.email || ''}</p>
-                <button class="btn btn-danger" onclick="AuthManager.signOut()" style="margin-top: var(--spacing-sm);">
+                <button class="btn btn-secondary" onclick="togglePasswordChange()">
+                    🔑 ${t('change_password')}
+                </button>
+                <button class="btn btn-danger" onclick="AuthManager.signOut()">
                     🚪 ${t('logout_button')}
                 </button>
+            </div>
+
+            <!-- Password Change Form (Hidden by default) -->
+            <div id="passwordChangeForm" style="display: none; background: var(--color-bg-secondary); padding: var(--spacing-md); border-radius: 12px; margin-top: var(--spacing-md);">
+                <h4 style="margin: 0 0 var(--spacing-md) 0;">${t('change_password')}</h4>
+                <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
+                    <div>
+                        <label style="display: block; font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 4px;">${t('new_password')}</label>
+                        <input type="password" id="newPasswordInput" 
+                               style="width: 100%; padding: 10px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-bg-primary); color: var(--color-text-primary);">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 4px;">${t('confirm_password')}</label>
+                        <input type="password" id="confirmPasswordInput" 
+                               style="width: 100%; padding: 10px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-bg-primary); color: var(--color-text-primary);">
+                    </div>
+                    <div style="display: flex; gap: var(--spacing-sm); margin-top: var(--spacing-sm);">
+                        <button class="btn btn-primary" onclick="handleChangePassword()" style="flex: 1;">
+                            💾 ${t('save')}
+                        </button>
+                        <button class="btn btn-secondary" onclick="togglePasswordChange()" style="flex: 1;">
+                            ${t('cancel')}
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -301,4 +389,158 @@ async function handleForceSync() {
         showToast(t('error_general'), 'error');
     }
 }
+
+// ========================================
+// Account Management Functions
+// ========================================
+
+// Toggle profile edit form
+function toggleProfileEdit() {
+    const form = document.getElementById('profileEditForm');
+    if (form) {
+        form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+// Toggle password change form
+function togglePasswordChange() {
+    const form = document.getElementById('passwordChangeForm');
+    if (form) {
+        form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+// Handle save profile
+async function handleSaveProfile() {
+    const name = document.getElementById('profileNameInput')?.value;
+    const bio = document.getElementById('profileBioInput')?.value;
+
+    if (!name || name.trim() === '') {
+        showToast(t('error_invalid_input'), 'error');
+        return;
+    }
+
+    try {
+        await AuthManager.updateProfile({ full_name: name, bio: bio });
+        showToast(t('profile_updated'), 'success');
+        toggleProfileEdit();
+        renderPage('settings');
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        showToast(t('error_general'), 'error');
+    }
+}
+
+// Handle change password
+async function handleChangePassword() {
+    const newPassword = document.getElementById('newPasswordInput')?.value;
+    const confirmPassword = document.getElementById('confirmPasswordInput')?.value;
+
+    if (!newPassword || newPassword.length < 6) {
+        showToast(t('error_invalid_input'), 'error');
+        return;
+    }
+
+    if (newPassword !== confirmPassword) {
+        showToast(t('password_mismatch'), 'error');
+        return;
+    }
+
+    try {
+        const { error } = await window.supabaseClient.auth.updateUser({
+            password: newPassword
+        });
+
+        if (error) throw error;
+
+        showToast(t('password_changed'), 'success');
+        togglePasswordChange();
+
+        // Clear inputs
+        document.getElementById('newPasswordInput').value = '';
+        document.getElementById('confirmPasswordInput').value = '';
+    } catch (error) {
+        console.error('Error changing password:', error);
+        showToast(error.message || t('error_general'), 'error');
+    }
+}
+
+// Calculate and display account statistics
+async function updateAccountStats() {
+    try {
+        // Total prayers
+        const totalPrayers = await db.prayers.count();
+        const totalPrayersEl = document.getElementById('accountTotalPrayers');
+        if (totalPrayersEl) totalPrayersEl.textContent = totalPrayers;
+
+        // Total habits
+        const totalHabits = await db.habits.count();
+        const totalHabitsEl = document.getElementById('accountTotalHabits');
+        if (totalHabitsEl) totalHabitsEl.textContent = totalHabits;
+
+        // Current streak (consecutive days with prayers)
+        const streak = await calculatePrayerStreak();
+        const streakEl = document.getElementById('accountCurrentStreak');
+        if (streakEl) streakEl.textContent = streak;
+
+        // Member since
+        const user = await AuthManager.getCurrentUser();
+        if (user?.created_at) {
+            const memberDate = new Date(user.created_at);
+            const now = new Date();
+            const daysSince = Math.floor((now - memberDate) / (1000 * 60 * 60 * 24));
+            const memberSinceEl = document.getElementById('accountMemberSince');
+            if (memberSinceEl) {
+                if (daysSince < 30) {
+                    memberSinceEl.textContent = `${daysSince}d`;
+                } else if (daysSince < 365) {
+                    const months = Math.floor(daysSince / 30);
+                    memberSinceEl.textContent = `${months}m`;
+                } else {
+                    const years = Math.floor(daysSince / 365);
+                    memberSinceEl.textContent = `${years}y`;
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error updating account stats:', error);
+    }
+}
+
+// Calculate prayer streak
+async function calculatePrayerStreak() {
+    try {
+        let streak = 0;
+        const today = new Date();
+
+        for (let i = 0; i < 365; i++) {
+            const checkDate = new Date(today);
+            checkDate.setDate(checkDate.getDate() - i);
+            const dateStr = formatDate(checkDate);
+
+            // Check if user prayed at least one prayer on this day
+            const prayers = await db.prayers.where({ date: dateStr }).toArray();
+            const hasPrayed = prayers.some(p => p.status === 'done');
+
+            if (hasPrayed) {
+                streak++;
+            } else {
+                break;
+            }
+        }
+
+        return streak;
+    } catch (error) {
+        console.error('Error calculating streak:', error);
+        return 0;
+    }
+}
+
+// Update stats when page loads
+window.addEventListener('pageRendered', (e) => {
+    if (e.detail?.page === 'settings') {
+        setTimeout(updateAccountStats, 100);
+    }
+});
+
 

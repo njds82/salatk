@@ -52,6 +52,31 @@ const AuthManager = {
         return data;
     },
 
+    async updateProfile(updates) {
+        const user = await this.getCurrentUser();
+        if (!user) throw new Error('No user logged in');
+
+        // Update user metadata
+        const { error: metaError } = await window.supabaseClient.auth.updateUser({
+            data: updates
+        });
+
+        if (metaError) throw metaError;
+
+        // Also update profiles table if it exists
+        const { error: profileError } = await window.supabaseClient
+            .from('profiles')
+            .upsert({
+                id: user.id,
+                ...updates,
+                updated_at: new Date().toISOString()
+            });
+
+        if (profileError) console.warn('Profile table update failed:', profileError);
+
+        return { success: true };
+    },
+
     isAuthenticated() {
         return !!window.supabaseClient.auth.getSession();
     }
