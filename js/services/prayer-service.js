@@ -34,6 +34,10 @@ const PrayerService = {
 
     // Mark prayer status
     async markPrayer(key, date, status) {
+        if (!key || !date) {
+            console.error('PrayerService: Missing key or date', { key, date });
+            return { success: false, message: 'missing_params' };
+        }
         const prayerDef = PRAYERS[key];
         if (!prayerDef) throw new Error('Invalid prayer key');
 

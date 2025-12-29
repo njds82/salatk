@@ -8,7 +8,7 @@ const PrayerManager = {
     // Initialize
     async init() {
         console.log('Initializing Prayer Manager (Manual/Default Only)...');
-        this.startMissedPrayersCheck();
+        await this.startMissedPrayersCheck();
         return this.getPrayerTimesForToday();
     },
 
@@ -156,21 +156,23 @@ const PrayerManager = {
             { key: 'isha', start: times.isha, end: '23:59' }
         ];
 
-        schedule.forEach(slot => {
+        const today = getCurrentDate();
+        const dailyPrayers = await getDailyPrayers(today);
+
+        for (const slot of schedule) {
             const startMinutes = timeToMinutes(slot.start);
             const endMinutes = timeToMinutes(slot.end);
 
             // If current time is PAST the end time
             if (currentMinutes > endMinutes) {
                 // Check if not performed yet
-                const dailyPrayers = getDailyPrayers(getCurrentDate()); // from data-manager
                 if (!dailyPrayers[slot.key]?.status) {
                     // Not done and not already missed
                     console.log(`Auto-marking missed: ${slot.key}`);
-                    markPrayerMissed(slot.key);
+                    await markPrayerMissed(slot.key, today);
                 }
             }
-        });
+        }
     },
 
     // Start periodic check
@@ -179,8 +181,8 @@ const PrayerManager = {
         this.checkAndMarkMissedPrayers();
 
         // Then every minute
-        setInterval(() => {
-            this.checkAndMarkMissedPrayers();
+        setInterval(async () => {
+            await this.checkAndMarkMissedPrayers();
         }, 60000);
     }
 };
