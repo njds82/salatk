@@ -126,7 +126,7 @@ async function handleMarkHabit(habitId, action) {
         if (result.success) {
             showToast(t('habit_marked_message'), 'success');
             await updatePointsDisplay();
-            renderPage(window.currentPage);
+            await updateHabitCard(habitId);
         }
     } catch (error) {
         console.error('Error in handleMarkHabit:', error);

@@ -94,7 +94,7 @@ async function handleResetHabit(habitId) {
         if (result.success) {
             showToast(t('undo_success'), 'info');
             await updatePointsDisplay();
-            await renderPage(window.currentPage);
+            await updateHabitCard(habitId);
         }
     } catch (error) {
         console.error('Error in handleResetHabit:', error);

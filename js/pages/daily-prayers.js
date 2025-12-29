@@ -92,7 +92,7 @@ async function handlePrayerPerformed(prayerKey) {
         if (result.success) {
             showToast(t('prayer_performed_message'), 'success');
             await updatePointsDisplay();
-            renderPage(window.currentPage);
+            await updatePrayerCard(prayerKey);
         }
     } catch (error) {
         console.error('Error in handlePrayerPerformed:', error);
@@ -111,7 +111,7 @@ async function handlePrayerMissed(prayerKey) {
         if (result.success) {
             showToast(t('prayer_missed_message'), 'warning'); // Changed error to warning (yellow) for UI feel
             await updatePointsDisplay();
-            renderPage(window.currentPage);
+            await updatePrayerCard(prayerKey);
         }
     } catch (error) {
         console.error('Error in handlePrayerMissed:', error);

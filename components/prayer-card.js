@@ -71,7 +71,7 @@ async function handleResetPrayer(prayerKey) {
         if (result.success) {
             showToast(t('undo_success'), 'info');
             await updatePointsDisplay();
-            await renderPage(window.currentPage);
+            await updatePrayerCard(prayerKey);
         }
     } catch (error) {
         console.error('Error in handleResetPrayer:', error);

@@ -171,7 +171,7 @@ async function handleMakeUpQada(qadaId) {
         if (result.success) {
             showToast(t('qada_made_up_message'), 'success');
             await updatePointsDisplay();
-            navigateTo('qada-prayers');
+            await refreshQadaList();
         }
     });
 }
@@ -184,6 +184,6 @@ async function handleRemoveQada(qadaId) {
             SyncManager.removeQadaRecord(qadaId);
         }
         showToast(t('habit_deleted_message'), 'info');
-        await renderPage(window.currentPage);
+        await refreshQadaList();
     });
 }
