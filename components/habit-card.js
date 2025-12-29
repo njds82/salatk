@@ -2,9 +2,10 @@
 // Habit Card Component
 // ========================================
 
-function createHabitCard(habit) {
-    const streak = getHabitStreak(habit.id);
-    const todayStatus = habit.history ? habit.history[getCurrentDate()] : null;
+async function createHabitCard(habit) {
+    const streak = await HabitService.getStreak(habit.id);
+    const history = await HabitService.getHistory(habit.id);
+    const todayStatus = history[window.selectedDate] || null;
     const isWorshipHabit = habit.type === 'worship';
 
     return `
@@ -83,11 +84,20 @@ function createHabitCard(habit) {
     `;
 }
 
-function handleResetHabit(habitId) {
-    const result = resetHabitStatus(habitId, selectedDate);
-    if (result.success) {
-        showToast(t('undo_success'), 'info');
-        updatePointsDisplay();
-        renderPage(currentPage);
+async function handleResetHabit(habitId) {
+    try {
+        if (!canEditDate(window.selectedDate)) {
+            showToast(t('last_7_days_only'), 'error');
+            return;
+        }
+        const result = await HabitService.reset(habitId, window.selectedDate);
+        if (result.success) {
+            showToast(t('undo_success'), 'info');
+            await updatePointsDisplay();
+            await renderPage(window.currentPage);
+        }
+    } catch (error) {
+        console.error('Error in handleResetHabit:', error);
+        showToast(t('error_general'), 'error');
     }
 }

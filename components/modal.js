@@ -67,11 +67,11 @@ function confirmDialog(message, onConfirm) {
             {
                 label: t('confirm'),
                 className: 'btn-primary',
-                onclick: () => {
-                    if (_currentConfirmCallback) {
-                        _currentConfirmCallback();
-                    }
+                onclick: async () => {
                     closeModal();
+                    if (_currentConfirmCallback) {
+                        await _currentConfirmCallback();
+                    }
                 }
             }
         ]

@@ -53,8 +53,7 @@ async function checkAuthAndInit() {
     }
 
     // Update points display after potential sync
-    updatePointsDisplay();
-    updatePointsDisplay();
+    await updatePointsDisplay();
 
     // Navigate to initial page
     navigateToHash();

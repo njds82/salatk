@@ -54,9 +54,9 @@ async function renderHabitsPage() {
         `;
     } else {
         html += `<div class="card-grid">`;
-        habits.forEach(habit => {
-            html += createHabitCard(habit);
-        });
+        for (const habit of habits) {
+            html += await createHabitCard(habit);
+        }
         html += `</div>`;
     }
 
@@ -125,7 +125,7 @@ async function handleMarkHabit(habitId, action) {
         const result = await markHabit(habitId, action, window.selectedDate);
         if (result.success) {
             showToast(t('habit_marked_message'), 'success');
-            updatePointsDisplay();
+            await updatePointsDisplay();
             renderPage(window.currentPage);
         }
     } catch (error) {

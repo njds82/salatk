@@ -61,11 +61,20 @@ function createPrayerCard(prayerKey, status = null, prayerTime = null) {
     `;
 }
 
-function handleResetPrayer(prayerKey) {
-    const result = resetPrayerStatus(prayerKey, selectedDate);
-    if (result.success) {
-        showToast(t('undo_success'), 'info');
-        updatePointsDisplay();
-        renderPage(currentPage);
+async function handleResetPrayer(prayerKey) {
+    try {
+        if (!canEditDate(window.selectedDate)) {
+            showToast(t('last_7_days_only'), 'error');
+            return;
+        }
+        const result = await PrayerService.resetPrayer(prayerKey, window.selectedDate);
+        if (result.success) {
+            showToast(t('undo_success'), 'info');
+            await updatePointsDisplay();
+            await renderPage(window.currentPage);
+        }
+    } catch (error) {
+        console.error('Error in handleResetPrayer:', error);
+        showToast(t('error_general'), 'error');
     }
 }

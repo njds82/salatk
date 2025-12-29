@@ -41,11 +41,11 @@ function getLevelProgress(points) {
 }
 
 // Update points display in header
-function updatePointsDisplay() {
-    const pointsData = getPoints();
+async function updatePointsDisplay() {
+    const totalPoints = await PointsService.getTotal();
     const pointsValue = document.getElementById('pointsValue');
 
     if (pointsValue) {
-        pointsValue.textContent = pointsData.total;
+        pointsValue.textContent = totalPoints;
     }
 }

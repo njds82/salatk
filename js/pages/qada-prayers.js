@@ -2,8 +2,8 @@
 // Qada Prayers Page
 // ========================================
 
-function renderQadaPrayersPage() {
-    const qadaPrayers = getQadaPrayers();
+async function renderQadaPrayersPage() {
+    const qadaPrayers = await getQadaPrayers();
     const totalRakaat = qadaPrayers.reduce((sum, prayer) => sum + prayer.rakaat, 0);
 
     let html = `
@@ -136,7 +136,7 @@ function showAddQadaModal() {
 }
 
 // Handle add manual qada
-function handleAddManualQada() {
+async function handleAddManualQada() {
     const prayerType = document.getElementById('qadaPrayerTypeSelect').value;
     const count = parseInt(document.getElementById('qadaPrayerCountInput').value);
     const dateInput = document.getElementById('qadaPrayerDateInput').value;
@@ -152,7 +152,7 @@ function handleAddManualQada() {
     }
 
     const date = dateInput || null;
-    const result = addManualQadaPrayer(prayerType, count, date);
+    const result = await addManualQadaPrayer(prayerType, count, date);
 
     if (result.success) {
         const message = t('added_prayers_success')
@@ -165,27 +165,25 @@ function handleAddManualQada() {
 }
 
 // Handle make up qada prayer
-function handleMakeUpQada(qadaId) {
-    confirmDialog(t('confirm'), () => {
-        const result = makeUpQadaPrayer(qadaId);
+async function handleMakeUpQada(qadaId) {
+    confirmDialog(t('confirm'), async () => {
+        const result = await makeUpQadaPrayer(qadaId);
         if (result.success) {
             showToast(t('qada_made_up_message'), 'success');
-            updatePointsDisplay();
+            await updatePointsDisplay();
             navigateTo('qada-prayers');
         }
     });
 }
 
 // Handle remove qada prayer
-function handleRemoveQada(qadaId) {
-    confirmDialog(t('confirm_delete'), () => {
-        const data = loadData();
-        const index = data.qadaPrayers.findIndex(q => q.id === qadaId);
-        if (index !== -1) {
-            data.qadaPrayers.splice(index, 1);
-            saveData(data);
-            showToast(t('habit_deleted_message'), 'info');
-            renderPage(currentPage);
+async function handleRemoveQada(qadaId) {
+    confirmDialog(t('confirm_delete'), async () => {
+        await db.qada.delete(qadaId);
+        if (window.SyncManager) {
+            SyncManager.removeQadaRecord(qadaId);
         }
+        showToast(t('habit_deleted_message'), 'info');
+        await renderPage(window.currentPage);
     });
 }

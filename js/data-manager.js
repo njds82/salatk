@@ -132,7 +132,7 @@ async function getStatistics() {
     const prayers = await db.prayers.toArray();
     const habits = await HabitService.getAll();
     const habitHistory = await db.habit_history.toArray();
-    const points = await PointsService.getTotalPoints();
+    const points = await PointsService.getTotal();
 
     let prayersPerformed = 0;
     let prayersMissed = 0;

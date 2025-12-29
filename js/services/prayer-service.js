@@ -116,6 +116,39 @@ const PrayerService = {
             await db.qada.delete(qada.id);
             if (window.SyncManager) SyncManager.removeQadaRecord(qada.id);
         }
+    },
+
+    // Reset prayer status (undo decision)
+    async resetPrayer(key, date) {
+        const existing = await db.prayers.get({ date: date, key: key });
+        if (!existing) return { success: false, message: 'no_record' };
+
+        const prayerDef = PRAYERS[key];
+        let pointsChange = 0;
+
+        // Revert previous points
+        if (existing.status === 'done') {
+            pointsChange -= prayerDef.points;
+        } else if (existing.status === 'missed' && prayerDef.required) {
+            pointsChange += prayerDef.points;
+            // Remove qada entry
+            await this.removeQada(date, key);
+        }
+
+        // Delete the prayer record
+        await db.prayers.delete([date, key]);
+
+        // Update points
+        if (pointsChange !== 0) {
+            await PointsService.addPoints(pointsChange, `${t('reset_decision')} - ${t(prayerDef.nameKey)}`);
+        }
+
+        // Sync
+        if (window.SyncManager) {
+            SyncManager.deletePrayerRecord(date, key);
+        }
+
+        return { success: true };
     }
 };
 

@@ -91,7 +91,7 @@ async function handlePrayerPerformed(prayerKey) {
         const result = await PrayerService.markPrayer(prayerKey, window.selectedDate, 'done');
         if (result.success) {
             showToast(t('prayer_performed_message'), 'success');
-            updatePointsDisplay();
+            await updatePointsDisplay();
             renderPage(window.currentPage);
         }
     } catch (error) {
@@ -110,7 +110,7 @@ async function handlePrayerMissed(prayerKey) {
         const result = await PrayerService.markPrayer(prayerKey, window.selectedDate, 'missed');
         if (result.success) {
             showToast(t('prayer_missed_message'), 'warning'); // Changed error to warning (yellow) for UI feel
-            updatePointsDisplay();
+            await updatePointsDisplay();
             renderPage(window.currentPage);
         }
     } catch (error) {

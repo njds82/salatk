@@ -250,7 +250,7 @@ function handleImportData() {
             const file = e.target.files[0];
             await importData(file);
             showToast(t('data_imported_message'), 'success');
-            updatePointsDisplay();
+            await updatePointsDisplay();
             navigateTo('settings');
         } catch (error) {
             showToast(t('error_importing'), 'error');
@@ -262,10 +262,10 @@ function handleImportData() {
 // Handle clear all data
 function handleClearAllData() {
 
-    confirmDialog(t('confirm_clear_all'), () => {
-        clearAllData();
+    confirmDialog(t('confirm_clear_all'), async () => {
+        await clearAllData();
         showToast(t('data_cleared_message'), 'info');
-        updatePointsDisplay();
+        await updatePointsDisplay();
         navigateTo('daily-prayers');
     });
 }

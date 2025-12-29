@@ -113,6 +113,49 @@ const HabitService = {
         }
 
         if (window.SyncManager) SyncManager.removeHabitAction(habitId, date);
+    },
+
+    // Get habit streak (consecutive days)
+    async getStreak(habitId) {
+        const habit = await db.habits.get(habitId);
+        if (!habit) return 0;
+
+        const records = await db.habit_history
+            .where({ habitId })
+            .reverse()
+            .sortBy('date');
+
+        let streak = 0;
+        const today = getCurrentDate();
+        let checkDate = parseDate(today);
+
+        // Count consecutive days backwards from today
+        for (let i = 0; i < 365; i++) { // Max 365 days check
+            const recordDate = formatDate(checkDate);
+            const record = records.find(r => r.date === recordDate);
+
+            if (!record) break;
+
+            // For worship habits, count 'done' actions
+            // For sin habits, count 'avoided' actions
+            if (habit.type === 'worship' && record.action === 'done') {
+                streak++;
+            } else if (habit.type === 'sin' && record.action === 'avoided') {
+                streak++;
+            } else {
+                break;
+            }
+
+            checkDate.setDate(checkDate.getDate() - 1);
+        }
+
+        return streak;
+    },
+
+    // Reset habit action (undo)
+    async reset(habitId, date) {
+        await this.removeAction(habitId, date);
+        return { success: true };
     }
 };
 
