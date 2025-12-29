@@ -21,13 +21,13 @@ const SyncManager = {
         try {
             // Parallel Fetch using Promise.all
             const promises = [
-                window.supabaseClient.from('user_settings').select('*').eq('user_id', userId).single(),
+                window.supabaseClient.from('user_settings').select('*').eq('user_id', userId).maybeSingle(),
                 window.supabaseClient.from('prayer_records').select('*').eq('user_id', userId),
                 window.supabaseClient.from('qada_prayers').select('*').eq('user_id', userId),
                 window.supabaseClient.from('habits').select('*').eq('user_id', userId),
                 window.supabaseClient.from('habit_history').select('*').eq('user_id', userId),
                 window.supabaseClient.from('points_history').select('*').eq('user_id', userId),
-                window.supabaseClient.from('locations').select('*').eq('user_id', userId).single()
+                window.supabaseClient.from('locations').select('*').eq('user_id', userId).maybeSingle()
             ];
 
             const [
@@ -59,7 +59,7 @@ const SyncManager = {
                     date: p.date,
                     key: p.prayer_key,
                     status: p.status,
-                    timestamp: new Date(p.timestamp).getTime()
+                    timestamp: new Date(p.recorded_at).getTime()
                 }));
                 await db.prayers.bulkPut(prayerRecords);
             }
@@ -71,7 +71,7 @@ const SyncManager = {
                     prayer: q.prayer_key,
                     date: q.original_date,
                     rakaat: q.rakaat,
-                    timestamp: new Date(q.timestamp).getTime(),
+                    timestamp: new Date(q.recorded_at).getTime(),
                     manual: q.is_manual
                 }));
                 await db.qada.bulkPut(qadaRecords);
@@ -111,7 +111,7 @@ const SyncManager = {
                 const pointRecords = points.map(p => ({
                     amount: p.amount,
                     reason: p.reason,
-                    timestamp: new Date(p.timestamp).getTime() // We lose original ordering ID unless we sort
+                    timestamp: new Date(p.recorded_at).getTime() // We lose original ordering ID unless we sort
                 }));
                 await db.points.bulkAdd(pointRecords);
             }
@@ -152,8 +152,7 @@ const SyncManager = {
                 user_id: user.id,
                 language: settings.language,
                 theme: settings.theme,
-                last_visit: settings.lastVisit,
-                updated_at: new Date().toISOString()
+                last_visit: settings.lastVisit
             });
         if (error) console.error('Push Settings Error', error);
     },
@@ -168,7 +167,7 @@ const SyncManager = {
                 date: date,
                 prayer_key: prayerKey,
                 status: status,
-                timestamp: new Date().toISOString()
+                recorded_at: new Date().toISOString()
             }, { onConflict: 'user_id, date, prayer_key' });
         if (error) console.error('Push Prayer Error', error);
     },
@@ -194,7 +193,7 @@ const SyncManager = {
                 prayer_key: qadaItem.prayer,
                 original_date: qadaItem.date,
                 rakaat: qadaItem.rakaat,
-                timestamp: new Date(qadaItem.timestamp).toISOString(),
+                recorded_at: new Date(qadaItem.timestamp).toISOString(),
                 is_manual: qadaItem.manual || false,
                 is_made_up: false
             });
@@ -234,7 +233,7 @@ const SyncManager = {
             habit_id: habitId,
             date: date,
             action: action,
-            timestamp: new Date().toISOString()
+            recorded_at: new Date().toISOString()
         }, { onConflict: 'user_id, habit_id, date' });
         if (error) console.error('Push HabitAction Error', error);
     },
@@ -252,7 +251,7 @@ const SyncManager = {
             user_id: user.id,
             amount: amount,
             reason: reason,
-            timestamp: new Date().toISOString()
+            recorded_at: new Date().toISOString()
         });
         if (error) console.error('Push Point Error', error);
     },
@@ -278,8 +277,7 @@ const SyncManager = {
                     user_id: user.id,
                     language: settingsObj.language || 'ar',
                     theme: settingsObj.theme || 'light',
-                    last_visit: settingsObj.lastVisit || new Date().toISOString().split('T')[0],
-                    updated_at: new Date().toISOString()
+                    last_visit: settingsObj.lastVisit || new Date().toISOString().split('T')[0]
                 });
             }
 
@@ -291,7 +289,7 @@ const SyncManager = {
                     date: p.date,
                     prayer_key: p.key,
                     status: p.status,
-                    timestamp: new Date(p.timestamp || Date.now()).toISOString()
+                    recorded_at: new Date(p.timestamp || Date.now()).toISOString()
                 }));
                 // Process in chunks of 50 to avoid payload limits
                 for (let i = 0; i < prayerUpdates.length; i += 50) {
@@ -311,7 +309,7 @@ const SyncManager = {
                     prayer_key: q.prayer,
                     original_date: q.date,
                     rakaat: q.rakaat,
-                    timestamp: new Date(q.timestamp || Date.now()).toISOString(),
+                    recorded_at: new Date(q.timestamp || Date.now()).toISOString(),
                     is_manual: q.manual || false,
                     is_made_up: false
                 }));
@@ -341,7 +339,7 @@ const SyncManager = {
                     habit_id: h.habitId,
                     date: h.date,
                     action: h.action,
-                    timestamp: new Date().toISOString()
+                    recorded_at: new Date().toISOString()
                 }));
                 for (let i = 0; i < historyUpdates.length; i += 50) {
                     await window.supabaseClient
@@ -409,7 +407,7 @@ const SyncManager = {
                             date: newRecord.date,
                             key: newRecord.prayer_key,
                             status: newRecord.status,
-                            timestamp: new Date(newRecord.timestamp).getTime()
+                            timestamp: new Date(newRecord.recorded_at).getTime()
                         });
                     }
                     if (window.currentPage === 'daily-prayers') renderPage('daily-prayers');
@@ -424,7 +422,7 @@ const SyncManager = {
                             prayer: newRecord.prayer_key,
                             date: newRecord.original_date,
                             rakaat: newRecord.rakaat,
-                            timestamp: new Date(newRecord.timestamp).getTime(),
+                            timestamp: new Date(newRecord.recorded_at).getTime(),
                             manual: newRecord.is_manual
                         });
                     }
@@ -487,7 +485,7 @@ const SyncManager = {
                             await db.points.add({
                                 amount: newRecord.amount,
                                 reason: newRecord.reason,
-                                timestamp: new Date(newRecord.timestamp).getTime()
+                                timestamp: new Date(newRecord.recorded_at).getTime()
                             });
                         }
                         updatePointsDisplay();
