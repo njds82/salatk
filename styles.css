@@ -1379,12 +1379,15 @@ body.auth-mode {
 }
 
 /* ========================================
-   Leaderboard & Podium
+/* ========================================
+   Leaderboard & Podium (Premium Redesign)
    ======================================== */
 
 .podium-container {
     margin-bottom: var(--spacing-2xl);
-    padding-top: var(--spacing-2xl);
+    padding: var(--spacing-2xl) 0;
+    position: relative;
+    overflow: hidden;
 }
 
 .podium {
@@ -1392,7 +1395,8 @@ body.auth-mode {
     justify-content: center;
     align-items: flex-end;
     gap: var(--spacing-lg);
-    height: 300px;
+    height: 320px;
+    padding-bottom: 20px;
 }
 
 .podium-item {
@@ -1400,130 +1404,211 @@ body.auth-mode {
     flex-direction: column;
     align-items: center;
     flex: 1;
-    max-width: 150px;
+    max-width: 160px;
+    opacity: 0;
+    transform: translateY(30px);
 }
 
-.podium-item.gold {
-    order: 2;
+.podium-item.animate {
+    animation: slideUpFade 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
-.podium-item.silver {
-    order: 1;
-}
+.podium-item.gold { order: 2; animation-delay: 0.2s; }
+.podium-item.silver { order: 1; animation-delay: 0.4s; }
+.podium-item.bronze { order: 3; animation-delay: 0.6s; }
 
-.podium-item.bronze {
-    order: 3;
+@keyframes slideUpFade {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .avatar-container {
     position: relative;
-    margin-bottom: var(--spacing-md);
+    margin-bottom: -10px;
+    z-index: 2;
+    transition: transform var(--transition-normal);
+}
+
+.podium-item:hover .avatar-container {
+    transform: translateY(-8px) scale(1.1);
 }
 
 .medal-icon {
     width: 60px;
     height: 60px;
-    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+    filter: drop-shadow(0 8px 16px rgba(0,0,0,0.15));
 }
 
-.gold .medal-icon { width: 80px; height: 80px; }
+.gold .medal-icon { width: 90px; height: 90px; }
+.silver .medal-icon { width: 75px; height: 75px; }
 
 .crown {
     position: absolute;
-    top: -20px;
+    top: -25px;
     left: 50%;
     transform: translateX(-50%);
-    font-size: 2rem;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+    font-size: 2.5rem;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+    animation: crownFloat 3s ease-in-out infinite;
+}
+
+@keyframes crownFloat {
+    0%, 100% { transform: translateX(-50%) translateY(0) rotate(0); }
+    50% { transform: translateX(-50%) translateY(-10px) rotate(5deg); }
 }
 
 .podium-step {
     width: 100%;
-    padding: var(--spacing-md);
-    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    padding: var(--spacing-lg) var(--spacing-md) var(--spacing-md);
+    border-radius: var(--radius-lg) var(--radius-lg) var(--radius-md) var(--radius-md);
     text-align: center;
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-xl);
     color: white;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.podium-step::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 100%);
+    pointer-events: none;
 }
 
 .gold .podium-step {
-    height: 160px;
-    background: linear-gradient(135deg, #FFD700, #FFA500);
+    height: 180px;
+    background: linear-gradient(135deg, #FFD700, #FFA500, #FDB931);
+    box-shadow: 0 15px 35px rgba(255, 215, 0, 0.3);
 }
 
 .silver .podium-step {
-    height: 120px;
-    background: linear-gradient(135deg, #C0C0C0, #8E8E8E);
+    height: 140px;
+    background: linear-gradient(135deg, #E0E0E0, #C0C0C0, #A0A0A0);
+    box-shadow: 0 12px 25px rgba(192, 192, 192, 0.25);
 }
 
 .bronze .podium-step {
-    height: 90px;
-    background: linear-gradient(135deg, #CD7F32, #8B4513);
+    height: 100px;
+    background: linear-gradient(135deg, #D48E58, #CD7F32, #8B4513);
+    box-shadow: 0 10px 20px rgba(205, 127, 50, 0.2);
 }
 
 .podium-name {
     display: block;
-    font-weight: 700;
-    font-size: 1rem;
+    font-weight: 800;
+    font-size: 1.1rem;
     margin-bottom: 4px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 .podium-points {
-    font-size: 1.25rem;
+    font-size: 1.4rem;
     font-weight: 800;
-    opacity: 0.9;
+    letter-spacing: 0.05em;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 .leaderboard-list {
     margin-bottom: var(--spacing-2xl);
+    border: none;
+    overflow: hidden;
 }
 
 .list-header {
     display: grid;
-    grid-template-columns: 80px 1fr 100px;
-    padding: var(--spacing-md) var(--spacing-lg);
-    font-weight: 700;
-    color: var(--color-text-tertiary);
-    border-bottom: 1px solid var(--color-border);
+    grid-template-columns: 100px 1fr 120px;
+    padding: var(--spacing-lg);
+    font-weight: 800;
+    color: var(--color-text-secondary);
+    background: var(--color-bg-input);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.9rem;
+}
+
+.list-body {
+    background: var(--color-bg-card);
 }
 
 .list-item {
     display: grid;
-    grid-template-columns: 80px 1fr 100px;
-    padding: var(--spacing-md) var(--spacing-lg);
+    grid-template-columns: 100px 1fr 120px;
+    padding: var(--spacing-lg);
     align-items: center;
-    transition: background-color var(--transition-fast);
+    border-bottom: 1px solid var(--color-border);
+    transition: all var(--transition-normal);
+    opacity: 0;
+    transform: translateX(-20px);
 }
 
-.list-item:not(:last-child) {
-    border-bottom: 1px solid var(--color-border);
+.list-item.animate {
+    animation: slideInRight 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes slideInRight {
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 .list-item:hover {
     background: var(--color-bg-input);
+    transform: scale(1.01) translateX(5px);
+    z-index: 10;
+    box-shadow: var(--shadow-md);
+}
+
+.list-item.current-user {
+    background: linear-gradient(90deg, rgba(15, 118, 110, 0.1), transparent);
+    border-right: 4px solid var(--color-primary);
 }
 
 .rank-number {
-    font-weight: 800;
+    font-weight: 900;
     color: var(--color-text-tertiary);
+    font-size: 1.1rem;
 }
 
 .user-name {
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--color-text-primary);
 }
 
 .points-value {
-    font-weight: 700;
+    font-weight: 800;
     color: var(--color-primary);
+    font-size: 1.1rem;
     text-align: left;
 }
 
 [dir="rtl"] .points-value {
     text-align: right;
 }
+
+.rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    margin-left: 10px;
+    font-size: 0.8rem;
+    color: white;
+}
+
 
 /* Glass effect utility */
 .glass {

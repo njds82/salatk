@@ -5,10 +5,12 @@
 async function renderLeaderboardPage() {
     let leaderboardData = [];
     let errorMessage = null;
+    let currentUserSession = null;
 
     try {
         // Check if user is authenticated
         const { data: { session } } = await window.supabaseClient.auth.getSession();
+        currentUserSession = session;
 
         if (!session) {
             errorMessage = 'يجب تسجيل الدخول لعرض لوحة المتصدرين';
@@ -45,6 +47,7 @@ async function renderLeaderboardPage() {
 
     const top3 = leaderboardData.slice(0, 3);
     const others = leaderboardData.slice(3);
+    const currentUserId = currentUserSession?.user?.id;
 
     let html = `
         <div class="page-header">
@@ -81,27 +84,35 @@ async function renderLeaderboardPage() {
                     <span>${t('points_header')}</span>
                 </div>
                 <div class="list-body">
-                    ${others.map(user => `
-                        <div class="list-item">
-                            <span class="rank-number">#${user.ranking}</span>
-                            <span class="user-name">${user.full_name}</span>
-                            <span class="points-value">${user.total_points}</span>
-                        </div>
-                    `).join('')}
+                    ${others.map((user, index) => {
+        const isCurrentUser = user.user_id === currentUserId;
+        return `
+                            <div class="list-item ${isCurrentUser ? 'current-user' : ''}" style="animation-delay: ${0.8 + (index * 0.1)}s">
+                                <span class="rank-number">#${user.ranking}</span>
+                                <div class="user-info">
+                                    <span class="user-name">${user.full_name} ${isCurrentUser ? `<span class="badge badge-primary" style="font-size: 0.7rem; margin: 0 5px;">${t('you')}</span>` : ''}</span>
+                                </div>
+                                <span class="points-value">${user.total_points}</span>
+                            </div>
+                        `;
+    }).join('')}
                     ${leaderboardData.length === 0 ? `<p class="empty-state">${t('no_leaderboard_data')}</p>` : ''}
                 </div>
             </div>
         `}
     `;
 
+    // Trigger animations after a short delay
+    setTimeout(() => {
+        document.querySelectorAll('.podium-item, .list-item').forEach(el => {
+            el.classList.add('animate');
+        });
+    }, 100);
+
     return html;
 }
 
 function renderPodium(topUsers) {
-    // Reorder for podium display: [Silver, Gold, Bronze]
-    const podiumOrder = [1, 0, 2]; // Index 0 is Gold, 1 Silver, 2 Bronze
-    const orderedUsers = podiumOrder.map(idx => topUsers[idx]).filter(Boolean);
-
     return `
         <div class="podium">
             ${topUsers[1] ? `
@@ -143,3 +154,4 @@ function renderPodium(topUsers) {
         </div>
     `;
 }
+
