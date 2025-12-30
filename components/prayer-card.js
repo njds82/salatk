@@ -2,7 +2,7 @@
 // Prayer Card Component
 // ========================================
 
-function createPrayerCard(prayerKey, status = null, prayerTime = null) {
+function createPrayerCard(prayerKey, status = null, prayerTime = null, isTimeValid = true, disabledMessage = null) {
     const prayer = PRAYERS[prayerKey];
     const prayerName = t(prayer.nameKey);
     const rakaatText = prayer.rakaat > 0
@@ -14,6 +14,10 @@ function createPrayerCard(prayerKey, status = null, prayerTime = null) {
     const isDone = status === 'done';
     const isMissed = status === 'missed';
     const hasStatus = isDone || isMissed; // Any status selected - disable both buttons
+
+    // If time is not valid, we disable interactions
+    const isDisabled = !isTimeValid;
+    const clickHandler = isDisabled ? `showToast('${disabledMessage || t('prayer_time_not_reached')}', 'warning')` : '';
 
     return `
         <div class="prayer-card ${statusClass}">
@@ -28,10 +32,10 @@ function createPrayerCard(prayerKey, status = null, prayerTime = null) {
                                 </svg>
                             </button>
                             <div class="dropdown-menu">
-                                <button class="dropdown-item" onclick="handlePrayerPerformed('${prayerKey}')">
+                                <button class="dropdown-item" onclick="${isDisabled ? clickHandler : `handlePrayerPerformed('${prayerKey}')`}" ${isDisabled ? 'style="opacity: 0.5"' : ''}>
                                     <span style="color: var(--color-success)">●</span> ${t('performed')}
                                 </button>
-                                <button class="dropdown-item" onclick="handlePrayerMissed('${prayerKey}')">
+                                <button class="dropdown-item" onclick="${isDisabled ? clickHandler : `handlePrayerMissed('${prayerKey}')`}" ${isDisabled ? 'style="opacity: 0.5"' : ''}>
                                     <span style="color: var(--color-error)">●</span> ${t('missed')}
                                 </button>
                                 <button class="dropdown-item danger" onclick="handleResetPrayer('${prayerKey}')">
@@ -46,16 +50,23 @@ function createPrayerCard(prayerKey, status = null, prayerTime = null) {
                 <span class="prayer-points">${pointsText}</span>
             </div>
             <div class="prayer-actions">
-                <button class="btn btn-success" 
-                        onclick="handlePrayerPerformed('${prayerKey}')"
-                        ${hasStatus ? 'disabled' : ''}>
-                    ${t('performed')}
-                </button>
-                <button class="btn btn-danger" 
-                        onclick="handlePrayerMissed('${prayerKey}')"
-                        ${hasStatus ? 'disabled' : ''}>
-                    ${t('missed')}
-                </button>
+                ${isDisabled ? `
+                    <div style="flex: 1; display: flex; gap: var(--spacing-sm);" onclick="${clickHandler}">
+                        <button class="btn btn-success" disabled style="pointer-events: none;">${t('performed')}</button>
+                        <button class="btn btn-danger" disabled style="pointer-events: none;">${t('missed')}</button>
+                    </div>
+                ` : `
+                    <button class="btn btn-success" 
+                            onclick="handlePrayerPerformed('${prayerKey}')"
+                            ${hasStatus ? 'disabled' : ''}>
+                        ${t('performed')}
+                    </button>
+                    <button class="btn btn-danger" 
+                            onclick="handlePrayerMissed('${prayerKey}')"
+                            ${hasStatus ? 'disabled' : ''}>
+                        ${t('missed')}
+                    </button>
+                `}
             </div>
         </div>
     `;

@@ -61,12 +61,28 @@ async function updatePrayerCard(prayerKey) {
     const status = dailyPrayers[prayerKey]?.status || null;
 
     let prayerTime = null;
+    let isTimeValid = true;
+
     if (window.PrayerManager && isToday(window.selectedDate)) {
         const times = await PrayerManager.getPrayerTimesForToday();
         prayerTime = times[prayerKey];
+
+        const timeToMinutes = (timeStr) => {
+            if (!timeStr) return 0;
+            const [h, m] = timeStr.split(':').map(Number);
+            return h * 60 + m;
+        };
+
+        const now = new Date();
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+        const prayerMinutes = timeToMinutes(prayerTime);
+
+        if (currentMinutes < prayerMinutes) {
+            isTimeValid = false;
+        }
     }
 
-    const newCardHTML = createPrayerCard(prayerKey, status, prayerTime);
+    const newCardHTML = createPrayerCard(prayerKey, status, prayerTime, isTimeValid);
 
     // Find and replace the prayer card in the DOM
     const cardGrid = document.querySelector('.card-grid');

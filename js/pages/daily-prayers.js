@@ -2,6 +2,8 @@
 // Daily Prayers Page
 // ========================================
 
+let interactionCheckInterval = null;
+
 async function renderDailyPrayersPage() {
     const today = getCurrentDate();
     const hijriDate = getHijriDate(parseDate(selectedDate));
@@ -9,10 +11,25 @@ async function renderDailyPrayersPage() {
 
     // Get fetched times
     let prayerTimes = null;
-    if (window.PrayerManager && isToday(selectedDate)) {
-        // Use cache if available, otherwise get (getPrayerTimesForToday now handles internal cache)
-        prayerTimes = await PrayerManager.getPrayerTimesForToday();
+    let isTodayDate = false;
+
+    if (window.PrayerManager) {
+        // We use isToday helper if available, or manual check string comparison
+        isTodayDate = selectedDate === today;
+        if (isTodayDate) {
+            prayerTimes = await PrayerManager.getPrayerTimesForToday();
+        }
     }
+
+    // Helper to parse "HH:MM" to minutes
+    const timeToMinutes = (timeStr) => {
+        if (!timeStr) return 0;
+        const [h, m] = timeStr.split(':').map(Number);
+        return h * 60 + m;
+    };
+
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
     let html = `
         <div class="page-header">
@@ -44,21 +61,48 @@ async function renderDailyPrayersPage() {
             </div>
         </div>
         
-        <div class="card-grid">
+        <div class="card-grid" id="prayer-cards-container">
     `;
 
     // Render all prayers
     for (const prayerKey of Object.keys(PRAYERS)) {
         const status = dailyPrayers[prayerKey]?.status || null;
         let timeDisplay = null;
+        let isTimeValid = true; // Default true (for past days)
+
         if (prayerTimes && prayerTimes[prayerKey]) {
             timeDisplay = prayerTimes[prayerKey];
+
+            // Only validate time if viewing TODAY's list
+            if (isTodayDate) {
+                const prayerMinutes = timeToMinutes(timeDisplay);
+                // Allow interaction if current time >= prayer time
+                // Or if it's already 'done'/'missed' (handled inside createPrayerCard logic mostly to show status, 
+                // but checking here ensures we don't accidentally disable a completed prayer if logic changes)
+                // Requirement says: disable if time is BEFORE prayer time.
+                if (currentMinutes < prayerMinutes) {
+                    isTimeValid = false;
+                }
+            }
         }
 
-        html += createPrayerCard(prayerKey, status, timeDisplay);
+        html += createPrayerCard(prayerKey, status, timeDisplay, isTimeValid);
     }
 
     html += `</div>`;
+
+    // Start auto-refresh interval for Today view
+    if (interactionCheckInterval) clearInterval(interactionCheckInterval);
+    if (isTodayDate) {
+        interactionCheckInterval = setInterval(() => {
+            // Re-check times without full re-render if possible, or just call updatePrayerCard loop
+            // For simplicity, we can just iterate and call updatePrayerCard if status might change
+            // But updatePrayerCard does async fetch. Maybe better to just re-render page quietly? 
+            // Or update the specific changed cards.
+            // Let's iterate keys and call updatePrayerCard - it handles fetching fresh state.
+            Object.keys(PRAYERS).forEach(key => updatePrayerCard(key));
+        }, 60000); // Check every minute
+    }
 
     return html;
 }

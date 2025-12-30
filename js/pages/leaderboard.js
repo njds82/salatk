@@ -8,15 +8,12 @@ async function renderLeaderboardPage() {
     let currentUserSession = null;
 
     try {
-        // Check if user is authenticated
         const { data: { session } } = await window.supabaseClient.auth.getSession();
         currentUserSession = session;
 
         if (!session) {
             errorMessage = 'يجب تسجيل الدخول لعرض لوحة المتصدرين';
-            console.warn('User not authenticated');
         } else {
-            // Try to fetch from leaderboard view
             const { data, error } = await window.supabaseClient
                 .from('leaderboard')
                 .select('*')
@@ -25,18 +22,14 @@ async function renderLeaderboardPage() {
 
             if (error) {
                 console.error('Error fetching leaderboard:', error);
-
-                // Check if the error is because the view doesn't exist
                 if (error.code === '42P01' || error.message.includes('does not exist')) {
                     errorMessage = 'لوحة المتصدرين غير مُفعّلة. يرجى تشغيل سكريبت SQL: supabase_leaderboard_view.sql';
                 } else {
                     errorMessage = t('error_fetching_leaderboard');
                 }
-
                 showToast(errorMessage, 'error');
             } else {
                 leaderboardData = data || [];
-                console.log('Leaderboard data fetched:', leaderboardData.length, 'users');
             }
         }
     } catch (error) {
@@ -45,9 +38,13 @@ async function renderLeaderboardPage() {
         showToast(errorMessage, 'error');
     }
 
-    const top3 = leaderboardData.slice(0, 3);
-    const others = leaderboardData.slice(3);
     const currentUserId = currentUserSession?.user?.id;
+    // Calculate max score for progress bars (avoid division by zero)
+    let maxPointsInList = 0;
+    if (leaderboardData.length > 0) {
+        maxPointsInList = Math.max(...leaderboardData.map(u => u.total_points || 0));
+    }
+    const maxScore = maxPointsInList > 0 ? maxPointsInList : 1;
 
     let html = `
         <div class="page-header">
@@ -73,85 +70,65 @@ async function renderLeaderboardPage() {
                 ` : ''}
             </div>
         ` : `
-            <div class="podium-container">
-                ${renderPodium(top3)}
-            </div>
-
-            <div class="leaderboard-list card">
-                <div class="list-header">
-                    <span>${t('rank_header')}</span>
-                    <span>${t('user_header')}</span>
-                    <span>${t('points_header')}</span>
-                </div>
-                <div class="list-body">
-                    ${others.map((user, index) => {
+            <div class="leaderboard-table-container">
+                <table class="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th class="rank-cell">${t('rank_header') || 'المركز'}</th>
+                            <th>${t('user_header') || 'المستخدم'}</th>
+                            <th>${t('points_header') || 'النقاط'}</th>
+                            <th>${t('progress_header') || 'الإنجاز'}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${leaderboardData.map((user, index) => {
         const isCurrentUser = user.user_id === currentUserId;
+        const progressPercent = Math.min(100, Math.max(0, (user.total_points / maxScore) * 100));
+
+        // Rank Icons
+        let rankDisplay = `<span class="rank-number">#${user.ranking}</span>`;
+        if (user.ranking === 1) rankDisplay = `<span class="rank-icon">🥇</span>`;
+        if (user.ranking === 2) rankDisplay = `<span class="rank-icon">🥈</span>`;
+        if (user.ranking === 3) rankDisplay = `<span class="rank-icon">🥉</span>`;
+
         return `
-                            <div class="list-item ${isCurrentUser ? 'current-user' : ''}" style="animation-delay: ${0.8 + (index * 0.1)}s">
-                                <span class="rank-number">#${user.ranking}</span>
-                                <div class="user-info">
-                                    <span class="user-name">${user.full_name} ${isCurrentUser ? `<span class="badge badge-primary" style="font-size: 0.7rem; margin: 0 5px;">${t('you')}</span>` : ''}</span>
-                                </div>
-                                <span class="points-value">${user.total_points}</span>
-                            </div>
-                        `;
+                                <tr class="${isCurrentUser ? 'current-user-row' : ''}" style="animation: fadeIn 0.3s ease-out forwards; animation-delay: ${index * 0.05}s; opacity: 0;">
+                                    <td class="rank-cell">
+                                        ${rankDisplay}
+                                    </td>
+                                    <td class="user-cell">
+                                        <span class="user-name">
+                                            ${user.full_name} 
+                                            ${isCurrentUser ? `<span class="badge badge-primary" style="font-size: 0.7rem; margin: 0 5px; background: var(--color-primary); color: white; padding: 2px 6px; border-radius: 4px;">${t('you') || 'أنت'}</span>` : ''}
+                                        </span>
+                                    </td>
+                                    <td class="score-cell">
+                                        ${user.total_points.toLocaleString()}
+                                    </td>
+                                    <td class="progress-cell">
+                                        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 2px; color: var(--color-text-tertiary);">
+                                            <span>${Math.round(progressPercent)}%</span>
+                                        </div>
+                                        <div class="progress-bar-bg">
+                                            <div class="progress-bar-fill" style="width: ${progressPercent}%"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `;
     }).join('')}
-                    ${leaderboardData.length === 0 ? `<p class="empty-state">${t('no_leaderboard_data')}</p>` : ''}
-                </div>
+                        ${leaderboardData.length === 0 ? `
+                            <tr>
+                                <td colspan="4" class="empty-state">
+                                    ${t('no_leaderboard_data') || 'لا توجد بيانات لعرضها'}
+                                </td>
+                            </tr>
+                        ` : ''}
+                    </tbody>
+                </table>
             </div>
         `}
     `;
 
-    // Trigger animations after a short delay
-    setTimeout(() => {
-        document.querySelectorAll('.podium-item, .list-item').forEach(el => {
-            el.classList.add('animate');
-        });
-    }, 100);
-
     return html;
-}
-
-function renderPodium(topUsers) {
-    return `
-        <div class="podium">
-            ${topUsers[1] ? `
-            <div class="podium-item silver">
-                <div class="avatar-container">
-                    <img src="assets/images/silver-medal.png" alt="Silver" class="medal-icon">
-                </div>
-                <div class="podium-step">
-                    <span class="podium-name">${topUsers[1].full_name}</span>
-                    <span class="podium-points">${topUsers[1].total_points}</span>
-                </div>
-            </div>
-            ` : ''}
-
-            ${topUsers[0] ? `
-            <div class="podium-item gold">
-                <div class="avatar-container">
-                    <img src="assets/images/gold-medal.png" alt="Gold" class="medal-icon">
-                    <div class="crown">👑</div>
-                </div>
-                <div class="podium-step">
-                    <span class="podium-name">${topUsers[0].full_name}</span>
-                    <span class="podium-points">${topUsers[0].total_points}</span>
-                </div>
-            </div>
-            ` : ''}
-
-            ${topUsers[2] ? `
-            <div class="podium-item bronze">
-                <div class="avatar-container">
-                    <img src="assets/images/bronze-medal.png" alt="Bronze" class="medal-icon">
-                </div>
-                <div class="podium-step">
-                    <span class="podium-name">${topUsers[2].full_name}</span>
-                    <span class="podium-points">${topUsers[2].total_points}</span>
-                </div>
-            </div>
-            ` : ''}
-        </div>
-    `;
 }
 

@@ -7,11 +7,14 @@
 -- Create the view
 CREATE OR REPLACE VIEW leaderboard AS
 SELECT 
-    ROW_NUMBER() OVER (ORDER BY SUM(ph.amount) DESC, p.created_at) as ranking,
+    ROW_NUMBER() OVER (
+        ORDER BY COALESCE(SUM(ph.amount), 0) DESC, p.created_at ASC, p.full_name ASC
+    ) as ranking,
     p.id as user_id,
     COALESCE(p.full_name, 'مستخدم صلاتك') as full_name,
     COALESCE(SUM(ph.amount), 0) as total_points,
-    COUNT(ph.id) as total_activities
+    COUNT(ph.id) as total_activities,
+    p.created_at
 FROM 
     profiles p
 LEFT JOIN 
@@ -19,7 +22,7 @@ LEFT JOIN
 GROUP BY 
     p.id, p.full_name, p.created_at
 ORDER BY 
-    total_points DESC, p.created_at;
+    ranking ASC;
 
 -- Grant access to authenticated users
 GRANT SELECT ON leaderboard TO authenticated;
