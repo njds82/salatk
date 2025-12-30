@@ -292,9 +292,10 @@ async function handleThemeChange(theme) {
 }
 
 // Handle language change
-function handleLanguageChange(lang) {
-    setLanguage(lang);
-    navigateTo('settings');
+async function handleLanguageChange(lang) {
+    await SettingsService.set('language', lang);
+    if (window.setLanguage) setLanguage(lang);
+    renderPage('settings', true);
 }
 
 // Handle calculation settings change
@@ -310,6 +311,7 @@ async function handleCalculationSettingsChange() {
     // Force recalculate/re-render to apply changes immediately
     if (window.currentPage === 'settings') {
         if (window.PrayerManager) PrayerManager.clearCache();
+        renderPage('settings', true);
     }
 }
 
@@ -333,7 +335,7 @@ function handleSaveManualLocation() {
         PrayerManager.clearCache();
     }
     showToast(t('manual_mode_on'), 'success');
-    navigateTo('settings');
+    renderPage('settings', true);
 }
 
 // Handle region selection change

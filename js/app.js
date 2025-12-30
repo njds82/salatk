@@ -174,7 +174,12 @@ function navigateToHash() {
 // Render page
 async function renderPage(page, noScroll = false) {
     const content = document.getElementById('pageContent');
-    content.innerHTML = `<div class="loading-spinner"></div>`;
+    const isRefreshing = window.currentPage === page;
+
+    // Only show loading spinner if we are navigating to a NEW page or if we want a full reload
+    if (!noScroll || !isRefreshing) {
+        content.innerHTML = `<div class="loading-spinner"></div>`;
+    }
 
     let html = '';
 
