@@ -228,6 +228,9 @@ const translations = {
         login_success: 'تم تسجيل الدخول بنجاح',
         signup_success: 'تم إنشاء الحساب بنجاح',
         check_email_confirmation: 'يرجى تفقد بريدك الإلكتروني لتأكيد حسابك',
+        username_or_email_label: 'اسم المستخدم / البريد',
+        username_placeholder: '@username',
+        username_too_short: 'اسم المستخدم قصير جداً',
 
         // Leaderboard
         nav_leaderboard: 'لوحة الصدارة',
@@ -492,6 +495,9 @@ const translations = {
         login_success: 'Login successful',
         signup_success: 'Account created successfully',
         check_email_confirmation: 'Please check your email to confirm your account',
+        username_or_email_label: 'Username / Email',
+        username_placeholder: '@username',
+        username_too_short: 'Username too short',
 
         // Leaderboard
         nav_leaderboard: 'Leaderboard',

@@ -25,9 +25,9 @@ function renderAuthPage(type = 'login') {
                     ` : ''}
                     
                     <div class="form-group">
-                        <label for="email">${t('email_label')}</label>
+                        <label for="email">${t('username_or_email_label') || t('email_label')}</label>
                         <div class="input-wrapper">
-                            <input type="email" id="email" placeholder="${t('email_placeholder')}" required>
+                            <input type="text" id="email" placeholder="${t('username_placeholder') || '@username'}" required>
                         </div>
                     </div>
                     

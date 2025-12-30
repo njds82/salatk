@@ -11,7 +11,8 @@ SELECT
         ORDER BY COALESCE(SUM(ph.amount), 0) DESC, p.created_at ASC, p.full_name ASC
     ) as ranking,
     p.id as user_id,
-    COALESCE(p.full_name, 'مستخدم صلاتك') as full_name,
+    COALESCE(NULLIF(p.full_name, ''), p.username, 'مستخدم صلاتك') as full_name,
+    p.username,
     COALESCE(SUM(ph.amount), 0) as total_points,
     COUNT(ph.id) as total_activities,
     p.created_at
@@ -20,7 +21,7 @@ FROM
 LEFT JOIN 
     points_history ph ON ph.user_id = p.id
 GROUP BY 
-    p.id, p.full_name, p.created_at
+    p.id, p.full_name, p.username, p.created_at
 ORDER BY 
     ranking ASC;
 
