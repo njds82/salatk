@@ -32,14 +32,7 @@ const SettingsService = {
     async set(key, value) {
         await db.settings.put({ key, value });
 
-        // specific side effects
-        if (key === 'language') {
-            document.documentElement.lang = value;
-            document.documentElement.dir = value === 'ar' ? 'rtl' : 'ltr';
-        }
-        if (key === 'theme') {
-            document.documentElement.setAttribute('data-theme', value);
-        }
+        this.applySettings({ [key]: value });
 
         // Sync
         if (window.SyncManager) {
@@ -52,8 +45,35 @@ const SettingsService = {
 
     async init() {
         // Load initial theme/lang to avoid FOUC (Flash of Unstyled Content) if possible
-        // But this is async... so index.html might need a small synchronous inline script or default css
-        // For now, we rely on the page load logic.
+        const settings = await this.getSettings();
+        this.applySettings(settings);
+    },
+
+    // Apply settings to DOM and cache
+    applySettings(settings) {
+        if (settings.theme) {
+            document.documentElement.setAttribute('data-theme', settings.theme);
+            localStorage.setItem('salatk_theme', settings.theme);
+
+            // Update theme icon if on page
+            const sunIcon = document.querySelector('.sun-icon');
+            const moonIcon = document.querySelector('.moon-icon');
+            if (sunIcon && moonIcon) {
+                if (settings.theme === 'dark') {
+                    sunIcon.style.display = 'none';
+                    moonIcon.style.display = 'block';
+                } else {
+                    sunIcon.style.display = 'block';
+                    moonIcon.style.display = 'none';
+                }
+            }
+        }
+
+        if (settings.language) {
+            document.documentElement.lang = settings.language;
+            document.documentElement.dir = settings.language === 'ar' ? 'rtl' : 'ltr';
+            localStorage.setItem('salatk_lang', settings.language);
+        }
     }
 };
 

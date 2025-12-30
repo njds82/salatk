@@ -36,6 +36,14 @@ const SyncManager = {
                         { key: 'initialized', value: new Date(settings.initialized_at || Date.now()).getTime() }
                     ]);
                     console.log('✔ Settings synced');
+
+                    // Apply settings immediately after pull to ensure theme/lang consistency
+                    if (window.SettingsService) {
+                        SettingsService.applySettings({
+                            language: settings.language,
+                            theme: settings.theme
+                        });
+                    }
                 }
             } catch (e) { console.error('✘ Settings sync failed', e); }
 
