@@ -250,7 +250,7 @@ async function renderSettingsPage() {
                 ${t('app_name')}
             </p>
             <p style="color: var(--color-text-tertiary); font-size: 0.875rem;">
-                ${t('version')} 2.0.0 ${t('demo_tag')}
+                ${t('version')} 3.2.0 ${t('demo_tag')}
             </p>
             <p style="color: var(--color-text-tertiary); font-size: 0.875rem; margin-top: var(--spacing-md);">
                 ${t('app_description')}
