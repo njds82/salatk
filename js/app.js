@@ -86,14 +86,19 @@ async function checkAuthAndInit() {
 function setupEventListeners() {
     // Theme toggle
     const themeToggle = document.getElementById('themeToggle');
-    const currentTheme = document.documentElement.getAttribute('data-theme');
-    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-    if (window.handleThemeChange) {
-        handleThemeChange(newTheme);
-    } else {
-        // Fallback for app.js internal toggle if pages/settings.js not active
-        document.documentElement.setAttribute('data-theme', newTheme);
-        if (window.SettingsService) SettingsService.set('theme', newTheme);
+    if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+
+            if (window.handleThemeChange) {
+                handleThemeChange(newTheme);
+            } else {
+                // Fallback for app.js internal toggle if pages/settings.js not active
+                document.documentElement.setAttribute('data-theme', newTheme);
+                if (window.SettingsService) SettingsService.set('theme', newTheme);
+            }
+        });
     }
 
     // Language toggle
