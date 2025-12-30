@@ -24,11 +24,11 @@ async function renderSettingsPage() {
         <div class="card" style="margin-bottom: var(--spacing-lg); background: linear-gradient(135deg, hsla(262, 77%, 70%, 0.1), hsla(262, 47%, 55%, 0.1)); border: 2px solid var(--color-primary);">
             <div style="display: flex; align-items: center; gap: var(--spacing-md); margin-bottom: var(--spacing-lg);">
                 <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light)); display: flex; align-items: center; justify-content: center; font-size: 2.5em; color: white; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
-                    ${(profile?.full_name || user?.email || 'U').charAt(0).toUpperCase()}
+                    ${(profile?.full_name || user?.user_metadata?.username || user?.email?.split('@')[0] || 'U').charAt(0).toUpperCase()}
                 </div>
                 <div style="flex: 1;">
-                    <h2 style="margin: 0 0 4px 0; color: var(--color-primary); font-size: 1.5em;">${profile?.full_name || user?.email}</h2>
-                    <p style="margin: 0; color: var(--color-text-secondary); font-size: 0.9em;">${user?.email || ''}</p>
+                    <h2 style="margin: 0 0 4px 0; color: var(--color-primary); font-size: 1.5em;">${profile?.full_name || user?.user_metadata?.username || user?.email?.split('@')[0]}</h2>
+                    <p style="margin: 0; color: var(--color-text-secondary); font-size: 0.9em;">@${user?.user_metadata?.username || user?.email?.split('@')[0] || ''}</p>
                     ${profile?.bio ? `<p style="margin: 8px 0 0 0; color: var(--color-text-tertiary); font-size: 0.875em; font-style: italic;">"${profile.bio}"</p>` : ''}
                 </div>
                 <button class="btn btn-secondary" onclick="toggleProfileEdit()" style="padding: 8px 16px;">
