@@ -8,16 +8,15 @@ window.selectedDate = getCurrentDate();
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
-    // Load saved theme
+    // Initial theme/lang load (fast feedback from localStorage)
     const savedTheme = localStorage.getItem('salatk_theme') || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme);
+    const savedLang = localStorage.getItem('salatk_lang') || 'ar';
 
-    // Update theme icon
-    const sunIcon = document.querySelector('.sun-icon');
-    const moonIcon = document.querySelector('.moon-icon');
-    if (savedTheme === 'dark') {
-        sunIcon.style.display = 'none';
-        moonIcon.style.display = 'block';
+    if (window.SettingsService) {
+        SettingsService.applySettings({ theme: savedTheme, language: savedLang });
+    } else {
+        // Fallback if service not yet loaded
+        document.documentElement.setAttribute('data-theme', savedTheme);
     }
 
     // Set up event listeners
@@ -34,6 +33,11 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function checkAuthAndInit() {
+
+    // Initialize settings service (async load from DB)
+    if (window.SettingsService) {
+        await SettingsService.init();
+    }
 
     // Initialize prayer manager
     if (window.PrayerManager) {
@@ -82,11 +86,15 @@ async function checkAuthAndInit() {
 function setupEventListeners() {
     // Theme toggle
     const themeToggle = document.getElementById('themeToggle');
-    themeToggle.addEventListener('click', () => {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    if (window.handleThemeChange) {
         handleThemeChange(newTheme);
-    });
+    } else {
+        // Fallback for app.js internal toggle if pages/settings.js not active
+        document.documentElement.setAttribute('data-theme', newTheme);
+        if (window.SettingsService) SettingsService.set('theme', newTheme);
+    }
 
     // Language toggle
     const langToggle = document.getElementById('langToggle');
