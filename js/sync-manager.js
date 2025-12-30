@@ -533,14 +533,31 @@ const SyncManager = {
                     break;
                 case 'user_settings':
                     if (eventType !== 'DELETE') {
-                        const oldLang = getCurrentLanguage();
-                        await db.settings.bulkPut([
-                            { key: 'language', value: newRecord.language },
-                            { key: 'theme', value: newRecord.theme }
-                        ]);
-                        if (newRecord.theme) handleThemeChange(newRecord.theme);
-                        if (newRecord.language && newRecord.language !== oldLang) {
-                            setLanguage(newRecord.language);
+                        const currentSettings = await SettingsService.getSettings();
+
+                        // Only proceed if values are actually different to prevent loops
+                        if (newRecord.theme !== currentSettings.theme || newRecord.language !== currentSettings.language) {
+                            console.log('SyncManager: Applying settings update from cloud...', newRecord);
+
+                            await db.settings.bulkPut([
+                                { key: 'language', value: newRecord.language },
+                                { key: 'theme', value: newRecord.theme }
+                            ]);
+
+                            // Apply theme directly to DOM to avoid calling SettingsService.set (which would push back)
+                            if (newRecord.theme && newRecord.theme !== currentSettings.theme) {
+                                document.documentElement.setAttribute('data-theme', newRecord.theme);
+                            }
+
+                            // Apply language directly if different
+                            if (newRecord.language && newRecord.language !== currentSettings.language) {
+                                if (window.setLanguage) setLanguage(newRecord.language);
+                            }
+
+                            // Refresh UI if we are on the settings page
+                            if (window.currentPage === 'settings') {
+                                renderPage('settings', true);
+                            }
                         }
                     }
                     break;
