@@ -4,24 +4,22 @@
 -- This view calculates the total points for each user and ranks them
 
 -- Create a materialized view for better performance
+-- Create the view
 CREATE OR REPLACE VIEW leaderboard AS
 SELECT 
-    ROW_NUMBER() OVER (ORDER BY total_points DESC) as ranking,
-    u.id as user_id,
-    u.email,
-    COALESCE(u.raw_user_meta_data->>'full_name', SPLIT_PART(u.email, '@', 1)) as full_name,
+    ROW_NUMBER() OVER (ORDER BY SUM(ph.amount) DESC, p.created_at) as ranking,
+    p.id as user_id,
+    COALESCE(p.full_name, 'مستخدم صلاتك') as full_name,
     COALESCE(SUM(ph.amount), 0) as total_points,
     COUNT(ph.id) as total_activities
 FROM 
-    auth.users u
+    profiles p
 LEFT JOIN 
-    points_history ph ON ph.user_id = u.id
+    points_history ph ON ph.user_id = p.id
 GROUP BY 
-    u.id, u.email, u.raw_user_meta_data
-HAVING 
-    COALESCE(SUM(ph.amount), 0) > 0  -- Only show users with points
+    p.id, p.full_name, p.created_at
 ORDER BY 
-    total_points DESC;
+    total_points DESC, p.created_at;
 
 -- Grant access to authenticated users
 GRANT SELECT ON leaderboard TO authenticated;
