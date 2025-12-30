@@ -402,19 +402,27 @@ const SyncManager = {
             // 6. Points (CRITICAL FIX: Use upsert and include ID to avoid duplicates)
             const allPoints = await db.points.toArray();
             if (allPoints.length > 0) {
+                console.log(`SyncManager: Pushing ${allPoints.length} points...`);
                 const pointUpdates = allPoints.map(p => ({
-                    id: p.id, // Must include ID for upsert to work
+                    id: String(p.id), // Ensure ID is string
                     user_id: user.id,
                     amount: p.amount,
                     reason: p.reason,
                     recorded_at: new Date(p.timestamp || Date.now()).toISOString()
                 }));
-                // Use upsert instead of insert
-                const { error } = await window.supabaseClient.from('points_history').upsert(pointUpdates, { onConflict: 'id' });
-                if (error) {
-                    console.error('✘ Points push failed', error);
+
+                // Use chunked upsert to avoid payload size issues
+                let successCount = 0;
+                for (let i = 0; i < pointUpdates.length; i += 50) {
+                    const chunk = pointUpdates.slice(i, i + 50);
+                    const { error } = await window.supabaseClient.from('points_history').upsert(chunk, { onConflict: 'id' });
+                    if (error) {
+                        console.error(`✘ Points chunk sync failed (index ${i}):`, error.message || error);
+                    } else {
+                        successCount += chunk.length;
+                    }
                 }
-                else console.log(`✔ ${pointUpdates.length} Points pushed (Upserted)`);
+                console.log(`✔ ${successCount}/${allPoints.length} Points pushed (Upserted)`);
             }
 
             // 7. Location

@@ -8,7 +8,9 @@ ALTER TABLE prayer_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE qada_prayers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE habits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE habit_history ENABLE ROW LEVEL SECURITY;
-ALTER TABLE points_history ENABLE ROW LEVEL SECURITY;
+-- 6. Points History Policy
+ALTER TABLE points_history ALTER COLUMN id TYPE TEXT;
+CREATE POLICY "Users can read/insert their own points" ON points_history
 ALTER TABLE locations ENABLE ROW LEVEL SECURITY;
 
 -- 1. User Settings Policy
@@ -46,6 +48,7 @@ CREATE POLICY "Users can read/insert their own points" ON points_history
     WITH CHECK (auth.uid() = user_id);
     
 -- Note: Points logic ideally should be Server-Side via Trigger to prevent manual manipulation.
+-- Points ID is now TEXT to support deterministic strings (e.g. prayer:date:key)
 -- But for now, basic RLS ensures isolation between users.
 
 -- 7. Locations Policy
