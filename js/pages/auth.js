@@ -25,9 +25,9 @@ function renderAuthPage(type = 'login') {
                     ` : ''}
                     
                     <div class="form-group">
-                        <label for="email">${t('username_or_email_label') || t('email_label')}</label>
+                        <label for="username">${t('username_label')}</label>
                         <div class="input-wrapper">
-                            <input type="text" id="email" placeholder="${t('username_placeholder') || '@username'}" required>
+                            <input type="text" id="username" placeholder="${t('username_placeholder')}" required>
                         </div>
                     </div>
                     
@@ -67,7 +67,7 @@ function setupAuthFormListeners(type) {
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const email = document.getElementById('email').value;
+        const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
         const fullName = document.getElementById('fullName')?.value;
 
@@ -78,24 +78,18 @@ function setupAuthFormListeners(type) {
         try {
             let result;
             if (type === 'login') {
-                result = await AuthManager.signIn(email, password);
+                result = await AuthManager.signIn(username, password);
             } else {
-                result = await AuthManager.signUp(email, password, fullName);
+                result = await AuthManager.signUp(username, password, fullName);
             }
 
             if (result.error) {
                 showToast(result.error.message, 'error');
             } else {
-                // Check if signup required email confirmation
-                if (type === 'signup' && result.data && !result.data.session && result.data.user) {
-                    showToast(t('check_email_confirmation'), 'success');
-                    toggleAuthType('login');
-                } else {
-                    showToast(t(type === 'login' ? 'login_success' : 'signup_success'), 'success');
-                    // Redirect to home
-                    window.location.hash = 'daily-prayers';
-                    window.location.reload();
-                }
+                showToast(t(type === 'login' ? 'login_success' : 'signup_success'), 'success');
+                // Redirect to home
+                window.location.hash = 'daily-prayers';
+                window.location.reload();
             }
         } catch (err) {
             showToast(err.message, 'error');

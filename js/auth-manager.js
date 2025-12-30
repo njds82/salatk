@@ -3,43 +3,36 @@
 // ========================================
 
 const AuthManager = {
-    // Helper to resolve username or email to an email address
-    _resolveEmail(input) {
-        const isEmail = String(input).toLowerCase().match(
-            /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-        );
+    // Helper to resolve username to an email address
+    _resolveAuthEmail(username) {
+        // Enforce username only - no spaces, specific regex if needed, but for now simple trim
+        // We will strictly treat any input as a username and append @salatk.local
 
-        if (isEmail) return { email: input, isUsername: false };
-
-        // Treat as username
-        let username = input.trim();
-        if (username.startsWith('@')) username = username.substring(1);
+        let cleanUsername = username.trim();
+        // Remove @ if user added it
+        if (cleanUsername.startsWith('@')) cleanUsername = cleanUsername.substring(1);
 
         // Basic validation for username
-        if (username.length < 3) throw new Error(t('username_too_short') || 'Username too short');
+        if (cleanUsername.length < 3) throw new Error(t('username_too_short') || 'Username too short');
 
         // Generate dummy email
         return {
-            email: `${username}@salatk.local`,
-            isUsername: true,
-            username
+            email: `${cleanUsername}@salatk.local`,
+            username: cleanUsername
         };
     },
 
-    async signUp(usernameOrEmail, password, fullName) {
+    async signUp(username, password, fullName) {
         try {
-            const { email, isUsername, username } = this._resolveEmail(usernameOrEmail);
+            const { email, username: cleanUsername } = this._resolveAuthEmail(username);
 
             const options = {
                 emailRedirectTo: 'https://salatk.pages.dev/',
                 data: {
-                    full_name: fullName
+                    full_name: fullName,
+                    username: cleanUsername
                 }
             };
-
-            if (isUsername) {
-                options.data.username = username;
-            }
 
             const { data, error } = await window.supabaseClient.auth.signUp({
                 email,
@@ -47,10 +40,9 @@ const AuthManager = {
                 options
             });
 
-            if (data?.user && isUsername) {
-                // If it's a username signup, we might want to ensure the profile table has the username
-                // explicitly if the trigger doesn't handle it.
-                await this.updateProfile({ username });
+            if (data?.user) {
+                // Ensure profile is updated
+                await this.updateProfile({ username: cleanUsername });
             }
 
             return { data, error };
@@ -59,9 +51,9 @@ const AuthManager = {
         }
     },
 
-    async signIn(usernameOrEmail, password) {
+    async signIn(username, password) {
         try {
-            const { email } = this._resolveEmail(usernameOrEmail);
+            const { email } = this._resolveAuthEmail(username);
 
             const { data, error } = await window.supabaseClient.auth.signInWithPassword({
                 email,

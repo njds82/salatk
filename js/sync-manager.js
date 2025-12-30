@@ -642,7 +642,7 @@ const SyncManager = {
                 console.error('✘ No active session. Please log in.');
                 return;
             }
-            console.log('✔ Logged in as:', session.user.email);
+            console.log('✔ Logged in as:', session.user.user_metadata?.username || session.user.email);
             const userId = session.user.id;
 
             // 3. Permissions Check (Profile)
@@ -693,7 +693,8 @@ const SyncManager = {
                 console.warn('SyncManager: Profile missing, attempting self-repair...');
                 await window.supabaseClient.from('profiles').upsert({
                     id: user.id,
-                    email: user.email,
+                    id: user.id,
+                    username: user.user_metadata?.username || user.email?.split('@')[0],
                     full_name: user.user_metadata?.full_name || 'User'
                 });
                 console.log('✔ Profile repaired');
