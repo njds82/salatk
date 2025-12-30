@@ -455,6 +455,18 @@ const SyncManager = {
                 'postgres_changes',
                 { event: '*', schema: 'public' },
                 async (payload) => {
+                    // Only process events if they belong to the current user (security & loop prevention)
+                    const { data: { session } } = await window.supabaseClient.auth.getSession();
+                    if (!session) return;
+
+                    const userId = session.user.id;
+                    const record = payload.new || payload.old;
+
+                    if (record && record.user_id && record.user_id !== userId) {
+                        // console.log('SyncManager: ignoring event for other user');
+                        return;
+                    }
+
                     console.log('Realtime Change:', payload);
                     await this.handleRealtimeEvent(payload);
                 }
@@ -535,27 +547,34 @@ const SyncManager = {
                     if (eventType !== 'DELETE') {
                         const currentSettings = await SettingsService.getSettings();
 
-                        // Only proceed if values are actually different to prevent loops
-                        if (newRecord.theme !== currentSettings.theme || newRecord.language !== currentSettings.language) {
+                        const themeChanged = newRecord.theme && newRecord.theme !== currentSettings.theme;
+                        const langChanged = newRecord.language && newRecord.language !== currentSettings.language;
+
+                        // Only proceed if core values are actually different to prevent loops
+                        if (themeChanged || langChanged) {
                             console.log('SyncManager: Applying settings update from cloud...', newRecord);
 
                             await db.settings.bulkPut([
-                                { key: 'language', value: newRecord.language },
-                                { key: 'theme', value: newRecord.theme }
+                                { key: 'language', value: newRecord.language || currentSettings.language },
+                                { key: 'theme', value: newRecord.theme || currentSettings.theme }
                             ]);
 
-                            // Apply theme directly to DOM to avoid calling SettingsService.set (which would push back)
-                            if (newRecord.theme && newRecord.theme !== currentSettings.theme) {
+                            // Apply theme directly to DOM 
+                            if (themeChanged) {
                                 document.documentElement.setAttribute('data-theme', newRecord.theme);
                             }
 
                             // Apply language directly if different
-                            if (newRecord.language && newRecord.language !== currentSettings.language) {
+                            if (langChanged) {
                                 if (window.setLanguage) setLanguage(newRecord.language);
                             }
 
-                            // Refresh UI if we are on the settings page
+                            // Refresh UI if we are on the settings page, but without the loading spinner if possible
+                            // Or just rely on the direct DOM updates above for theme/lang.
+                            // If we are on settings page, we might want to update the select/button states.
                             if (window.currentPage === 'settings') {
+                                // Instead of a full renderPage which shows spinner, we could do a partial update.
+                                // But for now, let's keep it but ensure it doesn't trigger if ONLY last_visit changed.
                                 renderPage('settings', true);
                             }
                         }
