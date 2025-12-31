@@ -68,6 +68,10 @@ const AuthManager = {
         const { error } = await window.supabaseClient.auth.signOut();
         if (!error) {
             localStorage.removeItem('salatk_session');
+            // Clear local database to prevent data bleed between users
+            if (window.db) {
+                await window.db.delete();
+            }
             window.location.reload();
         }
         return { error };
