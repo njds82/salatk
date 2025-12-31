@@ -77,6 +77,11 @@ const SettingsService = {
             try {
                 await window.supabaseClient.from('user_settings').upsert(updates);
                 this.applySettings({ [key]: value });
+
+                // If calculation/madhab changed, clear prayer cache
+                if (key === 'calculationMethod' || key === 'madhab') {
+                    if (window.PrayerManager) window.PrayerManager.clearCache();
+                }
             } catch (e) {
                 console.error('SettingsService: Failed to save to cloud', e);
             }
