@@ -4,54 +4,87 @@
 
 const HabitService = {
     async getAll() {
-        return await db.habits.toArray();
+        if (!window.supabaseClient) return [];
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        if (!session) return [];
+
+        const { data } = await window.supabaseClient
+            .from('habits')
+            .select('*')
+            .eq('user_id', session.user.id);
+
+        return (data || []).map(h => ({
+            id: h.id,
+            name: h.name,
+            type: h.type,
+            created: new Date(h.created_at).getTime()
+        }));
     },
 
     async add(name, type) {
+        if (!window.supabaseClient) return null;
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        if (!session) return null;
+
         const habit = {
             id: crypto.randomUUID(),
+            user_id: session.user.id,
             name,
             type,
-            created: Date.now()
+            created_at: new Date().toISOString()
         };
-        await db.habits.add(habit);
 
-        if (window.SyncManager) SyncManager.pushHabit(habit);
-        return habit;
+        await window.supabaseClient.from('habits').insert(habit);
+
+        return { ...habit, created: new Date(habit.created_at).getTime() };
     },
 
     async delete(id) {
-        await db.habits.delete(id);
-        await db.habit_history.where({ habitId: id }).delete();
-
-        if (window.SyncManager) await SyncManager.deleteHabit(id);
+        if (!window.supabaseClient) return;
+        await window.supabaseClient.from('habits').delete().eq('id', id);
+        await window.supabaseClient.from('habit_history').delete().eq('habit_id', id);
     },
 
     async getHistory(habitId) {
-        // Return object { date: action }
-        const records = await db.habit_history.where({ habitId }).toArray();
+        if (!window.supabaseClient) return {};
+        const { data } = await window.supabaseClient
+            .from('habit_history')
+            .select('*')
+            .eq('habit_id', habitId);
+
         const history = {};
-        records.forEach(r => history[r.date] = r.action);
+        (data || []).forEach(r => history[r.date] = r.action);
         return history;
     },
 
-    // Get history for all habits for specific date range or just 'today' helper
     async getDailyActions(date) {
-        // Because we index [habitId+date], getting by date alone is not optimized unless we have index on 'date'.
-        // Our schema: habit_history: '[habitId+date], habitId, date' -> 'date' is indexed second.
-        const records = await db.habit_history.where('date').equals(date).toArray();
-        return records;
+        if (!window.supabaseClient) return [];
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        if (!session) return [];
+
+        const { data } = await window.supabaseClient
+            .from('habit_history')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .eq('date', date);
+
+        return (data || []).map(r => ({
+            habitId: r.habit_id,
+            date: r.date,
+            action: r.action,
+            timestamp: new Date(r.recorded_at).getTime()
+        }));
     },
 
     async logAction(habitId, date, action) {
-        const habit = await db.habits.get(habitId);
+        if (!window.supabaseClient) return;
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        if (!session) return;
+
+        // Fetch habit details for point calculation
+        const { data: habit } = await window.supabaseClient.from('habits').select('*').eq('id', habitId).single();
         if (!habit) throw new Error('Habit not found');
 
-        const existing = await db.habit_history.get({ habitId, date });
-
-        if (existing && existing.action === action) return; // No change
-
-        // Logic for points needs to be handled via Deterministic IDs
         const pointId = `habit:${habitId}:${date}`;
         let pointsAmount = 0;
         let reason = '';
@@ -69,55 +102,59 @@ const HabitService = {
             }
         }
 
-        await db.habit_history.put({
-            habitId,
+        await window.supabaseClient.from('habit_history').upsert({
+            user_id: session.user.id,
+            habit_id: habitId,
             date,
             action,
-            timestamp: Date.now()
-        });
+            recorded_at: new Date().toISOString()
+        }, { onConflict: 'user_id,habit_id,date' });
 
-        // Update Points with deterministic ID
-        // Note: Even if pointsAmount is 0 (optional action), we call it to ensure old records with this ID are cleared.
         await PointsService.addPoints(pointsAmount, reason, pointId);
-
-        if (window.SyncManager) SyncManager.pushHabitAction(habitId, date, action);
     },
 
     async removeAction(habitId, date) {
-        // Logic to remove action (Undo) and revert points
+        if (!window.supabaseClient) return;
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        if (!session) return;
+
         const pointId = `habit:${habitId}:${date}`;
 
-        await db.habit_history.where({ habitId, date }).delete();
+        await window.supabaseClient.from('habit_history')
+            .delete()
+            .eq('user_id', session.user.id)
+            .eq('habit_id', habitId)
+            .eq('date', date);
 
-        // Remove points (amount 0 + ID = delete)
         await PointsService.addPoints(0, `Reset habit action`, pointId);
-
-        if (window.SyncManager) window.SyncManager.removeHabitAction(habitId, date);
     },
 
     // Get habit streak (consecutive days)
     async getStreak(habitId) {
-        const habit = await db.habits.get(habitId);
-        if (!habit) return 0;
+        if (!window.supabaseClient) return 0;
 
-        const records = await db.habit_history
-            .where({ habitId })
-            .reverse()
-            .sortBy('date');
+        const { data: records } = await window.supabaseClient
+            .from('habit_history')
+            .select('*')
+            .eq('habit_id', habitId)
+            .order('date', { ascending: false });
+
+        if (!records) return 0;
+
+        // need habit type
+        const { data: habit } = await window.supabaseClient.from('habits').select('type').eq('id', habitId).single();
+        if (!habit) return 0;
 
         let streak = 0;
         const today = getCurrentDate();
         let checkDate = parseDate(today);
 
-        // Count consecutive days backwards from today
-        for (let i = 0; i < 365; i++) { // Max 365 days check
-            const recordDate = formatDate(checkDate);
-            const record = records.find(r => r.date === recordDate);
+        for (let i = 0; i < 365; i++) {
+            const dateStr = formatDate(checkDate);
+            const record = records.find(r => r.date === dateStr);
 
             if (!record) break;
 
-            // For worship habits, count 'done' actions
-            // For sin habits, count 'avoided' actions
             if (habit.type === 'worship' && record.action === 'done') {
                 streak++;
             } else if (habit.type === 'sin' && record.action === 'avoided') {

@@ -20,149 +20,175 @@ const PrayerService = {
 
     // Get prayers for a specific date
     async getDailyPrayers(date) {
-        // Fetch all prayers for this date from IndexedDB
-        const records = await db.prayers.where({ date: date }).toArray();
+        if (!window.supabaseClient) return {};
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        if (!session) return {};
 
-        // Convert array to object map: { fajr: { status: 'done', ... }, ... }
-        const prayerMap = {};
-        records.forEach(r => {
-            prayerMap[r.key] = r;
-        });
+        try {
+            const { data, error } = await window.supabaseClient
+                .from('prayer_records')
+                .select('*')
+                .eq('user_id', session.user.id)
+                .eq('date', date);
 
-        return prayerMap;
+            if (error) throw error;
+
+            const prayerMap = {};
+            (data || []).forEach(r => {
+                prayerMap[r.prayer_key] = {
+                    key: r.prayer_key,
+                    status: r.status,
+                    timestamp: new Date(r.recorded_at).getTime()
+                };
+            });
+
+            return prayerMap;
+        } catch (e) {
+            console.error('PrayerService: Failed to fetch daily prayers', e);
+            return {};
+        }
     },
 
     // Mark prayer status
     async markPrayer(key, date, status) {
-        if (!key || !date) {
-            console.error('PrayerService: Missing key or date', { key, date });
-            return { success: false, message: 'missing_params' };
+        if (!key || !date || !window.supabaseClient) {
+            console.error('PrayerService: Missing params', { key, date });
+            return { success: false };
         }
+
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        if (!session) return { success: false };
+
         const prayerDef = PRAYERS[key];
-        if (!prayerDef) throw new Error('Invalid prayer key');
-
-        const existing = await db.prayers.get({ date: date, key: key });
-
-        // If status is same, do nothing
-        if (existing && existing.status === status) {
-            return { success: false, message: 'no_change' };
-        }
-
-        // Logic for points needs to be handled via Deterministic IDs
         const pointId = `prayer:${date}:${key}`;
         let pointsAmount = 0;
         let reason = `${t(prayerDef.nameKey)} - ${t(status === 'done' ? 'performed' : 'missed')}`;
 
         if (status === 'done') {
             pointsAmount = prayerDef.points;
-            // If it was previously missed, remove from Qada
-            if (existing && existing.status === 'missed' && prayerDef.required) {
-                await this.removeQada(date, key);
-            }
+            if (prayerDef.required) await this.removeQada(date, key);
         } else if (status === 'missed' && prayerDef.required) {
             pointsAmount = -prayerDef.points;
-            // Add Qada if missing
             await this.addQada(date, key, prayerDef.rakaat);
         } else {
-            // If status is 'none' (reset) or optional missed, we just remove points for this ID
-            pointsAmount = 0;
-            if (existing && existing.status === 'missed' && prayerDef.required) {
-                await this.removeQada(date, key);
-            }
+            if (prayerDef.required) await this.removeQada(date, key);
         }
 
-        // Update DB
-        await db.prayers.put({
-            date: date,
-            key: key,
-            status: status,
-            timestamp: Date.now()
-        });
+        try {
+            // Update Cloud
+            const { error: prayerError } = await window.supabaseClient
+                .from('prayer_records')
+                .upsert({
+                    user_id: session.user.id,
+                    date: date,
+                    prayer_key: key,
+                    status: status,
+                    recorded_at: new Date().toISOString()
+                }, { onConflict: 'user_id,date,prayer_key' });
 
-        // Update Points with deterministic ID
-        // If pointsAmount is 0, addPoints handles deletion
-        await PointsService.addPoints(pointsAmount, reason, pointId);
+            if (prayerError) throw prayerError;
 
-        // Trigger Sync
-        if (window.SyncManager) {
-            await SyncManager.pushPrayerRecord(date, key, status);
+            // Update Points
+            await PointsService.addPoints(pointsAmount, reason, pointId);
+
+            return { success: true };
+        } catch (e) {
+            console.error('PrayerService: Error marking prayer', e);
+            return { success: false };
         }
-
-        return { success: true };
     },
 
     async addQada(originalDate, key, rakaat) {
-        // Check if already exists to avoid duplicates
-        const existing = await db.qada.where({ date: originalDate, prayer: key }).first();
-        if (existing) return;
+        if (!window.supabaseClient) return;
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        if (!session) return;
 
-        const qadaItem = {
-            id: crypto.randomUUID(),
-            prayer: key,
-            date: originalDate,
-            rakaat: rakaat,
-            timestamp: Date.now(),
-            manual: false
-        };
-        await db.qada.add(qadaItem);
-        if (window.SyncManager) await SyncManager.pushQadaRecord(qadaItem);
+        try {
+            await window.supabaseClient.from('qada_prayers').upsert({
+                id: crypto.randomUUID(),
+                user_id: session.user.id,
+                prayer_key: key,
+                original_date: originalDate,
+                rakaat: rakaat,
+                recorded_at: new Date().toISOString(),
+                is_manual: false
+            });
+        } catch (e) {
+            console.error('PrayerService: Error adding Qada', e);
+        }
     },
 
     async removeQada(originalDate, key) {
-        const qada = await db.qada.where({ date: originalDate, prayer: key }).first();
-        if (qada) {
-            await db.qada.delete(qada.id);
-            if (window.SyncManager) await SyncManager.removeQadaRecord(qada.id);
+        if (!window.supabaseClient) return;
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        if (!session) return;
+
+        try {
+            await window.supabaseClient.from('qada_prayers')
+                .delete()
+                .eq('user_id', session.user.id)
+                .eq('original_date', originalDate)
+                .eq('prayer_key', key);
+        } catch (e) {
+            console.error('PrayerService: Error removing Qada', e);
         }
     },
 
     // Reset prayer status (undo decision)
     async resetPrayer(key, date) {
-        const existing = await db.prayers.get({ date: date, key: key });
-        if (!existing) return { success: false, message: 'no_record' };
+        if (!window.supabaseClient) return { success: false };
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        if (!session) return { success: false };
 
         const prayerDef = PRAYERS[key];
         const pointId = `prayer:${date}:${key}`;
 
-        // If it was missed and required, remove Qada
-        if (existing.status === 'missed' && prayerDef.required) {
-            await this.removeQada(date, key);
+        try {
+            if (prayerDef.required) await this.removeQada(date, key);
+
+            await window.supabaseClient.from('prayer_records')
+                .delete()
+                .eq('user_id', session.user.id)
+                .eq('date', date)
+                .eq('prayer_key', key);
+
+            await PointsService.addPoints(0, `Reset ${key}`, pointId);
+
+            return { success: true };
+        } catch (e) {
+            console.error('PrayerService: Error resetting prayer', e);
+            return { success: false };
         }
-
-        // Delete the prayer record
-        await db.prayers.delete([date, key]);
-
-        // Remove points (amount 0 + ID = delete)
-        await PointsService.addPoints(0, `Reset ${key}`, pointId);
-
-        // Sync
-        if (window.SyncManager) {
-            await SyncManager.deletePrayerRecord(date, key);
-        }
-
-        return { success: true };
     },
 
     // Clean up ghost Qada records (prayers marked as done but still in Qada list)
     async cleanupQada() {
-        try {
-            const qadaRecords = await db.qada.toArray();
-            let cleanedCount = 0;
-            for (const qada of qadaRecords) {
-                if (qada.date === 'unknown' || qada.manual) continue;
+        if (!window.supabaseClient) return;
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        if (!session) return;
 
-                const prayer = await db.prayers.get({ date: qada.date, key: qada.prayer });
-                if (prayer && prayer.status === 'done') {
-                    await db.qada.delete(qada.id);
-                    if (window.SyncManager) await SyncManager.removeQadaRecord(qada.id);
-                    cleanedCount++;
+        try {
+            // This is complex to do purely in cloud without multiple fetches or a stored procedure.
+            // For now, we can skip it or do a limited cleanup.
+            console.log('PrayerService: Cloud-based cleanupQada starting...');
+            const { data: qadas } = await window.supabaseClient.from('qada_prayers').select('*').eq('user_id', session.user.id).is('is_manual', false);
+
+            if (qadas && qadas.length > 0) {
+                for (const qada of qadas) {
+                    const { data: prayer } = await window.supabaseClient.from('prayer_records')
+                        .select('status')
+                        .eq('user_id', session.user.id)
+                        .eq('date', qada.original_date)
+                        .eq('prayer_key', qada.prayer_key)
+                        .maybeSingle();
+
+                    if (prayer && prayer.status === 'done') {
+                        await window.supabaseClient.from('qada_prayers').delete().eq('id', qada.id);
+                    }
                 }
             }
-            if (cleanedCount > 0) {
-                console.log(`PrayerService: Cleaned up ${cleanedCount} ghost Qada records.`);
-            }
         } catch (error) {
-            console.error('PrayerService: Error during cleanupQada:', error);
+            console.error('PrayerService: Error during cloud cleanupQada:', error);
         }
     }
 };

@@ -5,41 +5,81 @@
 const SettingsService = {
     // Get all settings as an object
     async getSettings() {
-        const allKeys = await db.settings.toArray();
-        const settings = {
-            language: 'ar',
-            theme: 'light',
+        if (!window.supabaseClient) return this.getDefaultSettings();
+
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        if (!session) return this.getDefaultSettings();
+
+        try {
+            const { data, error } = await window.supabaseClient
+                .from('user_settings')
+                .select('*')
+                .eq('user_id', session.user.id)
+                .maybeSingle();
+
+            if (data) {
+                return {
+                    language: data.language || 'ar',
+                    theme: data.theme || 'light',
+                    calculationMethod: data.calculation_method || 'UmmAlQura',
+                    madhab: data.madhab || 'Shafi',
+                    lastVisit: data.last_visit || new Date().toISOString().split('T')[0],
+                    initialized: data.initialized_at || Date.now()
+                };
+            }
+        } catch (e) {
+            console.error('SettingsService: Failed to fetch cloud settings', e);
+        }
+
+        return this.getDefaultSettings();
+    },
+
+    getDefaultSettings() {
+        return {
+            language: localStorage.getItem('salatk_lang') || 'ar',
+            theme: localStorage.getItem('salatk_theme') || 'light',
             calculationMethod: 'UmmAlQura',
             madhab: 'Shafi',
             lastVisit: new Date().toISOString().split('T')[0],
             initialized: Date.now()
         };
-
-        allKeys.forEach(item => {
-            settings[item.key] = item.value;
-        });
-
-        return settings;
     },
 
     // Get single setting
     async get(key, defaultValue) {
-        const item = await db.settings.get(key);
-        return item ? item.value : defaultValue;
+        const settings = await this.getSettings();
+        return settings[key] !== undefined ? settings[key] : defaultValue;
     },
 
     // Set setting
     async set(key, value) {
-        await db.settings.put({ key, value });
+        if (!window.supabaseClient) return;
 
-        this.applySettings({ [key]: value });
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        if (!session) {
+            // If not logged in, we only update localStorage for immediate UI feedback
+            localStorage.setItem(`salatk_${key}`, value);
+            this.applySettings({ [key]: value });
+            return;
+        }
 
-        // Sync
-        if (window.SyncManager) {
-            // We need to fetch full object to push? Or update SyncManager to accept key/val?
-            // SyncManager.pushSettings expects an object.
-            const fullSettings = await this.getSettings();
-            await SyncManager.pushSettings(fullSettings);
+        const updates = { user_id: session.user.id };
+        const fieldMap = {
+            'language': 'language',
+            'theme': 'theme',
+            'calculationMethod': 'calculation_method',
+            'madhab': 'madhab',
+            'lastVisit': 'last_visit'
+        };
+
+        if (fieldMap[key]) {
+            updates[fieldMap[key]] = value;
+            try {
+                await window.supabaseClient.from('user_settings').upsert(updates);
+                this.applySettings({ [key]: value });
+            } catch (e) {
+                console.error('SettingsService: Failed to save to cloud', e);
+            }
         }
     },
 
