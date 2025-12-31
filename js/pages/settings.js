@@ -73,9 +73,11 @@ async function renderSettingsPage() {
                         <div style="font-size: 1.5em; font-weight: bold; color: var(--color-success);" id="accountTotalHabits">0</div>
                         <div style="font-size: 0.75em; color: var(--color-text-secondary); margin-top: 4px;">${t('total_habits')}</div>
                     </div>
-                    <div style="text-align: center; padding: var(--spacing-sm); background: var(--color-bg-primary); border-radius: 8px;">
-                        <div style="font-size: 1.5em; font-weight: bold; color: var(--color-warning);" id="accountCurrentStreak">0</div>
-                        <div style="font-size: 0.75em; color: var(--color-text-secondary); margin-top: 4px;">${t('current_streak')}</div>
+                    <div style="text-align: center; padding: var(--spacing-sm); background: var(--color-bg-primary); border-radius: 8px; border: 1px solid var(--color-warning);">
+                        <div style="font-size: 1.5em; font-weight: bold; color: var(--color-warning);">
+                            ⭐ <span id="accountTotalPoints">0</span>
+                        </div>
+                        <div style="font-size: 0.75em; color: var(--color-text-secondary); margin-top: 4px;">${t('your_points')}</div>
                     </div>
                     <div style="text-align: center; padding: var(--spacing-sm); background: var(--color-bg-primary); border-radius: 8px;">
                         <div style="font-size: 1.5em; font-weight: bold; color: var(--color-info);" id="accountMemberSince">-</div>
@@ -488,20 +490,19 @@ async function handleChangePassword() {
 // Calculate and display account statistics
 async function updateAccountStats() {
     try {
+        const stats = await getStatistics();
+
         // Total prayers
-        const totalPrayers = await db.prayers.count();
         const totalPrayersEl = document.getElementById('accountTotalPrayers');
-        if (totalPrayersEl) totalPrayersEl.textContent = totalPrayers;
+        if (totalPrayersEl) totalPrayersEl.textContent = stats.prayersPerformed;
 
         // Total habits
-        const totalHabits = await db.habits.count();
         const totalHabitsEl = document.getElementById('accountTotalHabits');
-        if (totalHabitsEl) totalHabitsEl.textContent = totalHabits;
+        if (totalHabitsEl) totalHabitsEl.textContent = stats.worshipCount;
 
-        // Current streak (consecutive days with prayers)
-        const streak = await calculatePrayerStreak();
-        const streakEl = document.getElementById('accountCurrentStreak');
-        if (streakEl) streakEl.textContent = streak;
+        // Total points
+        const totalPointsEl = document.getElementById('accountTotalPoints');
+        if (totalPointsEl) totalPointsEl.textContent = stats.totalPoints.toLocaleString();
 
         // Member since
         const user = await AuthManager.getCurrentUser();

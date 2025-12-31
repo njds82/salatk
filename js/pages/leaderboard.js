@@ -12,10 +12,8 @@ async function renderLeaderboardPage() {
         const { data: { session } } = await window.supabaseClient.auth.getSession();
         currentUserSession = session;
 
-        // Fetch local points for consistency with header
-        if (window.PointsService) {
-            localTotalPoints = await PointsService.getTotal();
-        }
+        // currentUserSession = session; (kept for ID check)
+
 
 
 
@@ -113,14 +111,14 @@ async function renderLeaderboardPage() {
                                         </span>
                                     </td>
                                     <td class="score-cell">
-                                        ${isCurrentUser ? localTotalPoints.toLocaleString() : user.total_points.toLocaleString()}
+                                        ${user.total_points.toLocaleString()}
                                     </td>
                                     <td class="progress-cell">
                                         <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 2px; color: var(--color-text-tertiary);">
-                                            <span>${isCurrentUser ? Math.round(Math.min(100, Math.max(0, (localTotalPoints / maxScore) * 100))) : Math.round(progressPercent)}%</span>
+                                            <span>${Math.round(progressPercent)}%</span>
                                         </div>
                                         <div class="progress-bar-bg">
-                                            <div class="progress-bar-fill" style="width: ${isCurrentUser ? Math.min(100, Math.max(0, (localTotalPoints / maxScore) * 100)) : progressPercent}%"></div>
+                                            <div class="progress-bar-fill" style="width: ${progressPercent}%"></div>
                                         </div>
                                     </td>
                                 </tr>
