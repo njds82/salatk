@@ -14,7 +14,8 @@ WHERE username IS NULL AND email IS NOT NULL;
 ALTER TABLE profiles DROP COLUMN IF EXISTS email;
 
 -- 4. Update Leaderboard View to rely on username
-CREATE OR REPLACE VIEW leaderboard AS
+DROP VIEW IF EXISTS leaderboard;
+CREATE VIEW leaderboard AS
 SELECT 
     p.id as user_id,
     COALESCE(NULLIF(p.full_name, ''), p.username, 'مستخدم صلاتك') as full_name,
