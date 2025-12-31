@@ -91,11 +91,12 @@ async function renderLeaderboardPage() {
         const isCurrentUser = user.user_id === currentUserId;
         const progressPercent = Math.min(100, Math.max(0, (user.total_points / maxScore) * 100));
 
-        // Rank Icons
-        let rankDisplay = `<span class="rank-number">#${user.ranking}</span>`;
-        if (user.ranking === 1) rankDisplay = `<span class="rank-icon">🥇</span>`;
-        if (user.ranking === 2) rankDisplay = `<span class="rank-icon">🥈</span>`;
-        if (user.ranking === 3) rankDisplay = `<span class="rank-icon">🥉</span>`;
+        // Rank Icons - Use index instead of user.ranking since ORDER BY already sorted by total_points
+        const actualRank = index + 1;
+        let rankDisplay = `<span class="rank-number">#${actualRank}</span>`;
+        if (actualRank === 1) rankDisplay = `<span class="rank-icon">🥇</span>`;
+        if (actualRank === 2) rankDisplay = `<span class="rank-icon">🥈</span>`;
+        if (actualRank === 3) rankDisplay = `<span class="rank-icon">🥉</span>`;
 
         return `
                                 <tr class="${isCurrentUser ? 'current-user-row' : ''}" style="animation: fadeIn 0.3s ease-out forwards; animation-delay: ${index * 0.05}s; opacity: 0;">
