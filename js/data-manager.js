@@ -131,10 +131,22 @@ async function exportData() {
 
 // Statistics Helper
 async function getStatistics() {
-    const prayers = await db.prayers.toArray();
-    const habits = await HabitService.getAll();
-    const habitHistory = await db.habit_history.toArray();
-    const points = await PointsService.getTotal();
+    if (!window.supabaseClient) return { prayersPerformed: 0, prayersMissed: 0, totalRakaat: 0, worshipCount: 0, daysWithoutSin: 0, totalPoints: 0 };
+
+    const { data: { session } } = await window.supabaseClient.auth.getSession();
+    if (!session) return { prayersPerformed: 0, prayersMissed: 0, totalRakaat: 0, worshipCount: 0, daysWithoutSin: 0, totalPoints: 0 };
+
+    const userId = session.user.id;
+
+    // Fetch all relevant data from Cloud
+    const [prayersRes, habitHistoryRes, points] = await Promise.all([
+        window.supabaseClient.from('prayer_records').select('*').eq('user_id', userId),
+        window.supabaseClient.from('habit_history').select('*').eq('user_id', userId),
+        PointsService.getTotal()
+    ]);
+
+    const prayers = prayersRes.data || [];
+    const habitHistory = habitHistoryRes.data || [];
 
     let prayersPerformed = 0;
     let prayersMissed = 0;
@@ -143,7 +155,7 @@ async function getStatistics() {
     prayers.forEach(p => {
         if (p.status === 'done') {
             prayersPerformed++;
-            totalRakaat += (PRAYERS_LEGACY[p.key]?.rakaat || 0);
+            totalRakaat += (PRAYERS_LEGACY[p.prayer_key]?.rakaat || 0);
         } else if (p.status === 'missed') {
             prayersMissed++;
         }
@@ -151,19 +163,9 @@ async function getStatistics() {
 
     let worshipCount = 0;
     habitHistory.forEach(h => {
-        // Need to check habit type if possible, or assume all 'done' actions are worship?
-        // Simple heuristic: if action is 'done' it's worship.
         if (h.action === 'done') worshipCount++;
     });
 
-    // Days without sin calculation (simplified)
-    // We need dates where NO sin was committed? 
-    // Or dates where Sins were marked 'avoided'?
-    // Logic from old file: 
-    // "Count days where NO sin habit was marked 'committed'" in last 30 days.
-    // This requires complex query. For checking, let's just count 'avoided' actions for now as proxy or return 0.
-    // Real implementation requires proper time range check.
-    // Let's rely on 'avoided' counts for simplicity in this migration phase.
     let daysWithoutSin = habitHistory.filter(h => h.action === 'avoided').length;
 
     return {
@@ -172,7 +174,8 @@ async function getStatistics() {
         totalRakaat,
         worshipCount,
         daysWithoutSin,
-        totalPoints: points
+        totalPoints: points,
+        rawPrayers: prayers // Helpful for charts
     };
 }
 

@@ -14,8 +14,8 @@ async function renderStatisticsPage() {
     // Let's refactor: getStatistics could return the raw prayers array?
     // Or we just re-fetch for this specific chart.
 
-    // Fetch all prayers for simplicity in calculation
-    const allPrayers = await db.prayers.toArray();
+    // Use rawPrayers already fetched in getStatistics
+    const allPrayers = stats.rawPrayers || [];
 
     const weeklyData = weekDates.map(date => {
         const daysPrayers = allPrayers.filter(p => p.date === date);
