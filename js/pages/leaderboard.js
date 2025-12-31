@@ -12,7 +12,7 @@ async function renderLeaderboardPage() {
         currentUserSession = session;
 
         if (!session) {
-            errorMessage = 'يجب تسجيل الدخول لعرض لوحة المتصدرين';
+            errorMessage = t('error_login_required');
         } else {
             const { data, error } = await window.supabaseClient
                 .from('leaderboard')
@@ -23,7 +23,7 @@ async function renderLeaderboardPage() {
             if (error) {
                 console.error('Error fetching leaderboard:', error);
                 if (error.code === '42P01' || error.message.includes('does not exist')) {
-                    errorMessage = 'لوحة المتصدرين غير مُفعّلة. يرجى تشغيل سكريبت SQL: supabase_leaderboard_view.sql';
+                    errorMessage = t('error_leaderboard_disabled');
                 } else {
                     errorMessage = t('error_fetching_leaderboard');
                 }
@@ -55,16 +55,16 @@ async function renderLeaderboardPage() {
         ${errorMessage ? `
             <div class="card" style="padding: 40px; text-align: center;">
                 <div style="font-size: 4em; margin-bottom: 20px;">⚠️</div>
-                <h3 style="color: #f5576c; margin-bottom: 15px;">خطأ في تحميل البيانات</h3>
+                <h3 style="color: #f5576c; margin-bottom: 15px;">${t('error_sql_help_title')}</h3>
                 <p style="color: #666; margin-bottom: 20px;">${errorMessage}</p>
                 ${errorMessage.includes('SQL') ? `
                     <div style="background: #f8f9fa; padding: 20px; border-radius: 12px; text-align: right; margin-top: 20px;">
-                        <h4 style="margin-bottom: 10px;">📝 خطوات الإصلاح:</h4>
+                        <h4 style="margin-bottom: 10px;">📝 ${t('error_sql_help_intro')}</h4>
                         <ol style="text-align: right; color: #333; line-height: 1.8;">
-                            <li>افتح لوحة تحكم Supabase</li>
-                            <li>انتقل إلى SQL Editor</li>
-                            <li>قم بتشغيل الملف: <code style="background: #e9ecef; padding: 2px 8px; border-radius: 4px;">supabase_leaderboard_view.sql</code></li>
-                            <li>أعد تحميل الصفحة</li>
+                            <li>${t('sql_step_1')}</li>
+                            <li>${t('sql_step_2')}</li>
+                            <li>${t('sql_step_3')}</li>
+                            <li>${t('sql_step_4')}</li>
                         </ol>
                     </div>
                 ` : ''}
@@ -74,10 +74,10 @@ async function renderLeaderboardPage() {
                 <table class="leaderboard-table">
                     <thead>
                         <tr>
-                            <th class="rank-cell">${t('rank_header') || 'المركز'}</th>
-                            <th>${t('user_header') || 'المستخدم'}</th>
-                            <th>${t('points_header') || 'النقاط'}</th>
-                            <th>${t('progress_header') || 'الإنجاز'}</th>
+                            <th class="rank-cell">${t('rank_header')}</th>
+                            <th>${t('user_header')}</th>
+                            <th>${t('points_header')}</th>
+                            <th>${t('progress_header')}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -99,7 +99,7 @@ async function renderLeaderboardPage() {
                                     <td class="user-cell">
                                         <span class="user-name">
                                             ${user.full_name} 
-                                            ${isCurrentUser ? `<span class="badge badge-primary" style="font-size: 0.7rem; margin: 0 5px; background: var(--color-primary); color: white; padding: 2px 6px; border-radius: 4px;">${t('you') || 'أنت'}</span>` : ''}
+                                            ${isCurrentUser ? `<span class="badge badge-primary" style="font-size: 0.7rem; margin: 0 5px; background: var(--color-primary); color: white; padding: 2px 6px; border-radius: 4px;">${t('you')}</span>` : ''}
                                         </span>
                                     </td>
                                     <td class="score-cell">
@@ -119,7 +119,7 @@ async function renderLeaderboardPage() {
                         ${leaderboardData.length === 0 ? `
                             <tr>
                                 <td colspan="4" class="empty-state">
-                                    ${t('no_leaderboard_data') || 'لا توجد بيانات لعرضها'}
+                                    ${t('no_leaderboard_data')}
                                 </td>
                             </tr>
                         ` : ''}

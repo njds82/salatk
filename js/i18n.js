@@ -265,6 +265,29 @@ const translations = {
         delete_account_warning: 'تحذير: سيتم حذف جميع بياناتك نهائياً',
         confirm_delete_account: 'هل أنت متأكد من حذف حسابك؟ هذا الإجراء لا يمكن التراجع عنه.',
         account_deleted: 'تم حذف الحساب بنجاح',
+
+        // Sync & Data
+        force_sync: 'تزامن قسري',
+        syncing_message: 'جاري المزامنة...',
+        sync_success: 'تمت المزامنة بنجاح',
+        sync_error: 'فشل التزامن',
+
+        // Leaderboard Errors & Help
+        error_login_required: 'يجب تسجيل الدخول لعرض لوحة المتصدرين',
+        error_leaderboard_disabled: 'لوحة المتصدرين غير مُفعّلة. يرجى تشغيل سكريبت SQL: supabase_leaderboard_view.sql',
+        error_sql_help_title: 'خطأ في تحميل البيانات',
+        error_sql_help_intro: 'خطوات الإصلاح:',
+        sql_step_1: 'افتح لوحة تحكم Supabase',
+        sql_step_2: 'انتقل إلى SQL Editor',
+        sql_step_3: 'قم بتشغيل الملف: supabase_leaderboard_view.sql',
+        sql_step_4: 'أعد تحميل الصفحة',
+        progress_header: 'الإنجاز',
+        you: 'أنت',
+
+        // Date Suffixes
+        short_day: 'ي',
+        short_month: 'ش',
+        short_year: 'س',
     },
 
     en: {
@@ -529,6 +552,29 @@ const translations = {
         delete_account_warning: 'Warning: All your data will be permanently deleted',
         confirm_delete_account: 'Are you sure you want to delete your account? This action cannot be undone.',
         account_deleted: 'Account deleted successfully',
+
+        // Sync & Data
+        force_sync: 'Force Sync',
+        syncing_message: 'Syncing...',
+        sync_success: 'Sync complete',
+        sync_error: 'Sync failed',
+
+        // Leaderboard Errors & Help
+        error_login_required: 'You must be logged in to view the leaderboard',
+        error_leaderboard_disabled: 'Leaderboard is disabled. Please run SQL script: supabase_leaderboard_view.sql',
+        error_sql_help_title: 'Error Loading Data',
+        error_sql_help_intro: 'Fix Steps:',
+        sql_step_1: 'Open Supabase Dashboard',
+        sql_step_2: 'Go to SQL Editor',
+        sql_step_3: 'Run file: supabase_leaderboard_view.sql',
+        sql_step_4: 'Reload Page',
+        progress_header: 'Progress',
+        you: 'You',
+
+        // Date Suffixes
+        short_day: 'd',
+        short_month: 'm',
+        short_year: 'y',
     }
 };
 

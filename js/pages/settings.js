@@ -229,7 +229,7 @@ async function renderSettingsPage() {
             <h3 style="margin-bottom: var(--spacing-md);">${t('data_management')}</h3>
             <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
                 <button class="btn btn-primary" onclick="handleForceSync()">
-                    🔄 ${t('force_sync') || 'Force Sync'}
+                    🔄 ${t('force_sync')}
                 </button>
                 <button class="btn btn-primary" onclick="handleExportData()">
                     📥 ${t('export_data')}
@@ -380,7 +380,7 @@ function handleClearAllData() {
 
 // Handle force sync
 async function handleForceSync() {
-    showToast(t('syncing_message') || 'Syncing...', 'info');
+    showToast(t('syncing_message'), 'info');
     if (window.SyncManager) {
         try {
             // We'll push current state first to ensure local changes aren't lost if they weren't synced yet
@@ -394,16 +394,16 @@ async function handleForceSync() {
             // NOTE: This assumes the user has local data they want to SAVE to the empty DB.
             const success = await SyncManager.pushAllLocalData();
             if (success) {
-                showToast(t('sync_success') || 'Sync complete', 'success');
+                showToast(t('sync_success'), 'success');
                 // Refresh data
                 await SyncManager.pullAllData();
                 renderPage('settings', true);
             } else {
-                showToast(t('sync_error') || 'Sync failed', 'error');
+                showToast(t('sync_error'), 'error');
             }
         } catch (error) {
             console.error(error);
-            showToast(t('sync_error') || 'Sync failed', 'error');
+            showToast(t('sync_error'), 'error');
         }
     } else {
         showToast(t('error_general'), 'error');
@@ -512,13 +512,13 @@ async function updateAccountStats() {
             const memberSinceEl = document.getElementById('accountMemberSince');
             if (memberSinceEl) {
                 if (daysSince < 30) {
-                    memberSinceEl.textContent = `${daysSince}d`;
+                    memberSinceEl.textContent = `${daysSince}${t('short_day')}`;
                 } else if (daysSince < 365) {
                     const months = Math.floor(daysSince / 30);
-                    memberSinceEl.textContent = `${months}m`;
+                    memberSinceEl.textContent = `${months}${t('short_month')}`;
                 } else {
                     const years = Math.floor(daysSince / 365);
-                    memberSinceEl.textContent = `${years}y`;
+                    memberSinceEl.textContent = `${years}${t('short_year')}`;
                 }
             }
         }
