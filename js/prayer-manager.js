@@ -24,35 +24,53 @@ const PrayerManager = {
 
     // Get user location (Manual or Default only)
     async getUserLocation() {
-        const PRAYER_CACHE_KEY = 'salatk_prayer_location';
+        if (!window.supabaseClient) return this.getDefaultLocation();
 
-        // 0. Try to get from IndexedDB (New Primary Source)
-        if (window.db) {
-            const dbLoc = await db.locations.get('user_location');
-            if (dbLoc) return dbLoc;
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        if (!session) return this.getDefaultLocation();
+
+        try {
+            const { data, error } = await window.supabaseClient
+                .from('locations')
+                .select('*')
+                .eq('user_id', session.user.id)
+                .maybeSingle();
+
+            if (data) {
+                return {
+                    lat: data.latitude,
+                    long: data.longitude,
+                    name: data.name || '',
+                    manualMode: data.is_manual_mode,
+                    lastUpdate: new Date(data.last_update).getTime()
+                };
+            }
+
+            // Migration check: If no cloud data, check legacy localStorage
+            const cached = localStorage.getItem(PRAYER_CACHE_KEY);
+            if (cached) {
+                const legacy = JSON.parse(cached);
+                console.log('PrayerManager: Migrating legacy location to cloud...');
+                await this.saveManualLocation(legacy.lat, legacy.long, legacy.name || '');
+                return legacy;
+            }
+        } catch (e) {
+            console.error('PrayerManager: Failed to fetch cloud location', e);
         }
 
-        // 1. Try to get cached/manual location from localStorage (Legacy Fallback)
-        const cached = localStorage.getItem(PRAYER_CACHE_KEY);
-        if (cached) {
-            const cachedData = JSON.parse(cached);
-            return cachedData;
-        }
-
-        // 2. Default to Jerusalem if nothing set
-        console.log('No location set, defaulting to Jerusalem');
-        const defaultLoc = {
-            lat: 31.7683,
-            long: 35.2137,
-            name: 'Jerusalem', // for UI display if needed
-            manualMode: true
-        };
-        localStorage.setItem(PRAYER_CACHE_KEY, JSON.stringify(defaultLoc));
-        return defaultLoc;
+        return this.getDefaultLocation();
     },
 
-    // Save manual location
-    saveManualLocation(lat, long, name = '') {
+    getDefaultLocation() {
+        return {
+            lat: 31.7683,
+            long: 35.2137,
+            name: 'Jerusalem',
+            manualMode: true
+        };
+    },
+
+    async saveManualLocation(lat, long, name = '') {
         const loc = {
             lat: parseFloat(lat),
             long: parseFloat(long),
@@ -60,7 +78,28 @@ const PrayerManager = {
             lastUpdate: Date.now(),
             manualMode: true
         };
+
+        if (window.supabaseClient) {
+            const { data: { session } } = await window.supabaseClient.auth.getSession();
+            if (session) {
+                try {
+                    await window.supabaseClient.from('locations').upsert({
+                        user_id: session.user.id,
+                        latitude: loc.lat,
+                        longitude: loc.long,
+                        name: loc.name,
+                        is_manual_mode: loc.manualMode,
+                        last_update: new Date(loc.lastUpdate).toISOString()
+                    });
+                } catch (e) {
+                    console.error('PrayerManager: Failed to save location to cloud', e);
+                }
+            }
+        }
+
+        // Keep in localStorage as backup for unauthenticated state or immediate access
         localStorage.setItem(PRAYER_CACHE_KEY, JSON.stringify(loc));
+        this.clearCache(); // Force recalculation with new location
         return loc;
     },
 

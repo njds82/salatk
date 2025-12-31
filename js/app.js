@@ -28,6 +28,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // Check for authentication & Initialize
     checkAuthAndInit();
 
+    // Listen for auth state changes to refresh data
+    if (window.supabaseClient) {
+        window.supabaseClient.auth.onAuthStateChange(async (event, session) => {
+            console.log('Auth state change:', event);
+            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+                await updatePointsDisplay();
+                if (window.PrayerManager) await PrayerManager.init();
+            }
+        });
+    }
+
     // Initialize notification badge
     if (window.updateNotifBadge) updateNotifBadge();
 });

@@ -54,3 +54,11 @@ async function updatePointsDisplay() {
         detail: { totalPoints }
     }));
 }
+
+// Global listener to ensure header stays in sync
+window.addEventListener('pointsUpdated', (e) => {
+    const pointsValue = document.getElementById('pointsValue');
+    if (pointsValue && e.detail && e.detail.totalPoints !== undefined) {
+        pointsValue.textContent = e.detail.totalPoints.toLocaleString();
+    }
+});
