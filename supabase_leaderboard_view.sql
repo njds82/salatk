@@ -3,9 +3,11 @@
 -- ========================================
 -- This view calculates the total points for each user and ranks them
 
--- Create a materialized view for better performance
--- Create the view
-CREATE OR REPLACE VIEW leaderboard AS
+-- Drop the existing view to allow column structure changes
+DROP VIEW IF EXISTS leaderboard;
+
+-- Create the view with new structure
+CREATE VIEW leaderboard AS
 SELECT 
     p.id as user_id,
     COALESCE(NULLIF(p.full_name, ''), p.username, 'مستخدم صلاتك') as full_name,
