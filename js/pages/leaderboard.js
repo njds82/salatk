@@ -23,7 +23,6 @@ async function renderLeaderboardPage() {
             const { data, error } = await window.supabaseClient
                 .from('leaderboard')
                 .select('*')
-                .order('total_points', { ascending: false })
                 .limit(100);
 
             if (error) {

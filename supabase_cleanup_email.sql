@@ -14,23 +14,30 @@ WHERE username IS NULL AND email IS NOT NULL;
 ALTER TABLE profiles DROP COLUMN IF EXISTS email;
 
 -- 4. Update Leaderboard View to rely on username
--- (Assuming the view definition I saw earlier already does this or works with what we have)
 CREATE OR REPLACE VIEW leaderboard AS
 SELECT 
-    ROW_NUMBER() OVER (
-        ORDER BY COALESCE(SUM(ph.amount), 0) DESC, p.created_at ASC, p.full_name ASC
-    ) as ranking,
     p.id as user_id,
     COALESCE(NULLIF(p.full_name, ''), p.username, 'مستخدم صلاتك') as full_name,
     p.username,
     COALESCE(SUM(ph.amount), 0) as total_points,
     COUNT(ph.id) as total_activities,
-    p.created_at
+    p.created_at,
+    -- Calculate completion rate: (prayers done / (total unique days * 5 prayers)) * 100
+    CASE 
+        WHEN COUNT(DISTINCT pr.date) > 0 
+        THEN (COUNT(CASE WHEN pr.status = 'done' THEN 1 END)::FLOAT / 
+              (COUNT(DISTINCT pr.date) * 5.0)) * 100.0
+        ELSE 0 
+    END as completion_rate
 FROM 
     profiles p
 LEFT JOIN 
     points_history ph ON ph.user_id = p.id
+LEFT JOIN 
+    prayer_records pr ON pr.user_id = p.id
 GROUP BY 
     p.id, p.full_name, p.username, p.created_at
 ORDER BY 
-    ranking ASC;
+    total_points DESC, 
+    completion_rate DESC,
+    p.created_at ASC;
