@@ -6,10 +6,16 @@ async function renderLeaderboardPage() {
     let leaderboardData = [];
     let errorMessage = null;
     let currentUserSession = null;
+    let localTotalPoints = 0;
 
     try {
         const { data: { session } } = await window.supabaseClient.auth.getSession();
         currentUserSession = session;
+
+        // Fetch local points for consistency with header
+        if (window.PointsService) {
+            localTotalPoints = await PointsService.getTotal();
+        }
 
         if (!session) {
             errorMessage = t('error_login_required');
@@ -103,14 +109,14 @@ async function renderLeaderboardPage() {
                                         </span>
                                     </td>
                                     <td class="score-cell">
-                                        ${user.total_points.toLocaleString()}
+                                        ${isCurrentUser ? localTotalPoints.toLocaleString() : user.total_points.toLocaleString()}
                                     </td>
                                     <td class="progress-cell">
                                         <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 2px; color: var(--color-text-tertiary);">
-                                            <span>${Math.round(progressPercent)}%</span>
+                                            <span>${isCurrentUser ? Math.round(Math.min(100, Math.max(0, (localTotalPoints / maxScore) * 100))) : Math.round(progressPercent)}%</span>
                                         </div>
                                         <div class="progress-bar-bg">
-                                            <div class="progress-bar-fill" style="width: ${progressPercent}%"></div>
+                                            <div class="progress-bar-fill" style="width: ${isCurrentUser ? Math.min(100, Math.max(0, (localTotalPoints / maxScore) * 100)) : progressPercent}%"></div>
                                         </div>
                                     </td>
                                 </tr>
@@ -132,3 +138,9 @@ async function renderLeaderboardPage() {
     return html;
 }
 
+// Listen for points updates to refresh leaderboard
+window.addEventListener('pointsUpdated', () => {
+    if (window.currentPage === 'leaderboard') {
+        renderPage('leaderboard', true); // true = noScroll/silent refresh
+    }
+});

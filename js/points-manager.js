@@ -48,4 +48,9 @@ async function updatePointsDisplay() {
     if (pointsValue) {
         pointsValue.textContent = totalPoints;
     }
+
+    // Dispatch event for other components (like Leaderboard) to react
+    window.dispatchEvent(new CustomEvent('pointsUpdated', {
+        detail: { totalPoints }
+    }));
 }
