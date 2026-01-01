@@ -530,31 +530,7 @@ async function updateAccountStats() {
 
 // Calculate prayer streak
 async function calculatePrayerStreak() {
-    try {
-        let streak = 0;
-        const today = new Date();
-
-        for (let i = 0; i < 365; i++) {
-            const checkDate = new Date(today);
-            checkDate.setDate(checkDate.getDate() - i);
-            const dateStr = formatDate(checkDate);
-
-            // Check if user prayed at least one prayer on this day
-            const prayers = await db.prayers.where({ date: dateStr }).toArray();
-            const hasPrayed = prayers.some(p => p.status === 'done');
-
-            if (hasPrayed) {
-                streak++;
-            } else {
-                break;
-            }
-        }
-
-        return streak;
-    } catch (error) {
-        console.error('Error calculating streak:', error);
-        return 0;
-    }
+    return await PrayerService.getPrayerStreak();
 }
 
 // Update stats when page loads

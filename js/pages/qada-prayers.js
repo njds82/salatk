@@ -3,7 +3,7 @@
 // ========================================
 
 async function renderQadaPrayersPage() {
-    const qadaPrayers = await getQadaPrayers();
+    const qadaPrayers = await PrayerService.getQadaPrayers();
     const totalRakaat = qadaPrayers.reduce((sum, prayer) => sum + prayer.rakaat, 0);
 
     let html = `
@@ -51,7 +51,7 @@ async function renderQadaPrayersPage() {
                     <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: var(--spacing-md);">
                         <div>
                             <div style="display: flex; align-items: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-xs);">
-                                <h3 style="font-size: 1.25rem; margin: 0;">${t(prayer.nameKey)}</h3>
+                                <h3 style="font-size: 1.25rem; margin: 0;">${t(prayer?.nameKey || qadaPrayer.prayer)}</h3>
                                 <div class="options-menu">
                                     <button class="options-btn">
                                         <svg width="20" height="20" viewBox="0 0 20 20">
@@ -151,27 +151,33 @@ async function handleAddManualQada() {
         return;
     }
 
-    const date = dateInput || null;
-    const result = await addManualQadaPrayer(prayerType, count, date);
+    try {
+        const date = dateInput || null;
+        for (let i = 0; i < count; i++) {
+            const rakaat = PrayerService.getDefinitions()[prayerType]?.rakaat || 0;
+            await PrayerService.addQada(date, prayerType, rakaat, true);
+        }
 
-    if (result.success) {
         const message = t('added_prayers_success')
             .replace('{count}', count)
-            .replace('{prayer}', t(PRAYERS[prayerType].nameKey));
+            .replace('{prayer}', t(PrayerService.getDefinitions()[prayerType].nameKey));
         showToast(message, 'success');
         closeModal();
-        navigateTo('qada-prayers');
+        renderPage('qada-prayers', true);
+    } catch (error) {
+        console.error('Error adding Qada:', error);
+        showToast(t('error_general'), 'error');
     }
 }
 
 // Handle make up qada prayer
 async function handleMakeUpQada(qadaId) {
     confirmDialog(t('confirm'), async () => {
-        const result = await makeUpQadaPrayer(qadaId);
+        const result = await PrayerService.makeUpQada(qadaId);
         if (result.success) {
             showToast(t('qada_made_up_message'), 'success');
             await updatePointsDisplay();
-            await refreshQadaList();
+            renderPage('qada-prayers', true);
         }
     });
 }
@@ -179,11 +185,12 @@ async function handleMakeUpQada(qadaId) {
 // Handle remove qada prayer
 async function handleRemoveQada(qadaId) {
     confirmDialog(t('confirm_delete'), async () => {
-        await db.qada.delete(qadaId);
-        if (window.SyncManager) {
-            await SyncManager.removeQadaRecord(qadaId);
+        const result = await PrayerService.deleteQada(qadaId);
+        if (result.success) {
+            showToast(t('habit_deleted_message'), 'info');
+            renderPage('qada-prayers', true);
+        } else {
+            showToast(t('error_general'), 'error');
         }
-        showToast(t('habit_deleted_message'), 'info');
-        await refreshQadaList();
     });
 }

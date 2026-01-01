@@ -43,34 +43,17 @@ async function markPrayerMissed(prayerKey, date) {
 }
 
 async function getQadaPrayers() {
-    return await db.qada.toArray();
+    return await PrayerService.getQadaPrayers();
 }
 
 async function makeUpQadaPrayer(qadaId) {
-    const qada = await db.qada.get(qadaId);
-    if (!qada) return { success: false };
-
-    await db.qada.delete(qadaId);
-    // Use deterministic ID for qada makeup
-    await PointsService.addPoints(3, t('made_up'), `qada:${qadaId}`);
-
-    if (window.SyncManager) await SyncManager.removeQadaRecord(qadaId);
-    return { success: true };
+    return await PrayerService.makeUpQada(qadaId);
 }
 
 async function addManualQadaPrayer(prayerKey, count = 1, date = null) {
-    // Basic implementation for bridge
+    const rakaat = PRAYERS_LEGACY[prayerKey]?.rakaat || 0;
     for (let i = 0; i < count; i++) {
-        const item = {
-            id: crypto.randomUUID(),
-            prayer: prayerKey,
-            date: date || 'unknown',
-            rakaat: PRAYERS_LEGACY[prayerKey].rakaat,
-            timestamp: Date.now(),
-            manual: true
-        };
-        await db.qada.add(item);
-        if (window.SyncManager) await SyncManager.pushQadaRecord(item);
+        await PrayerService.addQada(date, prayerKey, rakaat, true);
     }
     return { success: true };
 }

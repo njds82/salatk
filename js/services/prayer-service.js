@@ -98,7 +98,7 @@ const PrayerService = {
         }
     },
 
-    async addQada(originalDate, key, rakaat) {
+    async addQada(originalDate, key, rakaat, isManual = false) {
         if (!window.supabaseClient) return;
         const { data: { session } } = await window.supabaseClient.auth.getSession();
         if (!session) return;
@@ -108,13 +108,83 @@ const PrayerService = {
                 id: crypto.randomUUID(),
                 user_id: session.user.id,
                 prayer_key: key,
-                original_date: originalDate,
+                original_date: originalDate || 'unknown',
                 rakaat: rakaat,
                 recorded_at: new Date().toISOString(),
-                is_manual: false
+                is_manual: isManual
             });
         } catch (e) {
             console.error('PrayerService: Error adding Qada', e);
+        }
+    },
+
+    async getQadaPrayers() {
+        if (!window.supabaseClient) return [];
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        if (!session) return [];
+
+        try {
+            const { data, error } = await window.supabaseClient
+                .from('qada_prayers')
+                .select('*')
+                .eq('user_id', session.user.id)
+                .order('recorded_at', { ascending: false });
+
+            if (error) throw error;
+
+            return (data || []).map(r => ({
+                id: r.id,
+                prayer: r.prayer_key,
+                date: r.original_date,
+                rakaat: r.rakaat,
+                timestamp: new Date(r.recorded_at).getTime(),
+                manual: r.is_manual
+            }));
+        } catch (e) {
+            console.error('PrayerService: Failed to fetch Qada prayers', e);
+            return [];
+        }
+    },
+
+    async makeUpQada(qadaId) {
+        if (!window.supabaseClient) return { success: false };
+
+        try {
+            // First get the record to know what points to add (if needed, though it's static +3 usually)
+            const { data: qada, error: fetchError } = await window.supabaseClient
+                .from('qada_prayers')
+                .select('*')
+                .eq('id', qadaId)
+                .single();
+
+            if (fetchError || !qada) return { success: false };
+
+            // Delete the record
+            const { error: deleteError } = await window.supabaseClient
+                .from('qada_prayers')
+                .delete()
+                .eq('id', qadaId);
+
+            if (deleteError) throw deleteError;
+
+            // Add points
+            await PointsService.addPoints(3, t('made_up') + ' (' + t(PRAYERS[qada.prayer_key].nameKey) + ')', `qada:${qadaId}`);
+
+            return { success: true };
+        } catch (e) {
+            console.error('PrayerService: Error making up Qada', e);
+            return { success: false };
+        }
+    },
+
+    async deleteQada(qadaId) {
+        if (!window.supabaseClient) return { success: false };
+        try {
+            await window.supabaseClient.from('qada_prayers').delete().eq('id', qadaId);
+            return { success: true };
+        } catch (e) {
+            console.error('PrayerService: Error deleting Qada', e);
+            return { success: false };
         }
     },
 
@@ -189,6 +259,59 @@ const PrayerService = {
             }
         } catch (error) {
             console.error('PrayerService: Error during cloud cleanupQada:', error);
+        }
+    },
+
+    // Get prayer streak (consecutive days)
+    async getPrayerStreak() {
+        if (!window.supabaseClient) return 0;
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        if (!session) return 0;
+
+        try {
+            // Fetch records for the last year (or a reasonable chunk)
+            const { data: records, error } = await window.supabaseClient
+                .from('prayer_records')
+                .select('date, status')
+                .eq('user_id', session.user.id)
+                .order('date', { ascending: false });
+
+            if (error) throw error;
+            if (!records || records.length === 0) return 0;
+
+            // Group by date to see if day is "active"
+            const dailyActivity = {};
+            records.forEach(r => {
+                if (!dailyActivity[r.date]) dailyActivity[r.date] = false;
+                if (r.status === 'done') dailyActivity[r.date] = true;
+            });
+
+            let streak = 0;
+            const today = getCurrentDate();
+            let checkDate = parseDate(today);
+
+            for (let i = 0; i < 365; i++) {
+                const dateStr = formatDate(checkDate);
+                // If it's today and not yet prayed, we might still be in a streak if yesterday was fine
+                // But for simplicity, we'll check if ANY prayer was done that day.
+                if (dailyActivity[dateStr]) {
+                    streak++;
+                } else {
+                    // If it's today and nothing done yet, don't break streak immediately?
+                    // Usually, streaks only break if a FULL DAY is missed.
+                    if (dateStr === today) {
+                        // Keep going to check yesterday
+                    } else {
+                        break;
+                    }
+                }
+                checkDate.setDate(checkDate.getDate() - 1);
+            }
+
+            return streak;
+        } catch (e) {
+            console.error('PrayerService: Error calculating streak', e);
+            return 0;
         }
     }
 };
