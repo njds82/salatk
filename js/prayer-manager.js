@@ -30,11 +30,15 @@ const PrayerManager = {
         if (!session) return this.getDefaultLocation();
 
         try {
-            const { data, error } = await window.supabaseClient
-                .from('locations')
-                .select('*')
-                .eq('user_id', session.user.id)
-                .maybeSingle();
+            const { data, error } = await withTimeout(
+                window.supabaseClient
+                    .from('locations')
+                    .select('*')
+                    .eq('user_id', session.user.id)
+                    .maybeSingle(),
+                3000,
+                { data: null, error: 'timeout' }
+            );
 
             if (data) {
                 return {

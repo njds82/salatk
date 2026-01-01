@@ -38,7 +38,10 @@ const HabitService = {
             created_at: new Date().toISOString()
         };
 
-        await window.supabaseClient.from('habits').insert(habit);
+        await withTimeout(
+            window.supabaseClient.from('habits').insert(habit),
+            5000
+        );
 
         return { ...habit, created: new Date(habit.created_at).getTime() };
     },

@@ -11,11 +11,15 @@ const SettingsService = {
         if (!session) return this.getDefaultSettings();
 
         try {
-            const { data, error } = await window.supabaseClient
-                .from('user_settings')
-                .select('*')
-                .eq('user_id', session.user.id)
-                .maybeSingle();
+            const { data, error } = await withTimeout(
+                window.supabaseClient
+                    .from('user_settings')
+                    .select('*')
+                    .eq('user_id', session.user.id)
+                    .maybeSingle(),
+                3000,
+                { data: null, error: 'timeout' }
+            );
 
             if (data) {
                 return {
@@ -75,7 +79,10 @@ const SettingsService = {
         if (fieldMap[key]) {
             updates[fieldMap[key]] = value;
             try {
-                await window.supabaseClient.from('user_settings').upsert(updates);
+                await withTimeout(
+                    window.supabaseClient.from('user_settings').upsert(updates),
+                    5000
+                );
                 this.applySettings({ [key]: value });
 
                 // If calculation/madhab changed, clear prayer cache
