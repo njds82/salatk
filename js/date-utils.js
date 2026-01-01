@@ -41,26 +41,53 @@ function isToday(dateStr) {
     return dateStr === getCurrentDate();
 }
 
-// Get Hijri date (simplified - using approximation)
-// For accurate Hijri dates, you would need a proper library
+// Get Hijri date using Intl.DateTimeFormat (Accurate)
 function getHijriDate(date = new Date()) {
-    // This is a simplified approximation
-    const gregorianYear = date.getFullYear();
-    const hijriYear = Math.floor((gregorianYear - 622) * 1.030684);
+    try {
+        // Use islamic-uma (Umm al-Qura) for Saudi Arabia/Middle East standard
+        // Use nu-latn to ensure we get Western digits (0-9) for parsing
+        const formatter = new Intl.DateTimeFormat('en-u-ca-islamic-uma-nu-latn', {
+            day: 'numeric',
+            month: 'numeric',
+            year: 'numeric'
+        });
 
-    // Simplified calculation - not accurate for production
-    const approximateMonth = date.getMonth();
-    const approximateDay = date.getDate();
+        const parts = formatter.formatToParts(date);
+        const hijriParts = {};
+        parts.forEach(part => {
+            if (part.type !== 'literal') {
+                hijriParts[part.type] = part.value;
+            }
+        });
 
-    const monthKey = `h_month_${(approximateMonth % 12) + 1}`;
-    const monthName = t(monthKey);
+        const day = parseInt(hijriParts.day);
+        const month = parseInt(hijriParts.month); // 1-indexed
+        const year = parseInt(hijriParts.year);
 
-    return {
-        year: hijriYear,
-        month: approximateMonth % 12,
-        day: approximateDay,
-        formatted: `${approximateDay} ${monthName} ${hijriYear}${t('hijri_suffix')}`
-    };
+        const monthKey = `h_month_${month}`;
+        const monthName = t(monthKey);
+
+        return {
+            year: year,
+            month: month - 1, // 0-indexed for consistency
+            day: day,
+            formatted: `${day} ${monthName} ${year}${t('hijri_suffix')}`
+        };
+    } catch (e) {
+        console.error('Hijri date calculation error:', e);
+        // Fallback approximation (still better than nothing)
+        const gregorianYear = date.getFullYear();
+        const hijriYear = Math.floor((gregorianYear - 622) * 1.030684);
+        const approxMonth = date.getMonth();
+        const monthKey = `h_month_${(approxMonth % 12) + 1}`;
+
+        return {
+            year: hijriYear,
+            month: approxMonth,
+            day: date.getDate(),
+            formatted: `${date.getDate()} ${t(monthKey)} ${hijriYear}${t('hijri_suffix')}`
+        };
+    }
 }
 
 // Parse date string
