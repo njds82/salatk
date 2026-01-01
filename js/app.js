@@ -55,6 +55,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function checkAuthAndInit() {
+    // Navigate to initial page FAST (don't wait for services)
+    navigateToHash();
 
     // Start initializations in parallel
     const initTasks = [];
@@ -65,15 +67,11 @@ async function checkAuthAndInit() {
         initTasks.push(PrayerManager.init());
     }
 
-    // Wait for critical inits but with a total guard
-    // Note: getSession already has timeouts inside, so these are safe to await
+    // Wait for inits but they are now non-blocking for the first render
     await Promise.all(initTasks);
 
     // Update points display after potential sync
     updatePointsDisplay();
-
-    // Navigate to initial page
-    navigateToHash();
 
     // BACKGROUND TASKS: Non-critical cleanup and sync
     setTimeout(async () => {
