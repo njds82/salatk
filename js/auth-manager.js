@@ -121,8 +121,17 @@ const AuthManager = {
         return { success: true };
     },
 
-    isAuthenticated() {
-        return !!window.supabaseClient.auth.getSession();
+    _session: null,
+
+    async isAuthenticated() {
+        if (this._session) return true;
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        this._session = session;
+        return !!session;
+    },
+
+    setSession(session) {
+        this._session = session;
     }
 };
 
