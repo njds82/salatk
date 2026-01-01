@@ -169,6 +169,19 @@ function navigateTo(page) {
     renderPage(page);
 }
 
+/**
+ * Handles navigation based on the current URL hash.
+ */
+function navigateToHash() {
+    const hash = window.location.hash.substring(1); // Remove the '#'
+    const targetPage = hash || 'daily-prayers';
+
+    // Check if the current page in state is different from the hash
+    if (targetPage !== window.currentPage) {
+        navigateTo(targetPage);
+    }
+}
+
 // Helper to wrap a promise with a timeout
 async function withTimeout(promise, timeoutMs, timeoutValue = null) {
     return Promise.race([
