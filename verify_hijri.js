@@ -65,7 +65,7 @@ function getHijriDate(date = new Date()) {
         z = z - Math.floor(j * iyear + shift1);
         let im = Math.floor((z + 28.5001) / 29.5);
         if (im === 13) im = 12;
-        const id = Math.floor(z - Math.floor(29.5001 * im - 29));
+        const id = Math.floor(z - Math.floor(29.5001 * im - 29)) - 1;
 
         const monthKey = `h_month_${im}`;
         const monthName = t(monthKey);
