@@ -10,11 +10,15 @@ const PointsService = {
 
         try {
             // Fetch from leaderboard view for pre-calculated total
-            const { data, error } = await window.supabaseClient
-                .from('leaderboard')
-                .select('total_points')
-                .eq('user_id', session.user.id)
-                .maybeSingle();
+            const { data, error } = await withTimeout(
+                window.supabaseClient
+                    .from('leaderboard')
+                    .select('total_points')
+                    .eq('user_id', session.user.id)
+                    .maybeSingle(),
+                5000,
+                { data: null, error: 'timeout' }
+            );
 
             if (error) {
                 console.error('PointsService: Error fetching total from view', error);

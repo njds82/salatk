@@ -196,6 +196,18 @@ window.updatePrayerCard = updatePrayerCard;
 window.updateHabitCard = updateHabitCard;
 window.refreshQadaList = refreshQadaList;
 
+// Global timeout helper for resilient services
+window.withTimeout = async function (promise, timeoutMs, timeoutValue = null) {
+    let timeoutId;
+    const timeoutPromise = new Promise((resolve) => {
+        timeoutId = setTimeout(() => resolve(timeoutValue), timeoutMs);
+    });
+    return Promise.race([
+        promise,
+        timeoutPromise
+    ]).finally(() => clearTimeout(timeoutId));
+};
+
 // ========================================
 // Global Event Listeners (Dropdowns)
 // ========================================

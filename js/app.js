@@ -56,20 +56,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function checkAuthAndInit() {
 
-    // Initialize settings service (async load from DB)
+    // Start initializations in parallel
+    const initTasks = [];
     if (window.SettingsService) {
-        await SettingsService.init();
+        initTasks.push(SettingsService.init());
+    }
+    if (window.PrayerManager) {
+        initTasks.push(PrayerManager.init());
     }
 
-    // Initialize prayer manager (needed for main page)
-    if (window.PrayerManager) {
-        await PrayerManager.init();
-    }
+    // Wait for critical inits but with a total guard
+    // Note: getSession already has timeouts inside, so these are safe to await
+    await Promise.all(initTasks);
 
     // Update points display after potential sync
-    await updatePointsDisplay();
+    updatePointsDisplay();
 
-    // Navigate to initial page FAST
+    // Navigate to initial page
     navigateToHash();
 
     // BACKGROUND TASKS: Non-critical cleanup and sync
@@ -220,7 +223,13 @@ async function renderPage(page, noScroll = false) {
         // Auth check - prioritize cached session
         let session = null;
         if (window.AuthManager) {
-            session = await window.AuthManager.getSession();
+            // For login/signup, use memory/snapshot synchronously to avoid blocking UI
+            if (page === 'login' || page === 'signup') {
+                session = window.AuthManager._session;
+                window.AuthManager.getSession(); // Background refresh
+            } else {
+                session = await window.AuthManager.getSession();
+            }
         }
 
         if (!session && page !== 'login' && page !== 'signup') {

@@ -8,10 +8,14 @@ const HabitService = {
         const session = await window.AuthManager.getSession();
         if (!session) return [];
 
-        const { data } = await window.supabaseClient
-            .from('habits')
-            .select('*')
-            .eq('user_id', session.user.id);
+        const { data } = await withTimeout(
+            window.supabaseClient
+                .from('habits')
+                .select('*')
+                .eq('user_id', session.user.id),
+            8000,
+            { data: [] }
+        );
 
         return (data || []).map(h => ({
             id: h.id,
@@ -62,11 +66,15 @@ const HabitService = {
         const session = await window.AuthManager.getSession();
         if (!session) return [];
 
-        const { data } = await window.supabaseClient
-            .from('habit_history')
-            .select('*')
-            .eq('user_id', session.user.id)
-            .eq('date', date);
+        const { data } = await withTimeout(
+            window.supabaseClient
+                .from('habit_history')
+                .select('*')
+                .eq('user_id', session.user.id)
+                .eq('date', date),
+            8000,
+            { data: [] }
+        );
 
         return (data || []).map(r => ({
             habitId: r.habit_id,

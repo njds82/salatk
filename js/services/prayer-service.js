@@ -25,11 +25,15 @@ const PrayerService = {
         if (!session) return {};
 
         try {
-            const { data, error } = await window.supabaseClient
-                .from('prayer_records')
-                .select('*')
-                .eq('user_id', session.user.id)
-                .eq('date', date);
+            const { data, error } = await withTimeout(
+                window.supabaseClient
+                    .from('prayer_records')
+                    .select('*')
+                    .eq('user_id', session.user.id)
+                    .eq('date', date),
+                8000,
+                { data: [], error: 'timeout' }
+            );
 
             if (error) throw error;
 

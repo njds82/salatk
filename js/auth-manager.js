@@ -3,6 +3,18 @@
 // ========================================
 
 const AuthManager = {
+    // Helper for timeouts across the manager
+    _withTimeout(promise, ms = 10000) {
+        let timeoutId;
+        const timeoutPromise = new Promise((_, reject) => {
+            timeoutId = setTimeout(() => reject(new Error('timeout')), ms);
+        });
+        return Promise.race([
+            promise,
+            timeoutPromise
+        ]).finally(() => clearTimeout(timeoutId));
+    },
+
     // Helper to resolve username to an email address
     _resolveAuthEmail(username) {
         // Enforce username only - no spaces, specific regex if needed, but for now simple trim
@@ -34,20 +46,28 @@ const AuthManager = {
                 }
             };
 
-            const { data, error } = await window.supabaseClient.auth.signUp({
+            const { data, error } = await this._withTimeout(window.supabaseClient.auth.signUp({
                 email,
                 password,
                 options
-            });
+            }));
+
+            if (data?.session) {
+                this.setSession(data.session);
+            }
 
             if (data?.user) {
-                // Ensure profile is updated
-                await this.updateProfile({ username: cleanUsername });
+                // Ensure profile is updated, but don't block too long if it fails
+                try {
+                    await this.updateProfile({ username: cleanUsername });
+                } catch (e) {
+                    console.warn('AuthManager: Post-signup profile update failed or timed out', e);
+                }
             }
 
             return { data, error };
         } catch (err) {
-            return { error: err };
+            return { error: err.message === 'timeout' ? { message: t('error_timeout') || 'Operation timed out' } : err };
         }
     },
 
@@ -55,13 +75,16 @@ const AuthManager = {
         try {
             const { email } = this._resolveAuthEmail(username);
 
-            const { data, error } = await window.supabaseClient.auth.signInWithPassword({
+            const { data, error } = await this._withTimeout(window.supabaseClient.auth.signInWithPassword({
                 email,
                 password
-            });
+            }));
+            if (data?.session) {
+                this.setSession(data.session);
+            }
             return { data, error };
         } catch (err) {
-            return { error: err };
+            return { error: err.message === 'timeout' ? { message: t('error_timeout') || 'Operation timed out' } : err };
         }
     },
 
@@ -69,6 +92,7 @@ const AuthManager = {
         const { error } = await window.supabaseClient.auth.signOut();
         if (!error) {
             localStorage.removeItem('salatk_session');
+            localStorage.removeItem('salatk_auth_snapshot');
             // Clear local database to prevent data bleed between users
             if (window.db) {
                 await window.db.delete();
@@ -101,22 +125,26 @@ const AuthManager = {
         if (!user) throw new Error('No user logged in');
 
         // Update user metadata
-        const { error: metaError } = await window.supabaseClient.auth.updateUser({
+        const { error: metaError } = await this._withTimeout(window.supabaseClient.auth.updateUser({
             data: updates
-        });
+        }));
 
         if (metaError) throw metaError;
 
         // Also update profiles table if it exists
-        const { error: profileError } = await window.supabaseClient
-            .from('profiles')
-            .upsert({
-                id: user.id,
-                ...updates,
-                updated_at: new Date().toISOString()
-            });
+        try {
+            const { error: profileError } = await this._withTimeout(window.supabaseClient
+                .from('profiles')
+                .upsert({
+                    id: user.id,
+                    ...updates,
+                    updated_at: new Date().toISOString()
+                }), 5000); // Shorter timeout for non-critical profile table
 
-        if (profileError) console.warn('Profile table update failed:', profileError);
+            if (profileError) console.warn('Profile table update failed:', profileError);
+        } catch (e) {
+            console.warn('Profile table update timed out');
+        }
 
         return { success: true };
     },
@@ -130,16 +158,27 @@ const AuthManager = {
 
         // Try to get from snapshot first for instant load
         const snapshot = localStorage.getItem('salatk_auth_snapshot');
-        if (snapshot && !this._session) {
+        if (snapshot) {
             try {
                 this._session = JSON.parse(snapshot);
                 console.log('AuthManager: Using session snapshot');
+
+                // Trigger background refresh but don't await it
+                this._refreshSessionBackground();
+
+                return this._session;
             } catch (e) {
                 console.warn('AuthManager: Failed to parse session snapshot');
             }
         }
 
-        // Helper for timeout
+        // No snapshot or memory session, must wait for network
+        return this._refreshSessionBackground();
+    },
+
+    async _refreshSessionBackground() {
+        if (this._sessionPromise) return this._sessionPromise;
+
         const withTimeout = (promise, ms) => {
             let timeoutId;
             const timeoutPromise = new Promise((_, reject) => {
@@ -153,18 +192,18 @@ const AuthManager = {
 
         this._sessionPromise = (async () => {
             try {
-                // If we have a snapshot, we can afford a shorter timeout for revalidation
-                const timeoutMs = this._session ? 3000 : 5000;
+                // Shorter timeout if we already have some session data to work with
+                const timeoutMs = this._session ? 2000 : 5000;
                 const { data: { session } } = await withTimeout(window.supabaseClient.auth.getSession(), timeoutMs);
                 this.setSession(session);
                 return session;
             } catch (err) {
                 if (err.message === 'timeout') {
-                    console.warn('AuthManager: getSession timed out, using snapshot if available');
+                    console.warn('AuthManager: getSession timed out');
                 } else {
                     console.error('AuthManager: getSession error', err);
                 }
-                return this._session; // Fallback to snapshot (could be null)
+                return this._session;
             } finally {
                 this._sessionPromise = null;
             }
