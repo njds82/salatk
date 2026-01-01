@@ -26,7 +26,7 @@ const PrayerManager = {
     async getUserLocation() {
         if (!window.supabaseClient) return this.getDefaultLocation();
 
-        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        const session = await window.AuthManager.getSession();
         if (!session) return this.getDefaultLocation();
 
         try {
@@ -80,7 +80,7 @@ const PrayerManager = {
         };
 
         if (window.supabaseClient) {
-            const { data: { session } } = await window.supabaseClient.auth.getSession();
+            const session = await window.AuthManager.getSession();
             if (session) {
                 try {
                     await window.supabaseClient.from('locations').upsert({

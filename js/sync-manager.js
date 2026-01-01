@@ -47,7 +47,7 @@ const SyncManager = {
                 'postgres_changes',
                 { event: '*', schema: 'public' },
                 async (payload) => {
-                    const { data: { session } } = await window.supabaseClient.auth.getSession();
+                    const session = await window.AuthManager.getSession();
                     if (!session) return;
 
                     const userId = session.user.id;
@@ -67,10 +67,18 @@ const SyncManager = {
 
         try {
             // In cloud-only mode, we mostly trigger UI refreshes
+            // Only re-render if the change actually affects the current view
             switch (table) {
                 case 'prayer_records':
                     if (window.currentPage === 'daily-prayers' && window.renderPage) {
-                        renderPage('daily-prayers', true);
+                        // Use silent refresh if possible
+                        if (payload.new && payload.new.date === window.selectedDate) {
+                            if (window.updatePrayerCard) {
+                                window.updatePrayerCard(payload.new.prayer_key);
+                            } else {
+                                renderPage('daily-prayers', true);
+                            }
+                        }
                     }
                     break;
                 case 'qada_prayers':
@@ -92,14 +100,16 @@ const SyncManager = {
                         } else {
                             // Indirectly refresh theme/lang if needed
                             const settings = await SettingsService.getSettings();
-                            SettingsService.applySettings(settings);
+                            if (settings) SettingsService.applySettings(settings);
                         }
                     }
                     break;
                 case 'points_history':
                     await updatePointsDisplay();
-                    if (window.currentPage === 'leaderboard') {
-                        renderPage('leaderboard', true);
+                    if (window.currentPage === 'leaderboard' && window.renderPage) {
+                        // Don't auto-refresh leaderboard on every point change to avoid flicker
+                        // Leaderboard is heavy. Maybe just show a notification?
+                        // For now, keep it manual or throttle.
                     }
                     break;
             }

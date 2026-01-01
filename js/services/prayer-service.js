@@ -21,7 +21,7 @@ const PrayerService = {
     // Get prayers for a specific date
     async getDailyPrayers(date) {
         if (!window.supabaseClient) return {};
-        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        const session = await window.AuthManager.getSession();
         if (!session) return {};
 
         try {
@@ -56,7 +56,7 @@ const PrayerService = {
             return { success: false };
         }
 
-        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        const session = await window.AuthManager.getSession();
         if (!session) return { success: false };
 
         const prayerDef = PRAYERS[key];
@@ -114,7 +114,7 @@ const PrayerService = {
 
     async addQada(originalDate, key, rakaat, isManual = false) {
         if (!window.supabaseClient) return;
-        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        const session = await window.AuthManager.getSession();
         if (!session) return;
 
         try {
@@ -134,7 +134,7 @@ const PrayerService = {
 
     async getQadaPrayers() {
         if (!window.supabaseClient) return [];
-        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        const session = await window.AuthManager.getSession();
         if (!session) return [];
 
         try {
@@ -219,7 +219,7 @@ const PrayerService = {
 
     async removeQada(originalDate, key) {
         if (!window.supabaseClient) return;
-        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        const session = await window.AuthManager.getSession();
         if (!session) return;
 
         try {
@@ -236,7 +236,7 @@ const PrayerService = {
     // Reset prayer status (undo decision)
     async resetPrayer(key, date) {
         if (!window.supabaseClient) return { success: false };
-        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        const session = await window.AuthManager.getSession();
         if (!session) return { success: false };
 
         const prayerDef = PRAYERS[key];
@@ -263,28 +263,46 @@ const PrayerService = {
     // Clean up ghost Qada records (prayers marked as done but still in Qada list)
     async cleanupQada() {
         if (!window.supabaseClient) return;
-        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        const session = await window.AuthManager.getSession();
         if (!session) return;
 
         try {
-            // This is complex to do purely in cloud without multiple fetches or a stored procedure.
-            // For now, we can skip it or do a limited cleanup.
             console.log('PrayerService: Cloud-based cleanupQada starting...');
-            const { data: qadas } = await window.supabaseClient.from('qada_prayers').select('*').eq('user_id', session.user.id).is('is_manual', false);
+            // Fetch all non-manual qada prayers
+            const { data: qadas } = await window.supabaseClient
+                .from('qada_prayers')
+                .select('id, original_date, prayer_key')
+                .eq('user_id', session.user.id)
+                .is('is_manual', false);
 
-            if (qadas && qadas.length > 0) {
-                for (const qada of qadas) {
-                    const { data: prayer } = await window.supabaseClient.from('prayer_records')
-                        .select('status')
-                        .eq('user_id', session.user.id)
-                        .eq('date', qada.original_date)
-                        .eq('prayer_key', qada.prayer_key)
-                        .maybeSingle();
+            if (!qadas || qadas.length === 0) return;
 
-                    if (prayer && prayer.status === 'done') {
-                        await window.supabaseClient.from('qada_prayers').delete().eq('id', qada.id);
-                    }
-                }
+            // Group dates to fetch relevant prayer records in one go
+            const uniqueDates = [...new Set(qadas.filter(q => q.original_date).map(q => q.original_date))];
+
+            if (uniqueDates.length === 0) return;
+
+            // Fetch all "done" prayer records for these dates
+            const { data: doneRecords } = await window.supabaseClient
+                .from('prayer_records')
+                .select('date, prayer_key')
+                .eq('user_id', session.user.id)
+                .eq('status', 'done')
+                .in('date', uniqueDates);
+
+            const doneSet = new Set((doneRecords || []).map(r => `${r.date}:${r.prayer_key}`));
+
+            // Identify qada records that should be deleted
+            const idsToDelete = qadas
+                .filter(q => q.original_date && doneSet.has(`${q.original_date}:${q.prayer_key}`))
+                .map(q => q.id);
+
+            if (idsToDelete.length > 0) {
+                console.log(`PrayerService: Cleaning up ${idsToDelete.length} redundant Qada records`);
+                await window.supabaseClient
+                    .from('qada_prayers')
+                    .delete()
+                    .in('id', idsToDelete);
             }
         } catch (error) {
             console.error('PrayerService: Error during cloud cleanupQada:', error);
@@ -294,7 +312,7 @@ const PrayerService = {
     // Get prayer streak (consecutive days)
     async getPrayerStreak() {
         if (!window.supabaseClient) return 0;
-        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        const session = await window.AuthManager.getSession();
         if (!session) return 0;
 
         try {

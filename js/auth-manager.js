@@ -122,14 +122,20 @@ const AuthManager = {
 
     _session: null,
 
-    async isAuthenticated() {
-        if (this._session) return true;
+    async getSession() {
+        if (this._session) return this._session;
         const { data: { session } } = await window.supabaseClient.auth.getSession();
         this._session = session;
+        return session;
+    },
+
+    async isAuthenticated() {
+        const session = await this.getSession();
         return !!session;
     },
 
     setSession(session) {
+        console.log('AuthManager: session updated');
         this._session = session;
     }
 };

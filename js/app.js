@@ -35,8 +35,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (window.AuthManager) window.AuthManager.setSession(session);
 
             if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-                await updatePointsDisplay();
-                if (window.PrayerManager) await PrayerManager.init();
+                // Avoid full re-init if just a token refresh
+                if (event === 'SIGNED_IN') {
+                    await updatePointsDisplay();
+                    if (window.PrayerManager) await PrayerManager.init();
+                }
             }
 
             if (event === 'SIGNED_OUT') {
@@ -58,27 +61,30 @@ async function checkAuthAndInit() {
         await SettingsService.init();
     }
 
-    // Initialize prayer manager
+    // Initialize prayer manager (needed for main page)
     if (window.PrayerManager) {
         await PrayerManager.init();
-    }
-
-    // Cleanup Qada records in cloud
-    if (window.PrayerService && window.PrayerService.cleanupQada) {
-        await PrayerService.cleanupQada();
-    }
-
-    // Sync data if configured (Now Cloud-Only)
-    if (window.SyncManager) {
-        // Realtime subscriptions are still useful for cloud-only mode
-        SyncManager.subscribeToChanges();
     }
 
     // Update points display after potential sync
     await updatePointsDisplay();
 
-    // Navigate to initial page
+    // Navigate to initial page FAST
     navigateToHash();
+
+    // BACKGROUND TASKS: Non-critical cleanup and sync
+    setTimeout(async () => {
+        // Cleanup Qada records in cloud
+        if (window.PrayerService && window.PrayerService.cleanupQada) {
+            await PrayerService.cleanupQada();
+        }
+
+        // Sync data if configured (Now Cloud-Only)
+        if (window.SyncManager) {
+            // Realtime subscriptions are still useful for cloud-only mode
+            SyncManager.subscribeToChanges();
+        }
+    }, 100);
 }
 
 // Set up event listeners

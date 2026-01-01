@@ -115,7 +115,7 @@ async function exportData() {
 async function getStatistics() {
     if (!window.supabaseClient) return { prayersPerformed: 0, prayersMissed: 0, totalRakaat: 0, worshipCount: 0, daysWithoutSin: 0, totalPoints: 0 };
 
-    const { data: { session } } = await window.supabaseClient.auth.getSession();
+    const session = await window.AuthManager.getSession();
     if (!session) return { prayersPerformed: 0, prayersMissed: 0, totalRakaat: 0, worshipCount: 0, daysWithoutSin: 0, totalPoints: 0 };
 
     const userId = session.user.id;
