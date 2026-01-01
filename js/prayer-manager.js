@@ -231,6 +231,14 @@ const PrayerManager = {
             const today = getCurrentDate();
             const dailyPrayers = await getDailyPrayers(today);
 
+            // If fetching failed or returned nothing (and we expect something or just want to be safe)
+            // Note: getDailyPrayers returns {} on failure/no session.
+            // If it's truly a connection issue, we might want to bail.
+            if (!dailyPrayers || (Object.keys(dailyPrayers).length === 0 && window.supabaseClient && !(await window.supabaseClient.auth.getSession()).data.session)) {
+                console.warn('PrayerManager: Could not fetch daily prayers, skipping missed check');
+                return;
+            }
+
             for (const slot of schedule) {
                 const startMinutes = timeToMinutes(slot.start);
                 const endMinutes = timeToMinutes(slot.end);

@@ -75,6 +75,20 @@ const PrayerService = {
         }
 
         try {
+            // Check current status
+            const { data: currentRecord } = await window.supabaseClient
+                .from('prayer_records')
+                .select('status')
+                .eq('user_id', session.user.id)
+                .eq('date', date)
+                .eq('prayer_key', key)
+                .maybeSingle();
+
+            if (currentRecord && currentRecord.status === status) {
+                console.log(`PrayerService: skipping markPrayer, status already ${status}`);
+                return { success: true };
+            }
+
             // Update Cloud
             const { error: prayerError } = await window.supabaseClient
                 .from('prayer_records')
@@ -108,11 +122,11 @@ const PrayerService = {
                 id: crypto.randomUUID(),
                 user_id: session.user.id,
                 prayer_key: key,
-                original_date: originalDate || 'unknown',
+                original_date: originalDate || null,
                 rakaat: rakaat,
                 recorded_at: new Date().toISOString(),
                 is_manual: isManual
-            });
+            }, { onConflict: 'user_id,original_date,prayer_key' });
         } catch (e) {
             console.error('PrayerService: Error adding Qada', e);
         }
@@ -150,7 +164,7 @@ const PrayerService = {
         if (!window.supabaseClient) return { success: false };
 
         try {
-            // First get the record to know what points to add (if needed, though it's static +3 usually)
+            // First get the record to know what points to add
             const { data: qada, error: fetchError } = await window.supabaseClient
                 .from('qada_prayers')
                 .select('*')
@@ -158,6 +172,21 @@ const PrayerService = {
                 .single();
 
             if (fetchError || !qada) return { success: false };
+
+            // Update original record status if date is known
+            if (qada.original_date) {
+                const { error: recordError } = await window.supabaseClient
+                    .from('prayer_records')
+                    .upsert({
+                        user_id: qada.user_id,
+                        date: qada.original_date,
+                        prayer_key: qada.prayer_key,
+                        status: 'done',
+                        recorded_at: new Date().toISOString()
+                    }, { onConflict: 'user_id,date,prayer_key' });
+
+                if (recordError) console.warn('PrayerService: could not update prayer_record', recordError);
+            }
 
             // Delete the record
             const { error: deleteError } = await window.supabaseClient

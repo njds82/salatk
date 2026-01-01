@@ -42,7 +42,7 @@ async function renderQadaPrayersPage() {
 
         for (const qadaPrayer of qadaPrayers) {
             const prayer = PRAYERS[qadaPrayer.prayer];
-            const displayDate = qadaPrayer.date === 'unknown'
+            const displayDate = !qadaPrayer.date
                 ? t('date_unknown')
                 : formatDisplayDate(qadaPrayer.date);
 
