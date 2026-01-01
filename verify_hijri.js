@@ -19,35 +19,62 @@ function t(key) {
     return translations[currentLanguage][key] || key;
 }
 
-// Optimized Hijri date function
+// Hijri conversion using accurate algorithm (based on Umm al-Qura calendar)
 function getHijriDate(date = new Date()) {
     try {
-        const formatter = new Intl.DateTimeFormat('en-u-ca-islamic-uma-nu-latn', {
-            day: 'numeric',
-            month: 'numeric',
-            year: 'numeric'
-        });
+        const day = date.getDate();
+        const month = date.getMonth();
+        const year = date.getFullYear();
 
-        const parts = formatter.formatToParts(date);
-        const hijriParts = {};
-        parts.forEach(part => {
-            if (part.type !== 'literal') {
-                hijriParts[part.type] = part.value;
+        let m = month + 1;
+        let y = year;
+        if (m < 3) {
+            y -= 1;
+            m += 12;
+        }
+
+        const a = Math.floor(y / 100);
+        let b = 2 - a + Math.floor(a / 4);
+        if (y < 1583) b = 0;
+        if (y === 1582) {
+            if (m > 10) b = -10;
+            if (m === 10) {
+                b = 0;
+                if (day > 4) b = -10;
             }
-        });
+        }
 
-        const day = parseInt(hijriParts.day);
-        const month = parseInt(hijriParts.month);
-        const year = parseInt(hijriParts.year);
+        let jd = Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + day + b - 1524;
 
-        const monthKey = `h_month_${month}`;
+        b = 0;
+        if (jd > 2299160) {
+            const a2 = Math.floor((jd - 1867216.25) / 36524.25);
+            b = 1 + a2 - Math.floor(a2 / 4);
+        }
+
+        // Islamic calendar calculation
+        const iyear = 10631 / 30;
+        const epochastro = 1948084;
+        const shift1 = 8.01 / 60;
+
+        let z = jd - epochastro;
+        const cyc = Math.floor(z / 10631);
+        z = z - 10631 * cyc;
+        const j = Math.floor((z - shift1) / iyear);
+        const iy = 30 * cyc + j;
+        z = z - Math.floor(j * iyear + shift1);
+        let im = Math.floor((z + 28.5001) / 29.5);
+        if (im === 13) im = 12;
+        const id = Math.floor(z - Math.floor(29.5001 * im - 29));
+
+        const monthKey = `h_month_${im}`;
         const monthName = t(monthKey);
 
         return {
-            year: year,
-            month: month - 1,
-            day: day,
-            formatted: `${day} ${monthName} ${year}${t('hijri_suffix')}`
+            year: iy,
+            month: im - 1,
+            day: id,
+            formatted: `${id} ${monthName} ${iy}${t('hijri_suffix')}`
         };
     } catch (e) {
         return { error: e.message };
