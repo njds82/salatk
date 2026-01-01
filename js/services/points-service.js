@@ -8,24 +8,29 @@ const PointsService = {
         const { data: { session } } = await window.supabaseClient.auth.getSession();
         if (!session) return 0;
 
-        // Fetch from leaderboard view for pre-calculated total
-        const { data, error } = await window.supabaseClient
-            .from('leaderboard')
-            .select('total_points')
-            .eq('user_id', session.user.id)
-            .maybeSingle();
+        try {
+            // Fetch from leaderboard view for pre-calculated total
+            const { data, error } = await window.supabaseClient
+                .from('leaderboard')
+                .select('total_points')
+                .eq('user_id', session.user.id)
+                .maybeSingle();
 
-        if (error) {
-            console.error('PointsService: Error fetching total from view', error);
-            // Fallback to manual sum if view fails (might happen if view not created yet)
-            const { data: fallbackData } = await window.supabaseClient
-                .from('points_history')
-                .select('amount')
-                .eq('user_id', session.user.id);
-            return (fallbackData || []).reduce((sum, item) => sum + (item.amount || 0), 0);
+            if (error) {
+                console.error('PointsService: Error fetching total from view', error);
+                // Fallback to manual sum if view fails (might happen if view not created yet)
+                const { data: fallbackData } = await window.supabaseClient
+                    .from('points_history')
+                    .select('amount')
+                    .eq('user_id', session.user.id);
+                return (fallbackData || []).reduce((sum, item) => sum + (item.amount || 0), 0);
+            }
+
+            return data ? data.total_points : 0;
+        } catch (e) {
+            console.error('PointsService: Failed to fetch total points', e);
+            return 0;
         }
-
-        return data ? data.total_points : 0;
     },
 
     async getHistory() {
@@ -33,18 +38,25 @@ const PointsService = {
         const { data: { session } } = await window.supabaseClient.auth.getSession();
         if (!session) return [];
 
-        const { data } = await window.supabaseClient
-            .from('points_history')
-            .select('*')
-            .eq('user_id', session.user.id)
-            .order('recorded_at', { ascending: false });
+        try {
+            const { data, error } = await window.supabaseClient
+                .from('points_history')
+                .select('*')
+                .eq('user_id', session.user.id)
+                .order('recorded_at', { ascending: false });
 
-        return (data || []).map(p => ({
-            id: p.id,
-            amount: p.amount,
-            reason: p.reason,
-            timestamp: new Date(p.recorded_at).getTime()
-        }));
+            if (error) throw error;
+
+            return (data || []).map(p => ({
+                id: p.id,
+                amount: p.amount,
+                reason: p.reason,
+                timestamp: new Date(p.recorded_at).getTime()
+            }));
+        } catch (e) {
+            console.error('PointsService: Failed to fetch points history', e);
+            return [];
+        }
     },
 
     async addPoints(amount, reason, providedId = null) {

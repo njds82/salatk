@@ -169,10 +169,12 @@ function navigateTo(page) {
     renderPage(page);
 }
 
-// Navigate based on hash
-function navigateToHash() {
-    const hash = window.location.hash.replace('#', '') || 'daily-prayers';
-    navigateTo(hash);
+// Helper to wrap a promise with a timeout
+async function withTimeout(promise, timeoutMs, timeoutValue = null) {
+    return Promise.race([
+        promise,
+        new Promise((resolve) => setTimeout(() => resolve(timeoutValue), timeoutMs))
+    ]);
 }
 
 // Render page
@@ -188,8 +190,14 @@ async function renderPage(page, noScroll = false) {
     let html = '';
 
     try {
-        // Auth check
-        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        // Auth check with 5-second timeout
+        const sessionResult = await withTimeout(window.supabaseClient.auth.getSession(), 5000, { data: { session: null }, error: 'timeout' });
+        const session = sessionResult?.data?.session;
+
+        if (sessionResult.error === 'timeout') {
+            console.warn('Auth check timed out after 5 seconds');
+        }
+
         if (!session && page !== 'login' && page !== 'signup') {
             navigateTo('login');
             return;

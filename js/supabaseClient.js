@@ -4,7 +4,14 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 
 // supabase is provided by the CDN script in index.html
 if (window.supabase) {
-    window.supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+    window.supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey, {
+        auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true,
+            storage: window.localStorage
+        }
+    });
 } else {
     console.error('Supabase SDK not loaded');
 }
