@@ -219,17 +219,8 @@ async function renderPage(page, noScroll = false) {
     try {
         // Auth check - prioritize cached session
         let session = null;
-        if (window.AuthManager && window.AuthManager._session) {
-            session = window.AuthManager._session;
-        } else {
-            // Auth check with 5-second timeout
-            const sessionResult = await withTimeout(window.supabaseClient.auth.getSession(), 5000, { data: { session: null }, error: 'timeout' });
-            session = sessionResult?.data?.session;
-            if (window.AuthManager) window.AuthManager.setSession(session);
-
-            if (sessionResult.error === 'timeout') {
-                console.warn('Auth check timed out after 5 seconds');
-            }
+        if (window.AuthManager) {
+            session = await window.AuthManager.getSession();
         }
 
         if (!session && page !== 'login' && page !== 'signup') {

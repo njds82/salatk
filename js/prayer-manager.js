@@ -234,7 +234,8 @@ const PrayerManager = {
             // If fetching failed or returned nothing (and we expect something or just want to be safe)
             // Note: getDailyPrayers returns {} on failure/no session.
             // If it's truly a connection issue, we might want to bail.
-            if (!dailyPrayers || (Object.keys(dailyPrayers).length === 0 && window.supabaseClient && !(await window.supabaseClient.auth.getSession()).data.session)) {
+            const session = await window.AuthManager.getSession();
+            if (!dailyPrayers || (Object.keys(dailyPrayers).length === 0 && window.supabaseClient && !session)) {
                 console.warn('PrayerManager: Could not fetch daily prayers, skipping missed check');
                 return;
             }

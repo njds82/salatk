@@ -5,7 +5,7 @@
 const HabitService = {
     async getAll() {
         if (!window.supabaseClient) return [];
-        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        const session = await window.AuthManager.getSession();
         if (!session) return [];
 
         const { data } = await window.supabaseClient
@@ -23,7 +23,7 @@ const HabitService = {
 
     async add(name, type) {
         if (!window.supabaseClient) return null;
-        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        const session = await window.AuthManager.getSession();
         if (!session) return null;
 
         const habit = {
@@ -59,7 +59,7 @@ const HabitService = {
 
     async getDailyActions(date) {
         if (!window.supabaseClient) return [];
-        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        const session = await window.AuthManager.getSession();
         if (!session) return [];
 
         const { data } = await window.supabaseClient
@@ -78,7 +78,7 @@ const HabitService = {
 
     async logAction(habitId, date, action) {
         if (!window.supabaseClient) return;
-        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        const session = await window.AuthManager.getSession();
         if (!session) return;
 
         // Fetch habit details for point calculation
@@ -115,7 +115,7 @@ const HabitService = {
 
     async removeAction(habitId, date) {
         if (!window.supabaseClient) return;
-        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        const session = await window.AuthManager.getSession();
         if (!session) return;
 
         const pointId = `habit:${habitId}:${date}`;

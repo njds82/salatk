@@ -121,12 +121,55 @@ const AuthManager = {
     },
 
     _session: null,
+    _sessionPromise: null,
 
     async getSession() {
         if (this._session) return this._session;
-        const { data: { session } } = await window.supabaseClient.auth.getSession();
-        this._session = session;
-        return session;
+        if (this._sessionPromise) return this._sessionPromise;
+
+        // Try to get from snapshot first for instant load
+        const snapshot = localStorage.getItem('salatk_auth_snapshot');
+        if (snapshot && !this._session) {
+            try {
+                this._session = JSON.parse(snapshot);
+                console.log('AuthManager: Using session snapshot');
+            } catch (e) {
+                console.warn('AuthManager: Failed to parse session snapshot');
+            }
+        }
+
+        // Helper for timeout
+        const withTimeout = (promise, ms) => {
+            let timeoutId;
+            const timeoutPromise = new Promise((_, reject) => {
+                timeoutId = setTimeout(() => reject(new Error('timeout')), ms);
+            });
+            return Promise.race([
+                promise,
+                timeoutPromise
+            ]).finally(() => clearTimeout(timeoutId));
+        };
+
+        this._sessionPromise = (async () => {
+            try {
+                // If we have a snapshot, we can afford a shorter timeout for revalidation
+                const timeoutMs = this._session ? 3000 : 5000;
+                const { data: { session } } = await withTimeout(window.supabaseClient.auth.getSession(), timeoutMs);
+                this.setSession(session);
+                return session;
+            } catch (err) {
+                if (err.message === 'timeout') {
+                    console.warn('AuthManager: getSession timed out, using snapshot if available');
+                } else {
+                    console.error('AuthManager: getSession error', err);
+                }
+                return this._session; // Fallback to snapshot (could be null)
+            } finally {
+                this._sessionPromise = null;
+            }
+        })();
+
+        return this._sessionPromise;
     },
 
     async isAuthenticated() {
@@ -137,6 +180,11 @@ const AuthManager = {
     setSession(session) {
         console.log('AuthManager: session updated');
         this._session = session;
+        if (session) {
+            localStorage.setItem('salatk_auth_snapshot', JSON.stringify(session));
+        } else {
+            localStorage.removeItem('salatk_auth_snapshot');
+        }
     }
 };
 

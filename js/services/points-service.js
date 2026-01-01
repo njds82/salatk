@@ -5,7 +5,7 @@
 const PointsService = {
     async getTotal() {
         if (!window.supabaseClient) return 0;
-        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        const session = await window.AuthManager.getSession();
         if (!session) return 0;
 
         try {
@@ -35,7 +35,7 @@ const PointsService = {
 
     async getHistory() {
         if (!window.supabaseClient) return [];
-        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        const session = await window.AuthManager.getSession();
         if (!session) return [];
 
         try {
@@ -61,7 +61,7 @@ const PointsService = {
 
     async addPoints(amount, reason, providedId = null) {
         if (!window.supabaseClient) return;
-        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        const session = await window.AuthManager.getSession();
         if (!session) return;
 
         const id = providedId || crypto.randomUUID();

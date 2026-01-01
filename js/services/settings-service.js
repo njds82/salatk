@@ -7,7 +7,7 @@ const SettingsService = {
     async getSettings() {
         if (!window.supabaseClient) return this.getDefaultSettings();
 
-        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        const session = await window.AuthManager.getSession();
         if (!session) return this.getDefaultSettings();
 
         try {
@@ -55,7 +55,7 @@ const SettingsService = {
     async set(key, value) {
         if (!window.supabaseClient) return;
 
-        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        const session = await window.AuthManager.getSession();
         if (!session) {
             // If not logged in, we only update localStorage for immediate UI feedback
             localStorage.setItem(`salatk_${key}`, value);
