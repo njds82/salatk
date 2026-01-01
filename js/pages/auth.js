@@ -87,9 +87,8 @@ function setupAuthFormListeners(type) {
                 showToast(result.error.message, 'error');
             } else {
                 showToast(t(type === 'login' ? 'login_success' : 'signup_success'), 'success');
-                // Redirect to home
-                window.location.hash = 'daily-prayers';
-                window.location.reload();
+                // Navigate to home instead of reloading
+                navigateTo('daily-prayers');
             }
         } catch (err) {
             showToast(err.message, 'error');

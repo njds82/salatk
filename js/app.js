@@ -32,9 +32,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.supabaseClient) {
         window.supabaseClient.auth.onAuthStateChange(async (event, session) => {
             console.log('Auth state change:', event);
+            if (window.AuthManager) window.AuthManager.setSession(session);
+
             if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
                 await updatePointsDisplay();
                 if (window.PrayerManager) await PrayerManager.init();
+            }
+
+            if (event === 'SIGNED_OUT') {
+                if (window.currentPage !== 'login' && window.currentPage !== 'signup') {
+                    navigateTo('login');
+                }
             }
         });
     }
@@ -203,16 +211,28 @@ async function renderPage(page, noScroll = false) {
     let html = '';
 
     try {
-        // Auth check with 5-second timeout
-        const sessionResult = await withTimeout(window.supabaseClient.auth.getSession(), 5000, { data: { session: null }, error: 'timeout' });
-        const session = sessionResult?.data?.session;
+        // Auth check - prioritize cached session
+        let session = null;
+        if (window.AuthManager && window.AuthManager._session) {
+            session = window.AuthManager._session;
+        } else {
+            // Auth check with 5-second timeout
+            const sessionResult = await withTimeout(window.supabaseClient.auth.getSession(), 5000, { data: { session: null }, error: 'timeout' });
+            session = sessionResult?.data?.session;
+            if (window.AuthManager) window.AuthManager.setSession(session);
 
-        if (sessionResult.error === 'timeout') {
-            console.warn('Auth check timed out after 5 seconds');
+            if (sessionResult.error === 'timeout') {
+                console.warn('Auth check timed out after 5 seconds');
+            }
         }
 
         if (!session && page !== 'login' && page !== 'signup') {
             navigateTo('login');
+            return;
+        }
+
+        if (session && (page === 'login' || page === 'signup')) {
+            navigateTo('daily-prayers');
             return;
         }
 
