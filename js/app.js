@@ -31,14 +31,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // Listen for auth state changes to refresh data
     if (window.supabaseClient) {
         window.supabaseClient.auth.onAuthStateChange(async (event, session) => {
-            console.log('Auth state change:', event);
+            console.log('Auth state change:', event, !!session);
+
+            const oldSession = window.AuthManager ? window.AuthManager._session : null;
             if (window.AuthManager) window.AuthManager.setSession(session);
 
             if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-                // Avoid full re-init if just a token refresh
-                if (event === 'SIGNED_IN') {
+                // If it's a new login or we were previously unauthenticated, refresh UI
+                if (!oldSession && session) {
                     await updatePointsDisplay();
                     if (window.PrayerManager) await PrayerManager.init();
+                    // If we were on login/signup, go to main page
+                    if (window.currentPage === 'login' || window.currentPage === 'signup') {
+                        navigateTo('daily-prayers');
+                    }
                 }
             }
 
@@ -219,22 +225,27 @@ async function renderPage(page, noScroll = false) {
 
     try {
         // Auth check - prioritize cached session
-        let session = null;
         if (window.AuthManager) {
             // For login/signup, use memory/snapshot synchronously to avoid blocking UI
             if (page === 'login' || page === 'signup') {
                 session = window.AuthManager._session;
                 window.AuthManager.getSession(); // Background refresh
             } else {
+                // For other pages, getSession() will return snapshot instantly if available
                 session = await window.AuthManager.getSession();
             }
         }
 
+        // Resilient Navigation Logic:
+        // 1. Only redirect to login if we EXPLICITLY have no session (null)
+        // 2. If session is just potentially stale (returned by timeout logic), we still render.
+        // 3. BACKGROUND verification will handle logout if session is truly invalid.
         if (!session && page !== 'login' && page !== 'signup') {
             navigateTo('login');
             return;
         }
 
+        // If we have a session, don't show login/signup
         if (session && (page === 'login' || page === 'signup')) {
             navigateTo('daily-prayers');
             return;

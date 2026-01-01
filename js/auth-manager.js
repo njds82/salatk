@@ -156,14 +156,15 @@ const AuthManager = {
         if (this._session) return this._session;
         if (this._sessionPromise) return this._sessionPromise;
 
-        // Try to get from snapshot first for instant load
+        // 1. Try to get from snapshot first for instant load
         const snapshot = localStorage.getItem('salatk_auth_snapshot');
         if (snapshot) {
             try {
                 this._session = JSON.parse(snapshot);
                 console.log('AuthManager: Using session snapshot');
 
-                // Trigger background refresh but don't await it
+                // 2. Trigger background refresh but don't await it if we have a snapshot
+                // This allows the UI to render immediately
                 this._refreshSessionBackground();
 
                 return this._session;
@@ -172,7 +173,16 @@ const AuthManager = {
             }
         }
 
-        // No snapshot or memory session, must wait for network
+        // 3. If no snapshot, check if Supabase already has a session in its internal state
+        // This is a synchronous-ish check that might prevent unnecessary network waits
+        const localSession = window.supabaseClient.auth.session ? window.supabaseClient.auth.session() : null;
+        if (localSession) {
+            this.setSession(localSession);
+            this._refreshSessionBackground(); // Still refresh in background
+            return localSession;
+        }
+
+        // 4. No snapshot or local memory, must wait for network
         return this._refreshSessionBackground();
     },
 
