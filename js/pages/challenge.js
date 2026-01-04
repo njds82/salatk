@@ -28,14 +28,18 @@ export async function initChallengePage() {
 // Since app.js uses vanilla JS global functions for other pages, but this is a module.
 // We need to attach it to window.
 
-async function renderChallengePage() {
-    // 1. Fetch user progress
-    await fetchUserProgress();
+async function renderChallengePage(skipFetch = false) {
+    // 1. Fetch user progress (unless skipped)
+    if (!skipFetch) {
+        await fetchUserProgress();
+    }
 
     // 2. Build HTML
     let stagesHtml = '';
 
     challenges.forEach((stage, index) => {
+        // ... (rest of the loop is same)
+
         const isLocked = stage.id > lastCompletedStageId + 1;
         const isCompleted = stage.id <= lastCompletedStageId;
         const statusClass = isLocked ? 'locked' : (isCompleted ? 'completed' : 'unlocked');
@@ -206,10 +210,9 @@ async function finishStage(success) {
             lastCompletedStageId = activeStage.id;
 
             // Re-render page to show unlocked next stage
-            // We can cheat and just reload the view or update DOM
-            // Let's trigger a re-render of the page content
+            // We skip fetch to rely on the local update we just made, preventing race conditions
             const content = document.getElementById('pageContent');
-            const html = await renderChallengePage();
+            const html = await renderChallengePage(true);
             content.innerHTML = html;
 
             showToast(`مبروك! أكملت المرحلة وحصلت على 3 نقاط`, 'success');
