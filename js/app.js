@@ -303,6 +303,13 @@ async function renderPage(page, noScroll = false) {
             case 'settings':
                 html = await renderSettingsPage();
                 break;
+            case 'challenge':
+                if (window.renderChallengePage) {
+                    html = await window.renderChallengePage();
+                } else {
+                    html = '<div class="error-message">Error loading challenge module</div>';
+                }
+                break;
             default:
                 html = await renderDailyPrayersPage();
         }
