@@ -206,16 +206,22 @@ async function finishStage(success) {
     if (success) {
         // If this is a new completion (not replay of old one)
         if (activeStage.id > lastCompletedStageId) {
-            await awardPoints(activeStage.id);
-            lastCompletedStageId = activeStage.id;
+            const pointsAwarded = await awardPoints(activeStage.id);
 
-            // Re-render page to show unlocked next stage
-            // We skip fetch to rely on the local update we just made, preventing race conditions
-            const content = document.getElementById('pageContent');
-            const html = await renderChallengePage(true);
-            content.innerHTML = html;
+            if (pointsAwarded) {
+                lastCompletedStageId = activeStage.id;
 
-            showToast(`مبروك! أكملت المرحلة وحصلت على 3 نقاط`, 'success');
+                // Re-render page to show unlocked next stage
+                // We skip fetch to rely on the local update we just made, preventing race conditions
+                const content = document.getElementById('pageContent');
+                const html = await renderChallengePage(true);
+                content.innerHTML = html;
+
+                showToast(`مبروك! أكملت المرحلة وحصلت على 3 نقاط`, 'success');
+            } else {
+                showToast('تعذر احتساب النقاط. يرجى التحقق من الاتصال والمحاولة مرة أخرى.', 'error');
+                // Do NOT update lastCompletedStageId so user can retry
+            }
         } else {
             showToast(`أحسنت! أكملت المرحلة (تم احتساب النقاط سابقاً)`, 'success');
         }
@@ -225,21 +231,33 @@ async function finishStage(success) {
 }
 
 async function awardPoints(stageId) {
-    if (!window.PointsService) return;
+    if (!window.PointsService) return false;
 
     // Add points
-    await window.PointsService.addPoints(3, `challenge_stage_${stageId}`);
+    const success = await window.PointsService.addPoints(3, `challenge_stage_${stageId}`);
 
-    // Save progress to profiles
-    if (window.supabaseClient) {
-        const session = await window.AuthManager.getSession();
-        if (session) {
-            await window.supabaseClient
-                .from('profiles')
-                .update({ last_completed_stage: stageId })
-                .eq('id', session.user.id);
+    if (success) {
+        // Save progress to profiles only if points were successfully added
+        if (window.supabaseClient) {
+            const session = await window.AuthManager.getSession();
+            if (session) {
+                const { error } = await window.supabaseClient
+                    .from('profiles')
+                    .update({ last_completed_stage: stageId })
+                    .eq('id', session.user.id);
+
+                if (error) {
+                    console.error('Error saving progress:', error);
+                    // We still return true because points were awarded, 
+                    // progress sync might resolve next time or we can just proceed.
+                    // Ideally we might want to rollback points, but that's complex.
+                }
+            }
         }
+        return true;
     }
+
+    return false;
 }
 
 function showToast(msg, type) {
