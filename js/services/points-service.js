@@ -64,19 +64,25 @@ const PointsService = {
     },
 
     async addPoints(amount, reason, providedId = null) {
-        if (!window.supabaseClient) return;
+        if (!window.supabaseClient) {
+            console.error('[PointsService] supabaseClient not found');
+            return false;
+        }
         const session = await window.AuthManager.getSession();
-        if (!session) return;
+        if (!session) {
+            console.error('[PointsService] No session found');
+            return false;
+        }
 
         const id = providedId || crypto.randomUUID();
 
         if (amount === 0 && providedId) {
-            await window.supabaseClient.from('points_history').delete().eq('id', providedId);
-            return;
+            const { error } = await window.supabaseClient.from('points_history').delete().eq('id', providedId);
+            return !error;
         }
 
         try {
-            await window.supabaseClient.from('points_history').upsert({
+            const { error } = await window.supabaseClient.from('points_history').upsert({
                 id: id,
                 user_id: session.user.id,
                 amount: amount,
@@ -84,11 +90,18 @@ const PointsService = {
                 recorded_at: new Date().toISOString()
             });
 
+            if (error) {
+                console.error('PointsService: Error adding points', error);
+                return false;
+            }
+
             // Dispatch update event for local UI components
             const total = await this.getTotal();
             window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { totalPoints: total } }));
+            return true;
         } catch (e) {
-            console.error('PointsService: Error adding points', e);
+            console.error('PointsService: Exception adding points', e);
+            return false;
         }
     },
 
