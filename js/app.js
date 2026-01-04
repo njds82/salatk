@@ -40,7 +40,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 // If it's a new login or we were previously unauthenticated, refresh UI
                 if (!oldSession && session) {
                     await updatePointsDisplay();
-                    if (window.PrayerManager) await PrayerManager.init();
+                    if (window.PrayerManager) {
+                        const times = await PrayerManager.init();
+                        if (window.NotificationManager) {
+                            NotificationManager.scheduleNextPrayer(times);
+                        }
+                    }
                     // If we were on login/signup, go to main page
                     if (window.currentPage === 'login' || window.currentPage === 'signup') {
                         navigateTo('daily-prayers');
@@ -58,6 +63,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize notification badge
     if (window.updateNotifBadge) updateNotifBadge();
+
+    // Initialize Notifications
+    if (window.NotificationManager) {
+        NotificationManager.init();
+    }
+
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+                .then(registration => {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                })
+                .catch(err => {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+        });
+    }
 });
 
 async function checkAuthAndInit() {
@@ -70,7 +93,11 @@ async function checkAuthAndInit() {
         initTasks.push(SettingsService.init());
     }
     if (window.PrayerManager) {
-        initTasks.push(PrayerManager.init());
+        initTasks.push(PrayerManager.init().then(times => {
+            if (window.NotificationManager) {
+                NotificationManager.scheduleNextPrayer(times);
+            }
+        }));
     }
 
     // Wait for inits but they are now non-blocking for the first render

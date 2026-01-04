@@ -176,6 +176,11 @@ const translations = {
         error_location: 'تعذر تحديد الموقع',
         error_calculation: 'خطأ في حساب مواقيت الصلاة',
         notifications_title: 'الإشعارات',
+        notification_permission_title: 'تفعيل الإشعارات',
+        notification_permission_body: 'هل ترغب بتفعيل التنبيهات لأوقات الصلاة؟',
+        time_for_prayer: 'حان الآن موعد أذان {prayer}',
+        click_to_open: 'اضغط لفتح التطبيق',
+        test_notification: 'إشعار تجريبي',
 
         // v1.3.0 Features
         change_decision: 'تغيير القرار',
@@ -463,6 +468,11 @@ const translations = {
         error_location: 'Could not determine location',
         error_calculation: 'Error calculating prayer times',
         notifications_title: 'Notifications',
+        notification_permission_title: 'Enable Notifications',
+        notification_permission_body: 'Do you want to enable prayer time alerts?',
+        time_for_prayer: 'It is now time for {prayer} prayer',
+        click_to_open: 'Click to open app',
+        test_notification: 'Test Notification',
 
         // v1.3.0 Features
         change_decision: 'Change Decision',
