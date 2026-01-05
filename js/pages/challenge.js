@@ -155,21 +155,51 @@ function renderQuestion() {
     if (!activeStage) return;
     const question = activeStage.questions[currentQuestionIndex];
 
+    // Reset state
     document.getElementById('quiz-title').textContent = activeStage.title;
     document.getElementById('quiz-progress').textContent = `${currentQuestionIndex + 1} / ${activeStage.questions.length}`;
-    document.getElementById('question-text').textContent = question.text;
 
+    // Setup Content based on Type
     const optionsContainer = document.getElementById('options-container');
+    const questionTextElement = document.getElementById('question-text');
+
+    // Clear previous classes
+    optionsContainer.className = 'options-grid';
+
+    if (question.type === 'fill_blank') {
+        const parts = question.text.split('____');
+        questionTextElement.innerHTML = `
+            ${parts[0]} <span class="blank-spot" id="blank-spot">ــــــ</span> ${parts[1] || ''}
+        `;
+        optionsContainer.classList.add('fill-blank-mode');
+    } else {
+        questionTextElement.textContent = question.text;
+    }
+
+    if (question.type === 'true_false') {
+        optionsContainer.classList.add('true-false-mode');
+    }
+
     optionsContainer.innerHTML = '';
 
     question.options.forEach((opt, idx) => {
         const btn = document.createElement('button');
         btn.className = 'option-btn';
+
+        // Specific styling for types
+        if (question.type === 'true_false') {
+            btn.classList.add(idx === 0 ? 'btn-true' : 'btn-false');
+            // If text is purely generic, maybe add icons?
+            // But content usually "صح" or "خطأ"
+        }
+
         btn.textContent = opt;
         btn.onclick = () => handleAnswer(idx);
         optionsContainer.appendChild(btn);
     });
 }
+
+
 
 async function handleAnswer(selectedIndex) {
     const question = activeStage.questions[currentQuestionIndex];
@@ -181,6 +211,16 @@ async function handleAnswer(selectedIndex) {
     if (selectedIndex === question.correctIndex) {
         // Correct
         options[selectedIndex].classList.add('correct');
+
+        // Fill blank visual
+        if (question.type === 'fill_blank') {
+            const blankSpot = document.getElementById('blank-spot');
+            if (blankSpot) {
+                blankSpot.textContent = question.options[selectedIndex];
+                blankSpot.classList.add('filled', 'success');
+            }
+        }
+
         // Wait and go next
         setTimeout(() => {
             currentQuestionIndex++;
@@ -189,16 +229,25 @@ async function handleAnswer(selectedIndex) {
             } else {
                 finishStage(true);
             }
-        }, 1000);
+        }, 1200);
     } else {
         // Wrong
         options[selectedIndex].classList.add('wrong');
         options[question.correctIndex].classList.add('correct'); // Show correct one
 
+        // Fill blank with correction
+        if (question.type === 'fill_blank') {
+            const blankSpot = document.getElementById('blank-spot');
+            if (blankSpot) {
+                blankSpot.textContent = question.options[question.correctIndex];
+                blankSpot.classList.add('filled', 'error');
+            }
+        }
+
         // Wait and fail stage
         setTimeout(() => {
             finishStage(false);
-        }, 1500);
+        }, 2000);
     }
 }
 

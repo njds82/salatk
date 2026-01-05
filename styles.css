@@ -1987,3 +1987,67 @@ body.auth-mode {
     background: var(--color-bg-card);
     color: var(--color-text-primary);
 }
+
+/* True/False Mode */
+.options-grid.true-false-mode {
+    grid-template-columns: 1fr 1fr;
+}
+
+.option-btn.btn-true {
+    border-color: #10B981;
+    color: #10B981;
+    font-weight: 700;
+}
+
+.option-btn.btn-false {
+    border-color: #EF4444;
+    color: #EF4444;
+    font-weight: 700;
+}
+
+.option-btn.btn-true:hover:not(:disabled) {
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.option-btn.btn-false:hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* Fill Blank Mode */
+.blank-spot {
+    display: inline-block;
+    min-width: 60px;
+    border-bottom: 2px dashed var(--color-text-tertiary);
+    color: transparent;
+    transition: all 0.3s ease;
+    padding: 0 4px;
+}
+
+.blank-spot.filled {
+    border-bottom-style: solid;
+    color: var(--color-primary);
+    font-weight: bold;
+}
+
+.blank-spot.filled.success {
+    color: #10B981;
+    border-color: #10B981;
+}
+
+.blank-spot.filled.error {
+    color: #EF4444;
+    border-color: #EF4444;
+}
+
+.options-grid.fill-blank-mode {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.options-grid.fill-blank-mode .option-btn {
+    flex: 0 1 auto;
+    min-width: 120px;
+    padding: 0.75rem 1.5rem;
+    border-radius: 2rem;
+}
