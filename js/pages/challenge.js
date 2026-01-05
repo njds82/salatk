@@ -308,12 +308,17 @@ async function confirmAnswer() {
             }
         }
 
-        confirmBtn.textContent = 'إجابة خاطئة';
+        // Push question to end of queue to retry later
+        activeStage.questions.push(question);
+
+        confirmBtn.textContent = 'إجابة خاطئة - سنعيد السؤال لاحقاً';
         confirmBtn.classList.replace('btn-primary', 'btn-danger');
 
-        // Wait and fail stage
+        // Wait and go next (instead of failing)
         setTimeout(() => {
-            finishStage(false);
+            currentQuestionIndex++;
+            selectedOptionIndex = null;
+            renderQuestion();
         }, 2500);
     }
 }
