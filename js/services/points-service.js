@@ -2,6 +2,14 @@
 // Points Service
 // ========================================
 
+// Helper to wrap a promise with a timeout
+async function withTimeout(promise, timeoutMs, timeoutValue = null) {
+    return Promise.race([
+        promise,
+        new Promise((resolve) => setTimeout(() => resolve(timeoutValue), timeoutMs))
+    ]);
+}
+
 const PointsService = {
     async getTotal() {
         if (!window.supabaseClient) return 0;
@@ -75,6 +83,7 @@ const PointsService = {
         }
 
         const id = providedId || crypto.randomUUID();
+        console.log(`[PointsService] Adding ${amount} points for ${reason} (ID: ${id})`);
 
         if (amount === 0 && providedId) {
             const { error } = await window.supabaseClient.from('points_history').delete().eq('id', providedId);
@@ -95,6 +104,7 @@ const PointsService = {
                 return false;
             }
 
+            console.log('[PointsService] Points added successfully');
             // Dispatch update event for local UI components
             const total = await this.getTotal();
             window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { totalPoints: total } }));
