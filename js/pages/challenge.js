@@ -157,10 +157,21 @@ let stageStartTime = 0;
 let stageMistakes = 0;
 
 function startStage(stage) {
-    // Clone and shuffle questions
+    // Clone and shuffle questions, and shuffle their options within each question
     activeStage = {
         ...stage,
-        questions: shuffleArray([...stage.questions])
+        questions: shuffleArray([...stage.questions]).map(q => {
+            const questionClone = { ...q, options: [...q.options] };
+
+            // Shuffle options if there are multiple
+            if (questionClone.options && questionClone.options.length > 1) {
+                const correctText = questionClone.options[questionClone.correctIndex];
+                shuffleArray(questionClone.options);
+                questionClone.correctIndex = questionClone.options.indexOf(correctText);
+            }
+
+            return questionClone;
+        })
     };
     currentQuestionIndex = 0;
     stageStartTime = Date.now();
@@ -216,7 +227,9 @@ function renderQuestion() {
 
         // Specific styling for types
         if (question.type === 'true_false') {
-            btn.classList.add(idx === 0 ? 'btn-true' : 'btn-false');
+            // Apply correct styling based on text content since index might be shuffled
+            if (opt.includes('صح')) btn.classList.add('btn-true');
+            if (opt.includes('خطأ')) btn.classList.add('btn-false');
         }
 
         btn.textContent = opt;
