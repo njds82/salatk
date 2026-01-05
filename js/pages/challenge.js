@@ -48,10 +48,12 @@ async function renderChallengePage(skipFetch = false) {
         stagesHtml += `
             <div class="challenge-card ${statusClass}" onclick="window.handleStageClick(${stage.id})" data-id="${stage.id}">
                 <div class="card-icon">${icon}</div>
-                <h3 class="card-title">${stage.title}</h3>
-                <p class="card-status">
-                    ${isLocked ? 'مغلق' : (isCompleted ? 'مكتمل' : 'ابدأ التحدي')}
-                </p>
+                <div class="card-content">
+                    <h3 class="card-title">${stage.title}</h3>
+                    <p class="card-status">
+                        ${isLocked ? 'مغلق' : (isCompleted ? 'مكتمل' : 'ابدأ التحدي')}
+                    </p>
+                </div>
             </div>
         `;
     });
