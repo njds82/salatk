@@ -122,6 +122,37 @@ async function renderSettingsPage() {
             </div>
         </div>
         
+        <!-- Referral System -->
+        <div class="card" style="margin-bottom: var(--spacing-lg); border: 2px solid var(--color-success); background: linear-gradient(135deg, hsla(145, 77%, 70%, 0.1), hsla(145, 47%, 55%, 0.1));">
+            <h3 style="margin-bottom: var(--spacing-md); color: var(--color-success);">${t('referral_section_title')}</h3>
+            
+            <div style="background: var(--color-bg-elevated); padding: var(--spacing-md); border-radius: 12px; margin-bottom: var(--spacing-md); text-align: center;">
+                <p style="margin: 0 0 8px 0; font-size: 0.9em; color: var(--color-text-secondary);">${t('your_referral_code')}</p>
+                <div style="display: flex; align-items: center; justify-content: center; gap: var(--spacing-sm);">
+                    <div style="font-size: 1.8em; font-weight: bold; color: var(--color-primary); letter-spacing: 2px; padding: 4px 12px; background: var(--color-bg-primary); border-radius: 8px; border: 1px dashed var(--color-primary);">
+                        ${profile?.referral_code || '------'}
+                    </div>
+                    <button class="btn btn-secondary" onclick="copyReferralCode('${profile?.referral_code || ''}')" style="padding: 8px;">
+                        📋
+                    </button>
+                </div>
+                <p style="margin: 12px 0 0 0; font-size: 0.8em; color: var(--color-text-tertiary);">${t('referral_code_hint')}</p>
+            </div>
+
+            ${!profile?.referred_by ? `
+                <div style="background: var(--color-bg-elevated); padding: var(--spacing-md); border-radius: 12px;">
+                    <label style="display: block; font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 8px;">${t('enter_referral_code')}</label>
+                    <div style="display: flex; gap: var(--spacing-sm);">
+                        <input type="text" id="referralCodeInput" maxlength="6" 
+                               style="flex: 1; padding: 10px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-bg-primary); color: var(--color-text-primary); text-transform: uppercase; text-align: center; font-weight: bold; letter-spacing: 2px;">
+                        <button class="btn btn-primary" onclick="handleApplyReferralCode()">
+                            ${t('apply_code_button')}
+                        </button>
+                    </div>
+                </div>
+            ` : ''}
+        </div>
+        
         <!-- Theme Settings -->
         <div class="card" style="margin-bottom: var(--spacing-lg);">
             <h3 style="margin-bottom: var(--spacing-md);">${t('theme')}</h3>
@@ -265,6 +296,13 @@ async function renderSettingsPage() {
             <a href="https://salatk-app.pages.dev/" target="_blank" class="btn btn-primary" style="display: inline-block; text-decoration: none;">
                 🌐 salatk-app.pages.dev
             </a>
+        </div>
+
+        <!-- Share App -->
+        <div style="margin-top: var(--spacing-lg); margin-bottom: var(--spacing-xl); text-align: center;">
+            <button class="btn btn-primary" onclick="handleShareApp('${profile?.referral_code || ''}')" style="width: 100%; padding: 16px; font-size: 1.1em; border-radius: 50px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);">
+                📢 ${t('share_app_button')}
+            </button>
         </div>
     `;
 
@@ -532,6 +570,107 @@ async function updateAccountStats() {
 // Calculate prayer streak
 async function calculatePrayerStreak() {
     return await PrayerService.getPrayerStreak();
+}
+
+
+// Referral system functions
+async function handleApplyReferralCode() {
+    const input = document.getElementById('referralCodeInput');
+    const code = input?.value?.trim()?.toUpperCase();
+
+    if (!code || code.length !== 6) {
+        showToast(t('error_invalid_input'), 'error');
+        return;
+    }
+
+    try {
+        const user = await AuthManager.getCurrentUser();
+        const profile = await AuthManager.getProfile();
+
+        if (profile.referral_code === code) {
+            showToast(t('error_own_code'), 'error');
+            return;
+        }
+
+        if (profile.referred_by) {
+            showToast(t('error_already_referred'), 'error');
+            return;
+        }
+
+        showToast(t('loading_auth'), 'info');
+
+        // Find referrer
+        const { data: referrer, error: fetchError } = await window.supabaseClient
+            .from('profiles')
+            .select('id, referral_code')
+            .eq('referral_code', code)
+            .maybeSingle();
+
+        if (fetchError || !referrer) {
+            showToast(t('error_invalid_code'), 'error');
+            return;
+        }
+
+        // 1. Update current profile with referred_by
+        const { error: updateError } = await window.supabaseClient
+            .from('profiles')
+            .update({ referred_by: referrer.id })
+            .eq('id', user.id);
+
+        if (updateError) throw updateError;
+
+        // 2. Award points to current user
+        await window.PointsService.addPoints(7, t('referral_section_title'));
+
+        // 3. Award points to referrer
+        const { error: pointsError } = await window.supabaseClient
+            .from('points_history')
+            .insert({
+                id: crypto.randomUUID(),
+                user_id: referrer.id,
+                amount: 7,
+                reason: t('referral_section_title') + ' (Referrer reward)',
+                recorded_at: new Date().toISOString()
+            });
+
+        if (pointsError) console.error('Failed to award points to referrer:', pointsError);
+
+        showToast(t('referral_code_applied'), 'success');
+
+        // Refresh page to hide input
+        renderPage('settings', true);
+
+    } catch (error) {
+        console.error('Error applying referral code:', error);
+        showToast(t('error_general'), 'error');
+    }
+}
+
+function copyReferralCode(code) {
+    if (!code) return;
+    navigator.clipboard.writeText(code).then(() => {
+        showToast(t('copy_success') || 'Copied!', 'success');
+    }).catch(() => {
+        showToast('Failed to copy', 'error');
+    });
+}
+
+function handleShareApp(code) {
+    const shareMessage = t('share_message').replace('{code}', code || '------');
+
+    if (navigator.share) {
+        navigator.share({
+            title: t('app_name'),
+            text: shareMessage,
+            url: 'https://salatk-app.pages.dev/'
+        }).catch(err => {
+            if (err.name !== 'AbortError') console.error(err);
+        });
+    } else {
+        navigator.clipboard.writeText(shareMessage).then(() => {
+            showToast(t('copy_success') || 'Copied!', 'success');
+        });
+    }
 }
 
 // Update stats when page loads
