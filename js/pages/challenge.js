@@ -371,28 +371,56 @@ async function finishStage(success) {
 }
 
 async function awardPoints(stageId) {
-    if (!window.PointsService) return false;
+    if (!window.supabaseClient || !window.PointsService) return false;
 
-    // Add points
-    const success = await window.PointsService.addPoints(3, `challenge_stage_${stageId}`);
+    const reason = `challenge_stage_${stageId}`;
+    console.log('Attempting to award points for:', reason);
+
+    // 1. Try to add points
+    let success = await window.PointsService.addPoints(3, reason);
+    console.log('PointsService.addPoints result:', success);
+
+    // 2. If failed, check if we already have these points (Duplicate prevention/Recovery)
+    if (!success) {
+        console.log('Points addition failed. Checking if points were already awarded...');
+        const session = await window.AuthManager.getSession();
+        if (session) {
+            const { data } = await window.supabaseClient
+                .from('points_history')
+                .select('id')
+                .eq('user_id', session.user.id)
+                .eq('reason', reason)
+                .maybeSingle();
+
+            if (data) {
+                console.log('Points already exist for this stage. Proceeding as success.');
+                success = true;
+            } else {
+                console.error('Points do not exist and adding failed.');
+            }
+        }
+    }
 
     if (success) {
-        // Save progress to profiles only if points were successfully added
-        if (window.supabaseClient) {
-            const session = await window.AuthManager.getSession();
-            if (session) {
-                const { error } = await window.supabaseClient
-                    .from('profiles')
-                    .update({ last_completed_stage: stageId })
-                    .eq('id', session.user.id);
+        // Save progress to profiles
+        const session = await window.AuthManager.getSession();
+        if (session) {
+            console.log('Updating profile last_completed_stage to:', stageId);
+            const { error } = await window.supabaseClient
+                .from('profiles')
+                .update({ last_completed_stage: stageId })
+                .eq('id', session.user.id);
 
-                if (error) {
-                    console.error('Error saving progress:', error);
-                    // We still return true because points were awarded, 
-                    // progress sync might resolve next time or we can just proceed.
-                    // Ideally we might want to rollback points, but that's complex.
-                }
+            if (error) {
+                console.error('Error saving progress to profile:', error);
+                // We return true because points are verified/added. 
+                // The profile update failing is sad but we should let the user continue locally at least.
+            } else {
+                console.log('Profile updated successfully.');
             }
+
+            // Force refresh local profile/state if needed
+            lastCompletedStageId = stageId;
         }
         return true;
     }
