@@ -1965,6 +1965,12 @@ body.auth-mode {
     background: var(--color-bg-elevated);
 }
 
+.option-btn.selected {
+    border-color: var(--color-primary);
+    background: var(--color-bg-elevated);
+    box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.2);
+}
+
 .option-btn.correct {
     background: #10B981;
     /* Success Green */

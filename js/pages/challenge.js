@@ -189,21 +189,70 @@ function renderQuestion() {
         // Specific styling for types
         if (question.type === 'true_false') {
             btn.classList.add(idx === 0 ? 'btn-true' : 'btn-false');
-            // If text is purely generic, maybe add icons?
-            // But content usually "صح" or "خطأ"
         }
 
         btn.textContent = opt;
-        btn.onclick = () => handleAnswer(idx);
+        btn.onclick = () => selectOption(idx);
         optionsContainer.appendChild(btn);
     });
+
+    // Add Confirm Button if not exists in footer, or just show it
+    let confirmBtn = document.getElementById('confirm-btn');
+    if (!confirmBtn) {
+        const footer = document.querySelector('.quiz-footer');
+        // Clear existing footer content first to avoid duplicates or old buttons
+        footer.innerHTML = '<button class="btn btn-secondary" onclick="window.closeQuizModal()">خروج</button>';
+
+        confirmBtn = document.createElement('button');
+        confirmBtn.id = 'confirm-btn';
+        confirmBtn.className = 'btn btn-primary';
+        confirmBtn.textContent = 'تأكيد الإجابة';
+        confirmBtn.style.display = 'none'; // Hidden initially
+        confirmBtn.style.marginRight = '10px';
+        confirmBtn.onclick = confirmAnswer;
+        footer.appendChild(confirmBtn);
+    } else {
+        confirmBtn.style.display = 'none';
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'تأكيد الإجابة';
+    }
 }
 
+let selectedOptionIndex = null;
 
+function selectOption(index) {
+    selectedOptionIndex = index;
+    const options = document.querySelectorAll('.option-btn');
+    options.forEach((btn, idx) => {
+        btn.classList.remove('selected');
+        if (idx === index) btn.classList.add('selected');
+    });
 
-async function handleAnswer(selectedIndex) {
+    const question = activeStage.questions[currentQuestionIndex];
+    // Preview fill blank
+    if (question.type === 'fill_blank') {
+        const blankSpot = document.getElementById('blank-spot');
+        if (blankSpot) {
+            blankSpot.textContent = question.options[index];
+            blankSpot.classList.add('filled');
+            blankSpot.classList.remove('success', 'error'); // Reset status colors
+        }
+    }
+
+    // Show Confirm Button
+    const confirmBtn = document.getElementById('confirm-btn');
+    if (confirmBtn) confirmBtn.style.display = 'inline-block';
+}
+
+async function confirmAnswer() {
+    if (selectedOptionIndex === null) return;
+
+    const confirmBtn = document.getElementById('confirm-btn');
+    confirmBtn.disabled = true; // Prevent double click
+
     const question = activeStage.questions[currentQuestionIndex];
     const options = document.querySelectorAll('.option-btn');
+    const selectedIndex = selectedOptionIndex;
 
     // Disable all buttons
     options.forEach(btn => btn.disabled = true);
@@ -212,24 +261,26 @@ async function handleAnswer(selectedIndex) {
         // Correct
         options[selectedIndex].classList.add('correct');
 
-        // Fill blank visual
+        // Fill blank visual final state
         if (question.type === 'fill_blank') {
             const blankSpot = document.getElementById('blank-spot');
             if (blankSpot) {
-                blankSpot.textContent = question.options[selectedIndex];
-                blankSpot.classList.add('filled', 'success');
+                blankSpot.classList.add('success');
             }
         }
+
+        confirmBtn.textContent = 'إجابة صحيحة!';
 
         // Wait and go next
         setTimeout(() => {
             currentQuestionIndex++;
+            selectedOptionIndex = null; // Reset selection
             if (currentQuestionIndex < activeStage.questions.length) {
                 renderQuestion();
             } else {
                 finishStage(true);
             }
-        }, 1200);
+        }, 1500);
     } else {
         // Wrong
         options[selectedIndex].classList.add('wrong');
@@ -240,16 +291,21 @@ async function handleAnswer(selectedIndex) {
             const blankSpot = document.getElementById('blank-spot');
             if (blankSpot) {
                 blankSpot.textContent = question.options[question.correctIndex];
-                blankSpot.classList.add('filled', 'error');
+                blankSpot.classList.remove('success');
+                blankSpot.classList.add('error');
             }
         }
+
+        confirmBtn.textContent = 'إجابة خاطئة';
+        confirmBtn.classList.replace('btn-primary', 'btn-danger');
 
         // Wait and fail stage
         setTimeout(() => {
             finishStage(false);
-        }, 2000);
+        }, 2500);
     }
 }
+
 
 async function finishStage(success) {
     window.closeQuizModal();
