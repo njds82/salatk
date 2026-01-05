@@ -94,18 +94,28 @@ async function renderChallengePage(skipFetch = false) {
 }
 
 async function fetchUserProgress() {
-    if (!window.supabaseClient) return;
+    if (!window.supabaseClient) {
+        console.warn('Supabase client not available for progress fetch');
+        return;
+    }
     const session = await window.AuthManager.getSession();
-    if (!session) return;
+    if (!session) {
+        console.log('No session, cannot fetch progress');
+        return;
+    }
 
     try {
+        console.log('Fetching user progress for challenge...');
         const { data, error } = await window.supabaseClient
             .from('profiles')
             .select('last_completed_stage')
             .eq('id', session.user.id)
             .single();
 
+        if (error) throw error;
+
         if (data) {
+            console.log('User progress fetched:', data);
             lastCompletedStageId = data.last_completed_stage || 0;
         }
     } catch (e) {
@@ -226,6 +236,7 @@ function renderQuestion() {
     } else {
         confirmBtn.style.display = 'none';
         confirmBtn.disabled = false;
+        confirmBtn.className = 'btn btn-primary'; // Reset classes (remove btn-danger if present)
         confirmBtn.textContent = 'تأكيد الإجابة';
     }
 }
@@ -325,12 +336,15 @@ async function confirmAnswer() {
 
 
 async function finishStage(success) {
+    console.log('finishStage called', { success, stageId: activeStage?.id, lastCompleted: lastCompletedStageId });
     window.closeQuizModal();
 
     if (success) {
         // If this is a new completion (not replay of old one)
         if (activeStage.id > lastCompletedStageId) {
+            console.log('New stage completion detected. Awarding points...');
             const pointsAwarded = await awardPoints(activeStage.id);
+            console.log('Points awarded result:', pointsAwarded);
 
             if (pointsAwarded) {
                 lastCompletedStageId = activeStage.id;
@@ -343,10 +357,12 @@ async function finishStage(success) {
 
                 showToast(`مبروك! أكملت المرحلة وحصلت على 3 نقاط`, 'success');
             } else {
+                console.error('Points awarding failed');
                 showToast('تعذر احتساب النقاط. يرجى التحقق من الاتصال والمحاولة مرة أخرى.', 'error');
                 // Do NOT update lastCompletedStageId so user can retry
             }
         } else {
+            console.log('Stage already completed previously.');
             showToast(`أحسنت! أكملت المرحلة (تم احتساب النقاط سابقاً)`, 'success');
         }
     } else {
