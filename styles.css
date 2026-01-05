@@ -1210,6 +1210,7 @@ body.auth-mode {
     margin-bottom: var(--spacing-xs);
     background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
@@ -1900,11 +1901,15 @@ body.auth-mode {
     background: var(--color-bg-card);
     width: 90%;
     max-width: 500px;
+    max-height: 90vh;
     border-radius: 1.5rem;
     padding: 2rem;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
     animation: slideUp 0.3s ease-out;
     text-align: center;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
 }
 
 @keyframes slideUp {
@@ -1931,6 +1936,12 @@ body.auth-mode {
 .quiz-title {
     font-weight: bold;
     color: var(--color-primary);
+}
+
+.quiz-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem 0;
 }
 
 .question-text {
@@ -1983,6 +1994,13 @@ body.auth-mode {
     /* Danger Red */
     color: white;
     border-color: #EF4444;
+}
+
+.quiz-footer {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: auto;
+    padding-top: 1rem;
 }
 
 .quiz-footer button {
@@ -2056,4 +2074,43 @@ body.auth-mode {
     min-width: 120px;
     padding: 0.75rem 1.5rem;
     border-radius: 2rem;
+}
+
+/* Mobile Responsive for Quiz Modal */
+@media (max-width: 768px) {
+    .quiz-content {
+        width: 95%;
+        padding: 1.25rem;
+        max-height: 85vh;
+    }
+
+    .quiz-header {
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.75rem;
+    }
+
+    .question-text {
+        font-size: 1.1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .options-grid {
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .option-btn {
+        padding: 0.875rem;
+        font-size: 0.95rem;
+    }
+
+    .quiz-footer {
+        padding-top: 0.75rem;
+        gap: 0.5rem;
+    }
+
+    .quiz-footer button {
+        padding: 0.625rem 1rem;
+        font-size: 0.9rem;
+    }
 }
