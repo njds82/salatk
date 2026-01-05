@@ -293,6 +293,19 @@ const translations = {
         short_day: 'ي',
         short_month: 'ش',
         short_year: 'س',
+
+        // Referral System
+        referral_section_title: 'نظام المشاركة',
+        your_referral_code: 'كود المشاركة الخاص بك',
+        referral_code_hint: 'شارك كودك مع أصدقائك واكسب 7 نقاط لكل منكما!',
+        enter_referral_code: 'أدخل كود صديق',
+        apply_code_button: 'تفعيل الكود',
+        referral_code_applied: 'تم تفعيل الكود بنجاح! حصلت أنت وصديقك على 7 نقاط',
+        error_already_referred: 'لقد قمت بالفعل باستخدام كود مشاركة من قبل',
+        error_own_code: 'لا يمكنك استخدام كودك الخاص',
+        error_invalid_code: 'هذا الكود غير صحيح',
+        share_app_button: 'مشاركة التطبيق',
+        share_message: 'حمل تطبيق صلاتك من هنا واكسب 7 نقاط باستخدام كودي: {code} \n https://salatk-app.pages.dev/',
     },
 
     en: {
@@ -585,6 +598,19 @@ const translations = {
         short_day: 'd',
         short_month: 'm',
         short_year: 'y',
+
+        // Referral System
+        referral_section_title: 'Referral System',
+        your_referral_code: 'Your Referral Code',
+        referral_code_hint: 'Share your code with friends and both of you get 7 points!',
+        enter_referral_code: "Enter Friend's Code",
+        apply_code_button: 'Apply Code',
+        referral_code_applied: 'Code applied successfully! You and your friend got 7 points',
+        error_already_referred: 'You have already used a referral code',
+        error_own_code: 'You cannot use your own code',
+        error_invalid_code: 'This code is invalid',
+        share_app_button: 'Share App',
+        share_message: 'Download Salatk app and get 7 points using my code: {code} \n https://salatk-app.pages.dev/',
     }
 };
 
