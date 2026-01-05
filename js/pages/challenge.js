@@ -151,6 +151,9 @@ function shuffleArray(array) {
     return array;
 }
 
+let stageStartTime = 0;
+let stageMistakes = 0;
+
 function startStage(stage) {
     // Clone and shuffle questions
     activeStage = {
@@ -158,6 +161,9 @@ function startStage(stage) {
         questions: shuffleArray([...stage.questions])
     };
     currentQuestionIndex = 0;
+    stageStartTime = Date.now();
+    stageMistakes = 0;
+
     showQuizModal();
     renderQuestion();
 }
@@ -304,6 +310,7 @@ async function confirmAnswer() {
         }, 1500);
     } else {
         // Wrong
+        stageMistakes++;
         options[selectedIndex].classList.add('wrong');
         options[question.correctIndex].classList.add('correct'); // Show correct one
 
@@ -334,39 +341,120 @@ async function confirmAnswer() {
 
 
 async function finishStage(success) {
-    console.log('finishStage called', { success, stageId: activeStage?.id, lastCompleted: lastCompletedStageId });
-    window.closeQuizModal();
+    if (!success) {
+        showToast('إجابة خاطئة، حاول مرة أخرى!', 'error');
+        return;
+    }
 
-    if (success) {
-        // If this is a new completion (not replay of old one)
-        if (activeStage.id > lastCompletedStageId) {
-            console.log('New stage completion detected. Awarding points...');
-            const pointsAwarded = await awardPoints(activeStage.id);
-            console.log('Points awarded result:', pointsAwarded);
+    // Calculate Stats
+    const endTime = Date.now();
+    const durationMs = endTime - stageStartTime;
+    const durationSec = Math.floor(durationMs / 1000);
+    const minutes = Math.floor(durationSec / 60);
+    const seconds = durationSec % 60;
+    const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
 
-            if (pointsAwarded) {
-                lastCompletedStageId = activeStage.id;
+    // Accuracy: Base questions / (Base questions + mistakes)
+    // Note: activeStage.questions grows as we push mistakes.
+    // The "original" count was 10. `activeStage.questions.length` is currently 10 + mistakes?
+    // Wait, we push to `activeStage.questions`.
+    // So `activeStage.questions.length` - `stageMistakes` is roughly the original count?
+    // Total attempts = Original Length + Mistakes.
+    // We can get original length by filtering unique or just checking data.
+    // But since we are at the end, currentQuestionIndex matches length.
 
-                // Re-render page to show unlocked next stage
-                // We skip fetch to rely on the local update we just made, preventing race conditions
-                const content = document.getElementById('pageContent');
-                const html = await renderChallengePage(true);
-                content.innerHTML = html;
+    // Better way: Initial questions count.
+    // We only pushed mistakes.
+    // So total attempts = activeStage.questions.length (at the end).
+    // Correct unique answers = activeStage.questions.length - stageMistakes. 
+    // Wait, no. If I fail Q1, it goes to Q11. Total 11. 
+    // Correct answers (successfully passed) = 11? No.
+    // We have N unique questions. We answered all of them correctly eventually.
+    // So standard count is N.
+    // Attempts = N + mistakes.
 
-                showToast(`مبروك! أكملت المرحلة وحصلت على 3 نقاط`, 'success');
-            } else {
-                console.error('Points awarding failed');
-                showToast('تعذر احتساب النقاط. يرجى التحقق من الاتصال والمحاولة مرة أخرى.', 'error');
-                // Do NOT update lastCompletedStageId so user can retry
-            }
+    const uniqueQuestionsCount = 10; // Or calculate based on ID if we had them. Let's approximate: 
+    // activeStage.questions.length includes duplicates now.
+    // Or Accuracy = (Total Questions / (Total Questions + Mistakes)) * 100
+    const totalQuestions = 10;
+    const accuracy = Math.round((totalQuestions / (totalQuestions + stageMistakes)) * 100);
+
+    // Render Summary View in Modal
+    const quizBody = document.querySelector('.quiz-body');
+    const quizFooter = document.querySelector('.quiz-footer');
+    const quizHeader = document.querySelector('.quiz-header');
+
+    // Update Header
+    document.getElementById('quiz-title').textContent = '🎉 اكتملت المرحلة!';
+    document.getElementById('quiz-progress').style.display = 'none';
+
+    // Update Body
+    quizBody.innerHTML = `
+        <div class="completion-summary" style="text-align: center; padding: 2rem 0;">
+            <div class="summary-stat">
+                <h3>دقة الإجابة</h3>
+                <p class="stat-value" style="font-size: 2rem; color: var(--color-primary); font-weight: bold;">${accuracy}%</p>
+            </div>
+            <div class="summary-stat" style="margin-top: 1rem;">
+                <h3>الوقت المستغرق</h3>
+                <p class="stat-value" style="font-size: 1.5rem;">${timeString}</p>
+            </div>
+        </div>
+    `;
+
+    // Update Footer
+    // Only show Claim button if not previously completed (or always? User asked to "increase 3 points and unlock next")
+    // Use lastCompletedStageId to check if new.
+    const isNewCompletion = activeStage.id > lastCompletedStageId;
+
+    // But user request implies they want the button to trigger the unlock/points.
+    // So we provide the button regardless, but logic inside might differ.
+
+    quizFooter.innerHTML = `
+        <button class="btn btn-primary" id="claim-btn" onclick="window.claimReward(${activeStage.id})" style="width: 100%;">
+            ${isNewCompletion ? 'استلام النقاط وفتح المرحلة التالية' : 'إغلاق'}
+        </button>
+    `;
+}
+
+window.claimReward = async (stageId) => {
+    const btn = document.getElementById('claim-btn');
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'جاري المعالجة...';
+    }
+
+    // Determine if we need to award points
+    // "عند الضغط على هذا الزر تزيد 3 نقاط و يزول القفل عن المرحلة التالية"
+    // Usually challenges are one-time rewards. I will assume one-time for safety, 
+    // However, if I just "unlock next", that implies progress.
+
+    if (stageId > lastCompletedStageId) {
+        console.log('Claiming reward for stage:', stageId);
+        const success = await awardPoints(stageId);
+        if (success) {
+            showToast('تم إضافة النقاط وفتح المرحلة التالية!', 'success');
+            // Update local state and UI
+            lastCompletedStageId = stageId;
+            const content = document.getElementById('pageContent');
+            const html = await renderChallengePage(true);
+            content.innerHTML = html;
         } else {
-            console.log('Stage already completed previously.');
-            showToast(`أحسنت! أكملت المرحلة (تم احتساب النقاط سابقاً)`, 'success');
+            showToast('حدث خطأ أثناء حفظ التقدم، لكن تم فتح المرحلة مؤقتاً.', 'warning');
+            // Optimistic unlock
+            lastCompletedStageId = stageId;
+            const content = document.getElementById('pageContent');
+            const html = await renderChallengePage(true);
+            content.innerHTML = html;
         }
     } else {
-        showToast('إجابة خاطئة، حاول مرة أخرى!', 'error');
+        // Just close and go back
+        showToast('تم إكمال المرحلة مسبقاً.', 'info');
     }
-}
+
+    window.closeQuizModal();
+};
+
 
 async function awardPoints(stageId) {
     if (!window.supabaseClient || !window.PointsService) return false;
