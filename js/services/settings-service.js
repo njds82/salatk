@@ -3,12 +3,22 @@
 // ========================================
 
 const SettingsService = {
+    _cache: null,
+
     // Get all settings as an object
     async getSettings() {
-        if (!window.supabaseClient) return this.getDefaultSettings();
+        if (this._cache) return this._cache;
+
+        if (!window.supabaseClient) {
+            this._cache = this.getDefaultSettings();
+            return this._cache;
+        }
 
         const session = await window.AuthManager.getSession();
-        if (!session) return this.getDefaultSettings();
+        if (!session) {
+            this._cache = this.getDefaultSettings();
+            return this._cache;
+        }
 
         try {
             const { data, error } = await withTimeout(
@@ -22,7 +32,7 @@ const SettingsService = {
             );
 
             if (data) {
-                return {
+                this._cache = {
                     language: data.language || 'ar',
                     theme: data.theme || 'light',
                     calculationMethod: data.calculation_method || 'UmmAlQura',
@@ -30,12 +40,14 @@ const SettingsService = {
                     lastVisit: data.last_visit || new Date().toISOString().split('T')[0],
                     initialized: data.initialized_at || Date.now()
                 };
+                return this._cache;
             }
         } catch (e) {
             console.error('SettingsService: Failed to fetch cloud settings', e);
         }
 
-        return this.getDefaultSettings();
+        this._cache = this.getDefaultSettings();
+        return this._cache;
     },
 
     getDefaultSettings() {
@@ -57,13 +69,19 @@ const SettingsService = {
 
     // Set setting
     async set(key, value) {
-        if (!window.supabaseClient) return;
+        // Update cache immediately (Optimistic)
+        if (!this._cache) await this.getSettings();
+        this._cache[key] = value;
+        this.applySettings({ [key]: value });
+
+        if (!window.supabaseClient) {
+            localStorage.setItem(`salatk_${key}`, value);
+            return;
+        }
 
         const session = await window.AuthManager.getSession();
         if (!session) {
-            // If not logged in, we only update localStorage for immediate UI feedback
             localStorage.setItem(`salatk_${key}`, value);
-            this.applySettings({ [key]: value });
             return;
         }
 
@@ -83,7 +101,6 @@ const SettingsService = {
                     window.supabaseClient.from('user_settings').upsert(updates),
                     5000
                 );
-                this.applySettings({ [key]: value });
 
                 // If calculation/madhab changed, clear prayer cache
                 if (key === 'calculationMethod' || key === 'madhab') {
@@ -96,7 +113,6 @@ const SettingsService = {
     },
 
     async init() {
-        // Load initial theme/lang to avoid FOUC (Flash of Unstyled Content) if possible
         const settings = await this.getSettings();
         this.applySettings(settings);
     },
@@ -107,11 +123,14 @@ const SettingsService = {
             document.documentElement.setAttribute('data-theme', settings.theme);
             localStorage.setItem('salatk_theme', settings.theme);
 
-            // Update theme icon if on page
             const sunIcon = document.querySelector('.sun-icon');
             const moonIcon = document.querySelector('.moon-icon');
+
+            const darkThemes = ['dark', 'midnight', 'nightsky', 'darkstars', 'metalknight'];
+            const isDark = darkThemes.includes(settings.theme);
+
             if (sunIcon && moonIcon) {
-                if (settings.theme === 'dark') {
+                if (isDark) {
                     sunIcon.style.display = 'none';
                     moonIcon.style.display = 'block';
                 } else {

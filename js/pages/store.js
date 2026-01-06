@@ -92,31 +92,32 @@ async function renderStorePage() {
         const name = t(theme.nameKey) || theme.nameKey;
         const desc = t(theme.descKey) || theme.descKey;
 
+        // Use flexbox to ensure the footer (buttons) stays at the bottom
         html += `
-            <div class="card theme-card ${isActive ? 'active' : ''}" style="overflow: hidden; padding: 0; border: ${isActive ? '2px solid var(--color-primary)' : '1px solid var(--color-border)'}">
-                <div style="height: 100px; background: ${theme.preview}; position: relative;">
-                    ${isActive ? `<div style="position: absolute; top: 8px; right: 8px; background: var(--color-primary); color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.75em;">${t('prayer_done')}</div>` : ''}
+            <div class="card theme-card ${isActive ? 'active' : ''}" style="overflow: hidden; padding: 0; border: ${isActive ? '2px solid var(--color-primary)' : '1px solid var(--color-border)'}; display: flex; flex-direction: column;">
+                <div style="height: 100px; background: ${theme.preview}; position: relative; border-bottom: 1px solid var(--color-border);">
+                    ${isActive ? `<div style="position: absolute; top: 8px; right: 8px; background: var(--color-primary); color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.75em; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">${t('prayer_done')}</div>` : ''}
                 </div>
-                <div style="padding: var(--spacing-md);">
+                <div style="padding: var(--spacing-md); flex: 1; display: flex; flex-direction: column;">
                     <h3 style="margin: 0 0 4px 0;">${name}</h3>
-                    <p style="color: var(--color-text-secondary); font-size: 0.85em; margin-bottom: var(--spacing-md); line-height: 1.4;">${desc}</p>
+                    <p style="color: var(--color-text-secondary); font-size: 0.85em; margin-bottom: var(--spacing-md); line-height: 1.4; flex: 1;">${desc}</p>
                     
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: var(--spacing-md); border-top: 1px dashed var(--color-border);">
                         <span style="font-weight: bold; color: ${theme.price === 0 ? 'var(--color-success)' : 'var(--color-warning)'}">
-                            ${theme.price === 0 ? t('free') : `⭐ ${theme.price} ${t('points_short')}`}
+                            ${theme.price === 0 ? t('free') : `⭐ ${theme.price}`}
                         </span>
                         
                         ${isOwned ? `
                             <button class="btn ${isActive ? 'btn-secondary' : 'btn-primary'}" 
                                     onclick="handleApplyStoreTheme('${theme.id}')" 
                                     ${isActive ? 'disabled' : ''}
-                                    style="padding: 6px 16px;">
+                                    style="padding: 6px 16px; font-size: 0.9em;">
                                 ${isActive ? t('owned') : t('apply')}
                             </button>
                         ` : `
                             <button class="btn btn-primary" 
                                     onclick="handlePurchaseTheme('${theme.id}', ${theme.price}, '${name}')" 
-                                    style="padding: 6px 16px;">
+                                    style="padding: 6px 16px; font-size: 0.9em;">
                                 ${t('buy')}
                             </button>
                         `}
@@ -159,16 +160,25 @@ async function getOwnedThemes() {
 }
 
 async function handleApplyStoreTheme(themeId) {
+    // Immediate feedback
+    document.documentElement.setAttribute('data-theme', themeId);
+
+    // Optimistic UI update
+    if (typeof renderPage === 'function') {
+        // We set a temporary flag for the active theme so the re-render picked it up
+        // or we just call renderPage with the themeId override logic.
+        // Actually, renderPage calls renderStorePage which fetches settings.
+        // So we need to update the settings cache in memory if possible.
+        if (window.SettingsService && window.SettingsService._cache) {
+            window.SettingsService._cache.theme = themeId;
+        }
+        renderPage('store', true);
+    }
+
     if (window.handleThemeChange) {
         await handleThemeChange(themeId);
     } else {
-        document.documentElement.setAttribute('data-theme', themeId);
         await SettingsService.set('theme', themeId);
-    }
-
-    // Refresh the store page UI to show active state
-    if (currentPage === 'store') {
-        renderPage('store', true);
     }
 
     showToast(t('theme_updated') || 'Theme updated!', 'success');

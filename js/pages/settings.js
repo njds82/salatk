@@ -312,21 +312,32 @@ async function renderSettingsPage() {
 // Handle theme change
 async function handleThemeChange(theme) {
     document.documentElement.setAttribute('data-theme', theme);
-    await SettingsService.set('theme', theme);
+
+    // Save to localStorage immediately
+    localStorage.setItem('salatk_theme', theme);
+
+    // Background cloud save
+    SettingsService.set('theme', theme);
 
     // Update sun/moon icons
     const sunIcon = document.querySelector('.sun-icon');
     const moonIcon = document.querySelector('.moon-icon');
-    if (theme === 'dark') {
-        sunIcon.style.display = 'none';
-        moonIcon.style.display = 'block';
-    } else {
-        sunIcon.style.display = 'block';
-        moonIcon.style.display = 'none';
+
+    const darkThemes = ['dark', 'midnight', 'nightsky', 'darkstars', 'metalknight'];
+    const isDark = darkThemes.includes(theme);
+
+    if (sunIcon && moonIcon) {
+        if (isDark) {
+            sunIcon.style.display = 'none';
+            moonIcon.style.display = 'block';
+        } else {
+            sunIcon.style.display = 'block';
+            moonIcon.style.display = 'none';
+        }
     }
 
     // Only refresh settings page if we are on it
-    if (currentPage === 'settings') {
+    if (window.currentPage === 'settings') {
         renderPage('settings', true);
     }
 }
@@ -679,5 +690,8 @@ window.addEventListener('pageRendered', (e) => {
         setTimeout(updateAccountStats, 100);
     }
 });
+
+// Expose to window
+window.handleThemeChange = handleThemeChange;
 
 
