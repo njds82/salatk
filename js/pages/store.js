@@ -30,6 +30,13 @@ const THEMES = [
         descKey: 'Deep blue night theme',
         price: 100,
         preview: 'linear-gradient(135deg, #1e3a8a, #1e1b4b)'
+    },
+    {
+        id: 'nightsky',
+        nameKey: 'Night Sky',
+        descKey: 'Sparkling stars night theme',
+        price: 47,
+        preview: 'linear-gradient(135deg, #4c1d95, #2e1065)'
     }
 ];
 
