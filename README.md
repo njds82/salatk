@@ -1,152 +1,150 @@
-# Salatk (صلاتك)
+# Salatk (صلاتك) 🕌
 
-**Salatk** is a comprehensive web application designed to help Muslims manage their daily prayers, track missed prayers (Qada), and build consistent spiritual habits. It features prayer time calculations, gamification elements to encourage consistency, and a persistent tracking system using Supabase.
+**Salatk** هو تطبيق ويب متكامل ومصمم لمساعدتك على الالتزام بالصلوات الخمس، تتبع الصلوات الفائتة (القضاء)، وبناء عادات عبادية مستدامة من خلال نظام تحفيزي (Gamification).
 
-## ✨ Features
+---
 
-- **Prayer Times**: Accurate prayer times calculation based on user location (automatic or manual).
-- **Prayer Tracking**: Log daily prayers (Fajr, Dhuhr, Asr, Maghrib, Isha) and Sunnah prayers.
-- **Qada (Missed) Prayers**: Track and manage missed prayers with an easy-to-use counter system.
-- **Habit Tracker**: Custom habit tracking (e.g., Reading Quran, Athkar) with daily logging.
-- **Gamification**: Earn points for on-time prayers and habit completion. View your rank on the **Leaderboard**.
-- **Multi-language Support**: Fully localized for **Arabic** and **English**.
-- **Dark/Light Mode**: User-configurable themes.
-- **Cloud Sync**: All data is securely stored and synced using **Supabase** (PostgreSQL).
+## 📑 الفهرس (Table of Contents)
+1. [نظرة عامة على المشروع](#نظرة-عامة-على-المشروع)
+2. [هيكل المشروع (Structure)](#هيكل-المشروع)
+3. [دليل البرمجيات (Module Documentation)](#دليل-البرمجيات)
+    - [المديرين (Managers)](#المديرين-managers)
+    - [الخدمات (Services)](#الخدمات-services)
+    - [الأدوات المساعدة (Helpers)](#الأدوات-المساعدة-helpers)
+4. [دليل الصفحات (Page Reference)](#دليل-الصفحات)
+5. [قاعدة البيانات (Database Schema)](#قاعدة-البيانات)
+6. [مسارات العمل (Workflows)](#مسارات-العمل)
+7. [التنصيب والتشغيل (Setup)](#التنصيب-والتشغيل)
 
-## 🛠 Tech Stack
+---
 
-- **Frontend**: Vanilla HTML5, CSS3, JavaScript (ES6+).
-- **Backend/Database**: [Supabase](https://supabase.com/) (PostgreSQL).
-- **Authentication**: Supabase Auth.
-- **Hosting**: Static Web Hosting (can be deployed to Vercel, Netlify, Github Pages, etc.).
+## 🌟 نظرة عامة على المشروع
+يعتمد التطبيق على فلسفة "السحابية أولاً" (Cloud-Only)، حيث يتم تخزين كافة البيانات ومزامنتها لحظياً باستخدام **Supabase**. يتميز التطبيق بواجهة مستخدم عصرية تدعم الوضعين الفاتح والداكن، وتعدد اللغات (العربية والإنجليزية).
 
-## 📂 Project Structure
+---
 
-```
+## 📂 هيكل المشروع
+```text
 salatk/
-├── assets/             # Images, icons, and static assets
-├── components/         # Reusable HTML snippets/components
-├── js/                 # Core JavaScript logic
-│   ├── pages/          # Page-specific logic (home, qada, habits, etc.)
-│   ├── services/       # Business logic (PrayerService, HabitService)
-│   ├── i18n.js         # Internationalization (Translations)
-│   ├── supabaseClient.js # Supabase configuration
-│   └── app.js          # Main application entry point
-├── styles.css          # Global styles and variables
-└── index.html          # Main HTML entry point
+├── assets/             # الصور والأيقونات والملفات الثابتة
+├── components/         # مكونات واجهة المستخدم (Cards, Modals)
+├── js/                 # المنطق البرمجي الأساسي
+│   ├── pages/          # منطق الصفحات (Home, Store, Leaderboard...)
+│   ├── services/       # منطق العمل (Business Logic) والتعامل مع البيانات
+│   ├── i18n.js         # نظام الترجمة واللغات
+│   ├── auth-manager.js # إدارة المصادقة والملف الشخصي
+│   ├── prayer-manager.js # حساب أوقات الصلاة وإدارة الموقع
+│   ├── sync-manager.js  # المزامنة اللحظية مع السحاب
+│   └── app.js          # المتحكم الرئيسي في التطبيق
+└── styles.css          # نظام التصميم والألوان (CSS Variables)
 ```
 
-## 🗄 Database Schema
+---
 
-The application follows a cloud-first approach using Supabase. Below is the detailed schema:
+## 🛠 دليل البرمجيات (Module Documentation)
 
-### `profiles`
-Stores public user information. Linked to `auth.users`.
-- `id` (UUID, PK): References `auth.users`.
-- `username` (Text): Unique display name.
-- `full_name` (Text): User's full name.
-- `email` (Text): User's email.
-- `avatar_url` (Text): URL to user's profile picture.
-- `created_at` / `updated_at`: Timestamps.
+### 🏗 المديرين (Managers)
 
-### `publications` / `locations`
-Stores user location for prayer time calculation.
-- `user_id` (UUID, PK): References `profiles.id`.
-- `latitude` (Float): Location latitude.
-- `longitude` (Float): Location longitude.
-- `is_manual_mode` (Boolean): If custom location is selected.
-- `name` (Text): City/Region name.
+#### 1. `AuthManager` (`js/auth-manager.js`)
+المسؤول عن تسجيل الدخول وإدارة الجلسات.
+- **الدوال الأساسية**:
+    - `signUp(username, password, fullName)`: تسجيل مستخدم جديد.
+    - `signIn(username, password)`: تسجيل الدخول.
+    - `getSession()`: جلب الجلسة الحالية مع معالجة الوقت المستقطع (Timeout).
+    - `getProfile()`: جلب بيانات الملف الشخصي.
 
-### `prayer_records`
-Logs the status of daily prayers.
-- `id` (UUID, PK)
-- `user_id` (UUID): References `profiles.id`.
-- `date` (Date): The date of the record.
-- `fajr`, `dhuhr`, `asr`, `maghrib`, `isha` (Text): Status (e.g., 'completed', 'missed').
-- `sunnah_...` (Boolean): Status of Sunnah prayers.
+#### 2. `PrayerManager` (`js/prayer-manager.js`)
+المسؤول عن حساب المواقيت باستخدام مكتبة `Adhan.js`.
+- **المتغيرات الهامة**:
+    - `cachedTimes`: لتخزين أوقات الصلاة لليوم الحالي لتجنب إعادة الحساب.
+- **الدوال الأساسية**:
+    - `calculatePrayerTimes(lat, long)`: حساب أوقات الصلوات الست (بما فيها الضحى).
+    - `checkAndMarkMissedPrayers()`: فحص تلقائي للصلوات التي انتهى وقتها ولم تُؤدى لإضافتها للقضاء.
 
-### `qada_prayers`
-Tracks the count of missed prayers tracked by the user.
-- `id` (UUID, PK)
-- `user_id` (UUID): References `profiles.id`.
-- `fajr`, `dhuhr`, `asr`, `maghrib`, `isha` (Integer): Count of missed prayers.
-- `last_updated` (Timestamp).
+#### 3. `NotificationManager` (`js/notification-manager.js`)
+إدارة الإشعارات وتنبيهات الأذان.
+- **الدوال الأساسية**:
+    - `scheduleNextPrayer(prayerTimes)`: جدولة إشعار للصلاة القادمة فوراً.
+    - `showNotification(prayerKey)`: إظهار التنبيه للمستخدم (يدعم Service Worker).
 
-### `habits`
-Definitions of habits the user wants to track.
-- `id` (UUID, PK)
-- `user_id` (UUID): References `profiles.id`.
-- `name` (Text): Habit name.
-- `target_days` (Integer): Weekly target (0-7).
-- `is_archived` (Boolean).
+---
 
-### `habit_history`
-Daily logs of habit completions.
-- `id` (UUID, PK)
-- `user_id` (UUID): References `profiles.id`.
-- `habit_id` (UUID): References `habits.id`.
-- `completed_date` (Date): Date of completion.
+### 💼 الخدمات (Services)
 
-### `user_settings`
-User preferences.
-- `user_id` (UUID, PK): References `profiles.id`.
-- `theme` (Text): 'light' or 'dark'.
-- `language` (Text): 'ar' or 'en'.
-- `calculation_method` (Text): Prayer time calculation method (e.g., 'MWL', 'ISNA').
+#### 1. `PrayerService` (`js/services/prayer-service.js`)
+التعامل مع سجلات الصلاة في قاعدة البيانات.
+- **الدوال الأساسية**:
+    - `markPrayer(key, date, status)`: تسجيل صلاة كـ "تمت" أو "فاتت".
+    - `addQada(date, key, rakaat)`: إضافة صلاة لقائمة القضاء.
+    - `getPrayerStreak()`: حساب سلسلة أيام الالتزام المتتالية.
 
-### `points_history`
-Gamification audit log.
-- `id` (Text, PK)
-- `user_id` (UUID): References `profiles.id`.
-- `amount` (SmallInt): Points awarded/deducted.
-- `reason` (Text): Description of action.
-- `recorded_at` (Timestamp).
+#### 2. `PointsService` (`js/services/points-service.js`)
+إدارة نقاط المستخدم (Gamification).
+- **الدوال الأساسية**:
+    - `addPoints(amount, reason, id)`: إضافة أو خصم نقاط (مع منع التكرار باستخدام `id`).
+    - `getTotal()`: جلب إجمالي النقاط من View خاص في قاعدة البيانات.
 
-## 🚀 Getting Started
+#### 3. `SettingsService` (`js/services/settings-service.js`)
+إدارة إعدادات المستخدم (اللغة، الثيم، طريقة الحساب).
+- **الدوال الأساسية**:
+    - `set(key, value)`: حفظ الإعداد في Supabase و LocalStorage.
+    - `applySettings(settings)`: تطبيق الإعدادات برمجياً على واجهة التطبيق.
 
-### Prerequisites
-- A **Supabase** project.
-- A basic web server (e.g., VS Code Live Server, python http.server) or just file access (though some browser features require http/https).
+---
 
-### Installation
+### 🧰 الأدوات المساعدة (Helpers)
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/your-username/salatk.git
-    cd salatk
-    ```
+- **`ui-helpers.js`**: يحتوي على `updatePrayerCard` لتحديث حالة الكرت دون إعادة تحميل الصفحة، ودالة `withTimeout` لضمان استجابة التطبيق عند بطء الشبكة.
+- **`date-utils.js`**: يحتوي على `getHijriDate` لحساب التاريخ الهجري بدقة، و `formatDate` للتعامل مع التواريخ.
+- **`points-manager.js`**: يحتوي على مصفوفة `RANKS` التي تحدد الرتب البرونزية والذهبية وغيرها بناءً على النقاط.
 
-2.  **Environment Setup:**
-    Create a `.env` file (or simply update `js/supabaseClient.js` directly if not using a bundler) with your Supabase credentials.
-    
-    *Note: The current project uses a direct assignment in `js/supabaseClient.js`.*
-    
-    Open `js/supabaseClient.js` and ensure the `supabaseUrl` and `supabaseKey` are correct.
+---
 
-3.  **Run Locally:**
-    Since this is a vanilla JS application, you can serve it using any static file server.
-    
-    **Using Python:**
-    ```bash
-    python3 -m http.server 8000
-    ```
-    
-    **Using Node (http-server):**
-    ```bash
-    npx http-server .
-    ```
+## 📄 دليل الصفحات (Page Reference)
 
-4.  **Open in Browser:**
-    Navigate to `http://localhost:8000` (or the port specified).
+كل صفحة لها دالة `render...Page()` تقوم بتوليد HTML الخاص بها:
+1.  **Daily Prayers**: تعرض مواقيت الصلاة لليوم المختار وتسمح بتسجيل الأداء.
+2.  **Qada Prayers**: تعرض قائمة الصلوات الفائتة وتسمح بأدائها (Make up).
+3.  **Habits**: تتبع العادات (عبادات أو ابتعاد عن المعاصي).
+4.  **Store**: متجر الثيمات (Emerald, Midnight Blue) التي تُشترى بالنقاط.
+5.  **Challenge**: نظام أسئلة وتحديات لاختبار معلومات المستخدم.
+6.  **Leaderboard**: لوحة الصدارة العالمية بين المستخدمين.
 
-## 🌍 Supabase Setup
-This project depends on the following Supabase features:
-- **Authentication**: Enable Email/Password providers.
-- **Database**: Run the migration scripts (found in sql snippets or derived from schema above) to create required tables.
-- **Row Level Security (RLS)**: Ensure RLS is enabled on all tables allowing users to only access their own data.
+---
 
-## 🤝 Contributing
-Contributions are welcome! Please feel free to submit a Pull Request.
+## 🗄 قاعدة البيانات (Database Schema)
 
-## 📄 License
-[MIT](LICENSE)
+### الجداول الأساسية:
+- **`profiles`**: بيانات المستخدم (الاسم، اسم المستخدم، كود الإحالة).
+- **`prayer_records`**: سجل أداء الصلوات اليومي.
+- **`qada_prayers`**: سجل الصلوات الفائتة الفردي.
+- **`habits`**: تعريف العادات لكل مستخدم.
+- **`points_history`**: سجل العمليات على النقاط.
+- **`owned_themes`**: تتبع الثيمات التي اشتراها المستخدم من المتجر.
+
+---
+
+## 🔄 مسارات العمل (Workflows)
+
+### 1. التهيئة (Initialization):
+عند فتح التطبيق، يتم تنفيذ `checkAuthAndInit` التي:
+- تتأكد من وجود جلسة (Session).
+- تجلب الإعدادات والموقع الجغرافي.
+- تحسب أوقات الصلاة وتجدول الإشعارات.
+
+### 2. دورة حياة الصلاة (Prayer Life-cycle):
+- يحين وقت الصلاة -> يظهر إشعار.
+- المستخدم يضغط "تم" -> تضاف نقاط -> يتم تحديث كرت الصلاة السحابي.
+- انتهى وقت الصلاة ولم يضغط المستخدم -> تُضاف آلياً إلى قائمة القضاء.
+
+---
+
+## 🚀 التنصيب والتشغيل
+1. قم بتثبيت ملفات المشروع.
+2. تأكد من إعداد ملف `js/supabaseClient.js` ببيانات مشروعك في Supabase.
+3. قم بتشغيل خادم محلي (مثل Live Server).
+4. تأكد من تفعيل RLS (Row Level Security) في Supabase لضمان أمان البيانات.
+
+---
+
+**Salatk** - نسأل الله أن يتقبل منا ومنكم صالح الأعمال.

@@ -88,6 +88,46 @@
     --glass-border: hsla(222, 47%, 100%, 0.08);
 }
 
+/* Emerald Theme */
+[data-theme="emerald"] {
+    --color-primary: hsl(158, 77%, 36%);
+    --color-primary-light: hsl(158, 84%, 47%);
+    --color-primary-dark: hsl(158, 77%, 26%);
+    --color-secondary: hsl(142, 71%, 45%);
+    --color-accent: hsl(11, 80%, 55%);
+
+    --color-bg-main: hsl(158, 40%, 98%);
+    --color-bg-card: hsla(158, 40%, 100%, 0.9);
+    --color-bg-elevated: hsl(158, 40%, 100%);
+    --color-bg-input: hsl(158, 40%, 96%);
+
+    --color-text-primary: hsl(158, 47%, 11%);
+    --color-text-secondary: hsl(158, 25%, 27%);
+    --color-text-tertiary: hsl(158, 16%, 47%);
+
+    --color-border: hsl(158, 32%, 91%);
+}
+
+/* Midnight Blue Theme */
+[data-theme="midnight"] {
+    --color-primary: hsl(221, 83%, 53%);
+    --color-primary-light: hsl(221, 90%, 65%);
+    --color-primary-dark: hsl(221, 83%, 40%);
+    --color-secondary: hsl(262, 83%, 58%);
+    --color-accent: hsl(330, 81%, 60%);
+
+    --color-bg-main: hsl(222, 47%, 6%);
+    --color-bg-card: hsla(222, 47%, 10%, 0.85);
+    --color-bg-elevated: hsl(222, 47%, 14%);
+    --color-bg-input: hsl(222, 47%, 12%);
+
+    --color-text-primary: hsl(210, 40%, 98%);
+    --color-text-secondary: hsl(215, 20%, 75%);
+    --color-text-tertiary: hsl(215, 15%, 55%);
+
+    --color-border: hsl(222, 47%, 18%);
+}
+
 /* ========================================
    Base Styles
    ======================================== */
@@ -378,6 +418,21 @@ body::after {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: var(--spacing-lg);
+}
+
+.theme-card {
+    transition: all var(--transition-normal);
+    cursor: default;
+}
+
+.theme-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-xl);
+}
+
+.theme-card.active {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 20px rgba(15, 118, 110, 0.2);
 }
 
 /* Prayer Card */

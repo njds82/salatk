@@ -300,6 +300,9 @@ async function renderPage(page, noScroll = false) {
             case 'leaderboard':
                 html = await renderLeaderboardPage();
                 break;
+            case 'store':
+                html = await renderStorePage();
+                break;
             case 'settings':
                 html = await renderSettingsPage();
                 break;
