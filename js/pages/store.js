@@ -37,6 +37,13 @@ const THEMES = [
         descKey: 'Sparkling stars night theme',
         price: 47,
         preview: 'linear-gradient(135deg, #4c1d95, #2e1065)'
+    },
+    {
+        id: 'darkstars',
+        nameKey: 'Dark Stars',
+        descKey: 'Night mode with golden stars',
+        price: 65,
+        preview: 'linear-gradient(135deg, #0f172a, #000000)'
     }
 ];
 
