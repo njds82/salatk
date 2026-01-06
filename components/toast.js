@@ -18,7 +18,7 @@ function showToast(message, type = 'info') {
     // Save to history
     addNotification(message, type);
 
-    // Auto remove after 1 second
+    // Auto remove after 3 seconds
     setTimeout(() => {
         toast.style.opacity = '0';
         toast.style.transform = 'translateY(20px)';
@@ -27,7 +27,7 @@ function showToast(message, type = 'info') {
                 container.removeChild(toast);
             }
         }, 300);
-    }, 1000);
+    }, 3000);
 }
 
 function addNotification(message, type) {

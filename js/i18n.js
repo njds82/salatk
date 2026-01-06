@@ -278,6 +278,7 @@ const translations = {
         syncing_message: 'جاري المزامنة...',
         sync_success: 'تمت المزامنة بنجاح',
         sync_error: 'فشل التزامن',
+        error_general: 'حدث خطأ ما، يرجى المحاولة لاحقاً',
 
         // Leaderboard Errors & Help
         error_login_required: 'يجب تسجيل الدخول لعرض لوحة المتصدرين',
@@ -323,6 +324,10 @@ const translations = {
         insufficient_points: 'عذراً، ليس لديك نقاط كافية لشراء هذا الثيم',
         purchase_success: 'تم شراء الثيم بنجاح! يمكنك الآن تطبيقه',
         purchase_confirm: 'هل أنت متأكد من رغبتك في شراء "{name}" مقابل {price} نقطة؟',
+        Emerald: 'زمردي',
+        'Midnight Blue': 'أزرق منتصف الليل',
+        'Premium emerald green theme': 'ثيم أخضر زمردي فاخر',
+        'Deep blue night theme': 'ثيم أزرق ليلي عميق',
     },
 
     en: {
@@ -600,6 +605,7 @@ const translations = {
         syncing_message: 'Syncing...',
         sync_success: 'Sync complete',
         sync_error: 'Sync failed',
+        error_general: 'Something went wrong, please try again later',
 
         // Leaderboard Errors & Help
         error_login_required: 'You must be logged in to view the leaderboard',
@@ -645,6 +651,10 @@ const translations = {
         insufficient_points: 'Sorry, you don\'t have enough points to buy this theme',
         purchase_success: 'Theme purchased successfully! You can now apply it',
         purchase_confirm: 'Are you sure you want to buy "{name}" for {price} points?',
+        Emerald: 'Emerald',
+        'Midnight Blue': 'Midnight Blue',
+        'Premium emerald green theme': 'Premium emerald green theme',
+        'Deep blue night theme': 'Deep blue night theme',
     }
 };
 

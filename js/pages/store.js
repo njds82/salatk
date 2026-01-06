@@ -147,37 +147,48 @@ async function handleApplyStoreTheme(themeId) {
 }
 
 async function handlePurchaseTheme(themeId, price, themeName) {
-    const totalPoints = await PointsService.getTotal();
-
-    if (totalPoints < price) {
-        showToast(t('insufficient_points'), 'error');
-        return;
-    }
-
-    const confirmed = confirm(t('purchase_confirm').replace('{name}', themeName).replace('{price}', price));
-    if (!confirmed) return;
-
     try {
+        const totalPoints = await PointsService.getTotal();
+
+        if (totalPoints < price) {
+            showToast(t('insufficient_points'), 'error');
+            return;
+        }
+
+        const confirmMsg = t('purchase_confirm').replace('{name}', themeName).replace('{price}', price);
+        const confirmed = confirm(confirmMsg);
+        if (!confirmed) return;
+
+        showToast(t('loading_auth') || 'Processing...', 'info');
+
         const session = await AuthManager.getSession();
-        if (!session) return;
+        if (!session) {
+            showToast(t('error_login_required'), 'error');
+            return;
+        }
 
         // 1. Record ownership
         const { error: purchaseError } = await window.supabaseClient
             .from('owned_themes')
-            .insert({
+            .upsert({
                 user_id: session.user.id,
                 theme_id: themeId
-            });
+            }, { onConflict: 'user_id,theme_id' });
 
         if (purchaseError) throw purchaseError;
 
         // 2. Deduct points
-        await PointsService.addPoints(-price, `Purchase Theme: ${themeName}`);
+        const success = await PointsService.addPoints(-price, `Purchase Theme: ${themeName}`);
+        if (!success) {
+            console.error('Points deduction failed but theme was recorded.');
+        }
 
         showToast(t('purchase_success'), 'success');
 
         // Refresh UI
-        renderPage('store', true);
+        if (typeof renderPage === 'function') {
+            renderPage('store', true);
+        }
     } catch (e) {
         console.error('Purchase failed:', e);
         showToast(t('error_general'), 'error');
