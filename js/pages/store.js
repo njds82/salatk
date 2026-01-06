@@ -40,7 +40,7 @@ const THEMES = [
     },
     {
         id: 'darkstars',
-        nameKey: 'Dark Stars',
+        nameKey: 'Dark Sun',
         descKey: 'Night mode with golden stars',
         price: 65,
         preview: 'linear-gradient(135deg, #0f172a, #000000)'
