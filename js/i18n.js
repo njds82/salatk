@@ -328,10 +328,12 @@ const translations = {
         'Midnight Blue': 'أزرق منتصف الليل',
         'Night Sky': 'سماء الليل',
         'Dark Sun': 'شمس الظلام',
+        'Metal Knight': 'الفارس المعدني',
         'Premium emerald green theme': 'ثيم أخضر زمردي فاخر',
         'Deep blue night theme': 'ثيم أزرق ليلي عميق',
         'Sparkling stars night theme': 'ثيم النجوم المتلألئة والليل الهادئ',
         'Night mode with golden stars': 'الوضع الليلي مع نجوم ذهبية متألقة',
+        'Polished steel and armor theme': 'ثيم الفولاذ المصقول والدروع الحديدية',
     },
 
     en: {
@@ -659,10 +661,12 @@ const translations = {
         'Midnight Blue': 'Midnight Blue',
         'Night Sky': 'Night Sky',
         'Dark Sun': 'Dark Sun',
+        'Metal Knight': 'Metal Knight',
         'Premium emerald green theme': 'Premium emerald green theme',
         'Deep blue night theme': 'Deep blue night theme',
         'Sparkling stars night theme': 'Sparkling stars night theme',
         'Night mode with golden stars': 'Night mode with golden stars',
+        'Polished steel and armor theme': 'Polished steel and armor theme',
     }
 };
 

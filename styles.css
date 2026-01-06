@@ -202,6 +202,33 @@
     --glass-border: hsla(0, 0%, 100%, 0.05);
 }
 
+/* Metal Knight Theme */
+[data-theme="metalknight"] {
+    --color-primary-h: 210;
+    --color-primary-s: 15%;
+    --color-primary-l: 45%;
+    --color-primary: hsl(var(--color-primary-h), var(--color-primary-s), var(--color-primary-l));
+    --color-primary-light: hsl(210, 20%, 60%);
+    --color-primary-dark: hsl(210, 15%, 30%);
+    --color-secondary: hsl(0, 0%, 75%);
+    --color-accent: hsl(190, 80%, 50%);
+
+    --color-bg-main: hsl(210, 10%, 8%);
+    --color-bg-card: hsla(210, 10%, 12%, 0.9);
+    --color-bg-elevated: hsl(210, 10%, 16%);
+    --color-bg-input: hsl(210, 10%, 14%);
+
+    --color-text-primary: hsl(210, 5%, 95%);
+    --color-text-secondary: hsl(210, 5%, 75%);
+    --color-text-tertiary: hsl(210, 5%, 55%);
+
+    --color-border: hsl(210, 10%, 20%);
+    --color-border-focus: var(--color-accent);
+
+    --glass-bg: hsla(210, 10%, 8%, 0.85);
+    --glass-border: hsla(210, 5%, 100%, 0.06);
+}
+
 /* ========================================
    Base Styles
    ======================================== */
