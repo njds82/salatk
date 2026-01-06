@@ -79,6 +79,13 @@ const THEMES = [
         descKey: 'Majestic peaks with warm sunset glow',
         price: 88,
         preview: 'linear-gradient(135deg, #991b1b, #450a0a)'
+    },
+    {
+        id: 'pitchblack',
+        nameKey: 'Pitch Black',
+        descKey: 'Ultimate high-contrast monochrome dark theme',
+        price: 125,
+        preview: 'linear-gradient(135deg, #000000, #333333)'
     }
 ];
 

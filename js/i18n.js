@@ -333,6 +333,7 @@ const translations = {
         'Visual Buzz': 'الضجة البصرية',
         'Antimatter': 'المادة المضادة',
         'Red Mountain': 'الجبل الأحمر',
+        'Pitch Black': 'الظلام الدامس',
         'Premium emerald green theme': 'ثيم أخضر زمردي فاخر',
         'Deep blue night theme': 'ثيم أزرق ليلي عميق',
         'Sparkling stars night theme': 'ثيم النجوم المتلألئة والليل الهادئ',
@@ -342,6 +343,7 @@ const translations = {
         'Vibrant neon theme with energetic vibes': 'ثيم نيون حيوي مليء بالطاقة والحيوية',
         'The absolute dark void theme': 'ثيم الفراغ المظلم المطلق',
         'Majestic peaks with warm sunset glow': 'قمم مهيبة مع توهج الغروب الدافئ',
+        'Ultimate high-contrast monochrome dark theme': 'ثيم الظلام المطلق عالي التباين بالأبيض والأسود',
     },
 
     en: {
@@ -674,6 +676,7 @@ const translations = {
         'Visual Buzz': 'Visual Buzz',
         'Antimatter': 'Antimatter',
         'Red Mountain': 'Red Mountain',
+        'Pitch Black': 'Pitch Black',
         'Premium emerald green theme': 'Premium emerald green theme',
         'Deep blue night theme': 'Deep blue night theme',
         'Sparkling stars night theme': 'Sparkling stars night theme',
@@ -683,6 +686,7 @@ const translations = {
         'Vibrant neon theme with energetic vibes': 'Vibrant neon theme with energetic vibes',
         'The absolute dark void theme': 'The absolute dark void theme',
         'Majestic peaks with warm sunset glow': 'Majestic peaks with warm sunset glow',
+        'Ultimate high-contrast monochrome dark theme': 'Ultimate high-contrast monochrome dark theme',
     }
 };
 
