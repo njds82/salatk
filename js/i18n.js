@@ -330,12 +330,14 @@ const translations = {
         'Dark Sun': 'شمس الظلام',
         'Metal Knight': 'الفارس المعدني',
         'White Marble': 'الرخام الأبيض',
+        'Visual Buzz': 'الضجة البصرية',
         'Premium emerald green theme': 'ثيم أخضر زمردي فاخر',
         'Deep blue night theme': 'ثيم أزرق ليلي عميق',
         'Sparkling stars night theme': 'ثيم النجوم المتلألئة والليل الهادئ',
         'Night mode with golden stars': 'الوضع الليلي مع نجوم ذهبية متألقة',
         'Polished steel and armor theme': 'ثيم الفولاذ المصقول والدروع الحديدية',
         'Elegant white marble with gold accents': 'رخام أبيض فاخر مع لمسات ذهبية',
+        'Vibrant neon theme with energetic vibes': 'ثيم نيون حيوي مليء بالطاقة والحيوية',
     },
 
     en: {
@@ -665,12 +667,14 @@ const translations = {
         'Dark Sun': 'Dark Sun',
         'Metal Knight': 'Metal Knight',
         'White Marble': 'White Marble',
+        'Visual Buzz': 'Visual Buzz',
         'Premium emerald green theme': 'Premium emerald green theme',
         'Deep blue night theme': 'Deep blue night theme',
         'Sparkling stars night theme': 'Sparkling stars night theme',
         'Night mode with golden stars': 'Night mode with golden stars',
         'Polished steel and armor theme': 'Polished steel and armor theme',
         'Elegant white marble with gold accents': 'Elegant white marble with gold accents',
+        'Vibrant neon theme with energetic vibes': 'Vibrant neon theme with energetic vibes',
     }
 };
 

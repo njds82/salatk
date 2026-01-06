@@ -58,6 +58,13 @@ const THEMES = [
         descKey: 'Elegant white marble with gold accents',
         price: 75,
         preview: 'linear-gradient(135deg, #ffffff, #f1f5f9)'
+    },
+    {
+        id: 'visualnoise',
+        nameKey: 'Visual Buzz',
+        descKey: 'Vibrant neon theme with energetic vibes',
+        price: 95,
+        preview: 'linear-gradient(135deg, #ff00ff, #00ffff)'
     }
 ];
 
