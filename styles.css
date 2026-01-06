@@ -257,6 +257,35 @@
     --glass-border: hsla(0, 0%, 0%, 0.04);
 }
 
+/* Visual Noise Theme */
+[data-theme="visualnoise"] {
+    --color-primary-h: 320;
+    --color-primary-s: 90%;
+    --color-primary-l: 55%;
+    --color-primary: hsl(var(--color-primary-h), var(--color-primary-s), var(--color-primary-l));
+    --color-primary-light: hsl(300, 95%, 65%);
+    --color-primary-dark: hsl(330, 90%, 40%);
+    --color-secondary: hsl(180, 100%, 45%);
+    /* Neon Cyan */
+    --color-accent: hsl(60, 100%, 50%);
+    /* Neon Yellow */
+
+    --color-bg-main: hsl(280, 40%, 4%);
+    --color-bg-card: hsla(280, 40%, 8%, 0.85);
+    --color-bg-elevated: hsl(280, 40%, 12%);
+    --color-bg-input: hsl(280, 40%, 10%);
+
+    --color-text-primary: hsl(0, 0%, 100%);
+    --color-text-secondary: hsl(280, 20%, 80%);
+    --color-text-tertiary: hsl(280, 15%, 60%);
+
+    --color-border: hsl(280, 40%, 20%);
+    --color-border-focus: var(--color-secondary);
+
+    --glass-bg: hsla(280, 40%, 4%, 0.7);
+    --glass-border: hsla(320, 90%, 100%, 0.1);
+}
+
 /* ========================================
    Base Styles
    ======================================== */
