@@ -229,6 +229,34 @@
     --glass-border: hsla(210, 5%, 100%, 0.06);
 }
 
+/* White Marble Theme */
+[data-theme="whitemarble"] {
+    --color-primary-h: 215;
+    --color-primary-s: 25%;
+    --color-primary-l: 27%;
+    --color-primary: hsl(var(--color-primary-h), var(--color-primary-s), var(--color-primary-l));
+    --color-primary-light: hsl(215, 20%, 45%);
+    --color-primary-dark: hsl(215, 30%, 15%);
+    --color-secondary: hsl(35, 30%, 50%);
+    /* Soft Gold */
+    --color-accent: hsl(35, 60%, 45%);
+
+    --color-bg-main: hsl(0, 0%, 98%);
+    --color-bg-card: hsla(0, 0%, 100%, 0.95);
+    --color-bg-elevated: hsl(0, 0%, 100%);
+    --color-bg-input: hsl(0, 0%, 95%);
+
+    --color-text-primary: hsl(215, 25%, 15%);
+    --color-text-secondary: hsl(215, 10%, 40%);
+    --color-text-tertiary: hsl(215, 5%, 60%);
+
+    --color-border: hsl(215, 15%, 88%);
+    --color-border-focus: var(--color-secondary);
+
+    --glass-bg: hsla(0, 0%, 100%, 0.9);
+    --glass-border: hsla(0, 0%, 0%, 0.04);
+}
+
 /* ========================================
    Base Styles
    ======================================== */
