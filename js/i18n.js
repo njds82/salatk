@@ -13,6 +13,8 @@ const translations = {
         nav_qada_prayers: 'الصلاة الفائتة',
         nav_habits: 'متتبع العادات',
         nav_statistics: 'الإحصائيات',
+        nav_leaderboard: 'لوحة الصدارة',
+        nav_store: 'المتجر',
         nav_settings: 'الإعدادات',
 
         // Prayer names
@@ -306,6 +308,21 @@ const translations = {
         error_invalid_code: 'هذا الكود غير صحيح',
         share_app_button: 'مشاركة التطبيق',
         share_message: 'حمل تطبيق صلاتك من هنا واكسب 7 نقاط باستخدام كودي: {code} \n https://salatk-app.pages.dev/',
+
+        // Store
+        store_title: 'متجر الثيمات والتصاميم',
+        store_subtitle: 'خصص مظهر تطبيقك واجعل تجربتك فريدة',
+        premium_designs: 'تصاميم مميزة',
+        owned: 'ممتلك',
+        apply: 'تطبيق',
+        buy: 'شراء',
+        free: 'مجاني',
+        theme_light_desc: 'التصميم الفاتح الكلاسيكي المريح للعين في النهار',
+        theme_dark_desc: 'التصميم الداكن الأنيق المريح للعين في الليل',
+        points_short: 'نقطة',
+        insufficient_points: 'عذراً، ليس لديك نقاط كافية لشراء هذا الثيم',
+        purchase_success: 'تم شراء الثيم بنجاح! يمكنك الآن تطبيقه',
+        purchase_confirm: 'هل أنت متأكد من رغبتك في شراء "{name}" مقابل {price} نقطة؟',
     },
 
     en: {
@@ -318,6 +335,8 @@ const translations = {
         nav_qada_prayers: 'Missed Prayers',
         nav_habits: 'Habit Tracker',
         nav_statistics: 'Statistics',
+        nav_leaderboard: 'Leaderboard',
+        nav_store: 'Store',
         nav_settings: 'Settings',
 
         // Prayer names
@@ -611,6 +630,21 @@ const translations = {
         error_invalid_code: 'This code is invalid',
         share_app_button: 'Share App',
         share_message: 'Download Salatk app and get 7 points using my code: {code} \n https://salatk-app.pages.dev/',
+
+        // Store
+        store_title: 'Themes & Designs Store',
+        store_subtitle: 'Customize your app appearance',
+        premium_designs: 'Premium Designs',
+        owned: 'Owned',
+        apply: 'Apply',
+        buy: 'Buy',
+        free: 'Free',
+        theme_light_desc: 'Classic light design for comfortable daytime use',
+        theme_dark_desc: 'Elegant dark design for comfortable nighttime use',
+        points_short: 'pts',
+        insufficient_points: 'Sorry, you don\'t have enough points to buy this theme',
+        purchase_success: 'Theme purchased successfully! You can now apply it',
+        purchase_confirm: 'Are you sure you want to buy "{name}" for {price} points?',
     }
 };
 
