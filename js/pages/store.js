@@ -44,6 +44,13 @@ const THEMES = [
         descKey: 'Night mode with golden stars',
         price: 65,
         preview: 'linear-gradient(135deg, #0f172a, #000000)'
+    },
+    {
+        id: 'metalknight',
+        nameKey: 'Metal Knight',
+        descKey: 'Polished steel and armor theme',
+        price: 85,
+        preview: 'linear-gradient(135deg, #475569, #1e293b)'
     }
 ];
 
