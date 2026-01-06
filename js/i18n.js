@@ -332,6 +332,7 @@ const translations = {
         'White Marble': 'الرخام الأبيض',
         'Visual Buzz': 'الضجة البصرية',
         'Antimatter': 'المادة المضادة',
+        'Red Mountain': 'الجبل الأحمر',
         'Premium emerald green theme': 'ثيم أخضر زمردي فاخر',
         'Deep blue night theme': 'ثيم أزرق ليلي عميق',
         'Sparkling stars night theme': 'ثيم النجوم المتلألئة والليل الهادئ',
@@ -340,6 +341,7 @@ const translations = {
         'Elegant white marble with gold accents': 'رخام أبيض فاخر مع لمسات ذهبية',
         'Vibrant neon theme with energetic vibes': 'ثيم نيون حيوي مليء بالطاقة والحيوية',
         'The absolute dark void theme': 'ثيم الفراغ المظلم المطلق',
+        'Majestic peaks with warm sunset glow': 'قمم مهيبة مع توهج الغروب الدافئ',
     },
 
     en: {
@@ -671,6 +673,7 @@ const translations = {
         'White Marble': 'White Marble',
         'Visual Buzz': 'Visual Buzz',
         'Antimatter': 'Antimatter',
+        'Red Mountain': 'Red Mountain',
         'Premium emerald green theme': 'Premium emerald green theme',
         'Deep blue night theme': 'Deep blue night theme',
         'Sparkling stars night theme': 'Sparkling stars night theme',
@@ -679,6 +682,7 @@ const translations = {
         'Elegant white marble with gold accents': 'Elegant white marble with gold accents',
         'Vibrant neon theme with energetic vibes': 'Vibrant neon theme with energetic vibes',
         'The absolute dark void theme': 'The absolute dark void theme',
+        'Majestic peaks with warm sunset glow': 'Majestic peaks with warm sunset glow',
     }
 };
 

@@ -314,6 +314,35 @@
     --glass-border: hsla(0, 0%, 100%, 0.03);
 }
 
+/* Red Mountain Theme */
+[data-theme="redmountain"] {
+    --color-primary-h: 5;
+    --color-primary-s: 85%;
+    --color-primary-l: 45%;
+    --color-primary: hsl(var(--color-primary-h), var(--color-primary-s), var(--color-primary-l));
+    --color-primary-light: hsl(15, 90%, 60%);
+    --color-primary-dark: hsl(0, 90%, 30%);
+    --color-secondary: hsl(30, 90%, 50%);
+    /* Sunset Orange */
+    --color-accent: hsl(45, 100%, 70%);
+    /* Sandy Gold */
+
+    --color-bg-main: hsl(5, 20%, 6%);
+    --color-bg-card: hsla(5, 20%, 10%, 0.9);
+    --color-bg-elevated: hsl(5, 20%, 14%);
+    --color-bg-input: hsl(5, 20%, 12%);
+
+    --color-text-primary: hsl(20, 30%, 98%);
+    --color-text-secondary: hsl(20, 20%, 80%);
+    --color-text-tertiary: hsl(20, 15%, 60%);
+
+    --color-border: hsl(5, 30%, 18%);
+    --color-border-focus: var(--color-primary);
+
+    --glass-bg: hsla(5, 20%, 6%, 0.85);
+    --glass-border: hsla(0, 0%, 100%, 0.05);
+}
+
 /* ========================================
    Base Styles
    ======================================== */
