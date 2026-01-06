@@ -72,6 +72,13 @@ const THEMES = [
         descKey: 'The absolute dark void theme',
         price: 110,
         preview: 'linear-gradient(135deg, #000000, #1a0033)'
+    },
+    {
+        id: 'redmountain',
+        nameKey: 'Red Mountain',
+        descKey: 'Majestic peaks with warm sunset glow',
+        price: 88,
+        preview: 'linear-gradient(135deg, #991b1b, #450a0a)'
     }
 ];
 
