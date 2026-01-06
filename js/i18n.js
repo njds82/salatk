@@ -327,9 +327,11 @@ const translations = {
         Emerald: 'زمردي',
         'Midnight Blue': 'أزرق منتصف الليل',
         'Night Sky': 'سماء الليل',
+        'Dark Stars': 'نجوم الظلام',
         'Premium emerald green theme': 'ثيم أخضر زمردي فاخر',
         'Deep blue night theme': 'ثيم أزرق ليلي عميق',
         'Sparkling stars night theme': 'ثيم النجوم المتلألئة والليل الهادئ',
+        'Night mode with golden stars': 'الوضع الليلي مع نجوم ذهبية متألقة',
     },
 
     en: {
@@ -656,9 +658,11 @@ const translations = {
         Emerald: 'Emerald',
         'Midnight Blue': 'Midnight Blue',
         'Night Sky': 'Night Sky',
+        'Dark Stars': 'Dark Stars',
         'Premium emerald green theme': 'Premium emerald green theme',
         'Deep blue night theme': 'Deep blue night theme',
         'Sparkling stars night theme': 'Sparkling stars night theme',
+        'Night mode with golden stars': 'Night mode with golden stars',
     }
 };
 

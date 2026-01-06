@@ -175,6 +175,33 @@
     --glass-border: hsla(262, 47%, 100%, 0.1);
 }
 
+/* Dark Stars Theme */
+[data-theme="darkstars"] {
+    --color-primary-h: 45;
+    --color-primary-s: 90%;
+    --color-primary-l: 50%;
+    --color-primary: hsl(var(--color-primary-h), var(--color-primary-s), var(--color-primary-l));
+    --color-primary-light: hsl(45, 100%, 65%);
+    --color-primary-dark: hsl(45, 90%, 35%);
+    --color-secondary: hsl(35, 80%, 45%);
+    --color-accent: hsl(0, 0%, 100%);
+
+    --color-bg-main: hsl(220, 30%, 4%);
+    --color-bg-card: hsla(220, 30%, 8%, 0.9);
+    --color-bg-elevated: hsl(220, 30%, 12%);
+    --color-bg-input: hsl(220, 30%, 10%);
+
+    --color-text-primary: hsl(0, 0%, 98%);
+    --color-text-secondary: hsl(220, 10%, 70%);
+    --color-text-tertiary: hsl(220, 10%, 50%);
+
+    --color-border: hsl(220, 30%, 15%);
+    --color-border-focus: var(--color-primary);
+
+    --glass-bg: hsla(220, 30%, 4%, 0.8);
+    --glass-border: hsla(0, 0%, 100%, 0.05);
+}
+
 /* ========================================
    Base Styles
    ======================================== */
