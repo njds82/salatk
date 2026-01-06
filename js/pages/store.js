@@ -65,6 +65,13 @@ const THEMES = [
         descKey: 'Vibrant neon theme with energetic vibes',
         price: 95,
         preview: 'linear-gradient(135deg, #ff00ff, #00ffff)'
+    },
+    {
+        id: 'antimatter',
+        nameKey: 'Antimatter',
+        descKey: 'The absolute dark void theme',
+        price: 110,
+        preview: 'linear-gradient(135deg, #000000, #1a0033)'
     }
 ];
 

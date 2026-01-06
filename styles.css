@@ -286,6 +286,34 @@
     --glass-border: hsla(320, 90%, 100%, 0.1);
 }
 
+/* Antimatter Theme */
+[data-theme="antimatter"] {
+    --color-primary-h: 275;
+    --color-primary-s: 100%;
+    --color-primary-l: 15%;
+    --color-primary: hsl(var(--color-primary-h), var(--color-primary-s), var(--color-primary-l));
+    --color-primary-light: hsl(275, 40%, 30%);
+    --color-primary-dark: hsl(275, 100%, 5%);
+    --color-secondary: hsl(275, 10%, 40%);
+    --color-accent: hsl(0, 0%, 100%);
+
+    --color-bg-main: hsl(0, 0%, 0%);
+    --color-bg-card: hsla(0, 0%, 5%, 0.95);
+    --color-bg-elevated: hsl(0, 0%, 8%);
+    --color-bg-input: hsl(0, 0%, 10%);
+
+    --color-text-primary: hsl(0, 0%, 90%);
+    --color-text-secondary: hsl(0, 0%, 60%);
+    --color-text-tertiary: hsl(0, 0%, 40%);
+
+    --color-border: hsl(0, 0%, 15%);
+    --color-border-focus: hsl(275, 100%, 50%);
+    /* Subtle purple glow */
+
+    --glass-bg: hsla(0, 0%, 0%, 0.9);
+    --glass-border: hsla(0, 0%, 100%, 0.03);
+}
+
 /* ========================================
    Base Styles
    ======================================== */
