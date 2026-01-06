@@ -326,8 +326,10 @@ const translations = {
         purchase_confirm: 'هل أنت متأكد من رغبتك في شراء "{name}" مقابل {price} نقطة؟',
         Emerald: 'زمردي',
         'Midnight Blue': 'أزرق منتصف الليل',
+        'Night Sky': 'سماء الليل',
         'Premium emerald green theme': 'ثيم أخضر زمردي فاخر',
         'Deep blue night theme': 'ثيم أزرق ليلي عميق',
+        'Sparkling stars night theme': 'ثيم النجوم المتلألئة والليل الهادئ',
     },
 
     en: {
@@ -653,8 +655,10 @@ const translations = {
         purchase_confirm: 'Are you sure you want to buy "{name}" for {price} points?',
         Emerald: 'Emerald',
         'Midnight Blue': 'Midnight Blue',
+        'Night Sky': 'Night Sky',
         'Premium emerald green theme': 'Premium emerald green theme',
         'Deep blue night theme': 'Deep blue night theme',
+        'Sparkling stars night theme': 'Sparkling stars night theme',
     }
 };
 
