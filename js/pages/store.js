@@ -51,6 +51,13 @@ const THEMES = [
         descKey: 'Polished steel and armor theme',
         price: 85,
         preview: 'linear-gradient(135deg, #475569, #1e293b)'
+    },
+    {
+        id: 'whitemarble',
+        nameKey: 'White Marble',
+        descKey: 'Elegant white marble with gold accents',
+        price: 75,
+        preview: 'linear-gradient(135deg, #ffffff, #f1f5f9)'
     }
 ];
 
