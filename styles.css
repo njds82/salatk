@@ -552,16 +552,19 @@ body::after {
 .theme-card {
     transition: all var(--transition-normal);
     cursor: default;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .theme-card:hover {
     transform: translateY(-8px);
-    box-shadow: var(--shadow-xl);
+    box-shadow: 0 10px 30px hsla(var(--color-primary-h), var(--color-primary-s), var(--color-primary-l), 0.15);
 }
 
 .theme-card.active {
     border-color: var(--color-primary);
-    box-shadow: 0 0 20px rgba(15, 118, 110, 0.2);
+    box-shadow: 0 0 20px hsla(var(--color-primary-h), var(--color-primary-s), var(--color-primary-l), 0.25);
 }
 
 /* Prayer Card */
@@ -684,7 +687,7 @@ body::after {
 .btn-primary {
     background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
     color: white;
-    box-shadow: 0 4px 20px hsla(175, 77%, 26%, 0.3);
+    box-shadow: 0 4px 20px hsla(var(--color-primary-h), var(--color-primary-s), var(--color-primary-l), 0.3);
 }
 
 .btn-primary:hover {
