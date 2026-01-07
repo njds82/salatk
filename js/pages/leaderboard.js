@@ -107,7 +107,7 @@ async function renderLeaderboardPage() {
                                     <td class="user-cell">
                                         <span class="user-name">
                                             ${user.full_name} 
-                                            ${isCurrentUser ? `<span class="badge badge-primary" style="font-size: 0.7rem; margin: 0 5px; background: var(--color-primary); color: white; padding: 2px 6px; border-radius: 4px;">${t('you')}</span>` : ''}
+                                            ${isCurrentUser ? `<span class="badge badge-primary" style="font-size: 0.7rem; margin: 0 5px; background: var(--color-primary); color: var(--color-text-on-primary); padding: 2px 6px; border-radius: 4px;">${t('you')}</span>` : ''}
                                         </span>
                                     </td>
                                     <td class="score-cell">
