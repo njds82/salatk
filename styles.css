@@ -65,6 +65,9 @@
     --transition-fast: 200ms cubic-bezier(0.4, 0, 0.2, 1);
     --transition-normal: 350ms cubic-bezier(0.4, 0, 0.2, 1);
     --transition-slow: 600ms cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Text on Primary */
+    --color-text-on-primary: white;
 }
 
 /* Dark Theme */
@@ -368,6 +371,8 @@
 
     --glass-bg: hsla(0, 0%, 0%, 0.95);
     --glass-border: hsla(0, 0%, 100%, 0.05);
+
+    --color-text-on-primary: black;
 }
 
 /* ========================================
@@ -492,7 +497,7 @@ body::after {
     gap: var(--spacing-sm);
     padding: var(--spacing-sm) var(--spacing-lg);
     background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
-    color: white;
+    color: var(--color-text-on-primary);
     border-radius: var(--radius-full);
     font-weight: 700;
     box-shadow: 0 4px 15px hsla(var(--color-primary-h, 175), var(--color-primary-s, 77%), var(--color-primary-l, 26%), 0.3);
@@ -522,7 +527,7 @@ body::after {
 
 .icon-btn:hover {
     background: var(--color-primary);
-    color: white;
+    color: var(--color-text-on-primary);
     transform: scale(1.05);
 }
 
@@ -580,7 +585,7 @@ body::after {
 
 .nav-item.active {
     background: var(--color-primary);
-    color: white;
+    color: var(--color-text-on-primary);
     box-shadow: 0 4px 12px rgba(15, 118, 110, 0.25);
 }
 
@@ -745,7 +750,7 @@ body::after {
 
 .prayer-points {
     background: var(--color-primary);
-    color: white;
+    color: var(--color-text-on-primary);
     padding: var(--spacing-xs) var(--spacing-sm);
     border-radius: var(--radius-full);
     font-size: 0.875rem;
@@ -799,7 +804,7 @@ body::after {
 
 .btn-primary {
     background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
-    color: white;
+    color: var(--color-text-on-primary);
     box-shadow: 0 4px 20px hsla(var(--color-primary-h), var(--color-primary-s), var(--color-primary-l), 0.3);
 }
 
@@ -1115,7 +1120,7 @@ body::after {
 
     .nav-item.active {
         background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
-        color: white;
+        color: var(--color-text-on-primary);
         transform: translateY(-8px);
         box-shadow: 0 8px 20px hsla(175, 77%, 26%, 0.3);
     }

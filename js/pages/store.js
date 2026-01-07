@@ -103,7 +103,7 @@ async function renderStorePage() {
             <p class="page-subtitle">${t('store_subtitle')}</p>
         </div>
 
-        <div class="card" style="margin-bottom: var(--spacing-lg); background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light)); color: white; border: none; display: flex; justify-content: space-between; align-items: center;">
+        <div class="card" style="margin-bottom: var(--spacing-lg); background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light)); color: var(--color-text-on-primary); border: none; display: flex; justify-content: space-between; align-items: center;">
             <div>
                 <p style="margin: 0; opacity: 0.9; font-size: 0.9em;">${t('your_points')}</p>
                 <h2 style="margin: 0; font-size: 2em;">⭐ ${totalPoints.toLocaleString()}</h2>
@@ -124,7 +124,7 @@ async function renderStorePage() {
         html += `
             <div class="card theme-card ${isActive ? 'active' : ''}" style="overflow: hidden; padding: 0; border: ${isActive ? '2px solid var(--color-primary)' : '1px solid var(--color-border)'}; display: flex; flex-direction: column;">
                 <div style="height: 100px; background: ${theme.preview}; position: relative; border-bottom: 1px solid var(--color-border);">
-                    ${isActive ? `<div style="position: absolute; top: 8px; right: 8px; background: var(--color-primary); color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.75em; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">${t('prayer_done')}</div>` : ''}
+                    ${isActive ? `<div style="position: absolute; top: 8px; right: 8px; background: var(--color-primary); color: var(--color-text-on-primary); padding: 2px 8px; border-radius: 20px; font-size: 0.75em; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">${t('prayer_done')}</div>` : ''}
                 </div>
                 <div style="padding: var(--spacing-md); flex: 1; display: flex; flex-direction: column;">
                     <h3 style="margin: 0 0 4px 0;">${name}</h3>
