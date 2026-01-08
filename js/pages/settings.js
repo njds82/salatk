@@ -257,24 +257,6 @@ async function renderSettingsPage() {
             </div>
         </div>
 
-        <!-- Data Management -->
-        <div class="card" style="margin-bottom: var(--spacing-lg);">
-            <h3 style="margin-bottom: var(--spacing-md);">${t('data_management')}</h3>
-            <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
-                <button class="btn btn-primary" onclick="handleForceSync()">
-                    🔄 ${t('force_sync')}
-                </button>
-                <button class="btn btn-primary" onclick="handleExportData()">
-                    📥 ${t('export_data')}
-                </button>
-                <button class="btn btn-secondary" onclick="handleImportData()">
-                    📤 ${t('import_data')}
-                </button>
-                <button class="btn btn-danger" onclick="handleClearAllData()">
-                    🗑️ ${t('clear_all')}
-                </button>
-            </div>
-        </div>
         
         <!-- About -->
         <div class="card" style="text-align: center; background: linear-gradient(135deg, hsla(175, 77%, 26%, 0.1), hsla(35, 92%, 33%, 0.1));">
@@ -366,11 +348,6 @@ async function handleCalculationSettingsChange() {
     }
 }
 
-// Handle export data
-function handleExportData() {
-    exportData();
-    showToast(t('data_exported_message'), 'success');
-}
 // Handle manual location save
 function handleSaveManualLocation() {
     const lat = document.getElementById('latInput').value;
@@ -399,68 +376,8 @@ function handleRegionChange() {
     }
 }
 
-// Handle import data
-function handleImportData() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'application/json';
-    input.onchange = async (e) => {
-        try {
-            const file = e.target.files[0];
-            await importData(file);
-            showToast(t('data_imported_message'), 'success');
-            await updatePointsDisplay();
-            navigateTo('settings');
-        } catch (error) {
-            showToast(t('error_importing'), 'error');
-        }
-    };
-    input.click();
-}
 
-// Handle clear all data
-function handleClearAllData() {
 
-    confirmDialog(t('confirm_clear_all'), async () => {
-        await clearAllData();
-        showToast(t('data_cleared_message'), 'info');
-        await updatePointsDisplay();
-        navigateTo('daily-prayers');
-    });
-}
-
-// Handle force sync
-async function handleForceSync() {
-    showToast(t('syncing_message'), 'info');
-    if (window.SyncManager) {
-        try {
-            // We'll push current state first to ensure local changes aren't lost if they weren't synced yet
-            // However, SyncManager currently only has fine-grained object pushes.
-            // Let's rely on pullAllData for now, or implement a pushAll in SyncManager.
-            // A "Force Sync" usually implies "Make cloud look like me" or "Make me look like cloud".
-            // Given "offline-first" style, we usually want "Push dirty, then Pull".
-            // For now, let's just Pull to verify connection, as Push happens on edit.
-            // If the user says "Database empty", they might have data LOCALLY they want to see in cloud.
-            // So we actually need a "Push All" for existing local data that was created before sync was active.
-
-            // NOTE: This assumes the user has local data they want to SAVE to the empty DB.
-            const success = await SyncManager.pushAllLocalData();
-            if (success) {
-                showToast(t('sync_success'), 'success');
-                // Refresh data
-                await SyncManager.pullAllData();
-                renderPage('settings', true);
-            } else {
-                showToast(t('sync_error'), 'error');
-            }
-        } catch (error) {
-            console.error(error);
-            showToast(t('sync_error'), 'error');
-        }
-    } else {
-        showToast(t('error_general'), 'error');
-    }
-}
 
 // ========================================
 // Account Management Functions
