@@ -34,10 +34,12 @@ const PointsService = {
                 }
 
                 // Fallback to manual sum if view fails or user not in view yet
+                // Increase limit to 10,000 to handle users with many activities
                 const { data: fallbackData, error: fallbackError } = await window.supabaseClient
                     .from('points_history')
                     .select('amount')
-                    .eq('user_id', session.user.id);
+                    .eq('user_id', session.user.id)
+                    .limit(10000);
 
                 if (fallbackError) {
                     console.error('PointsService: Fallback fetch failed', fallbackError);

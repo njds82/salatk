@@ -64,7 +64,7 @@ const PrayerService = {
         if (!session) return { success: false };
 
         const prayerDef = PRAYERS[key];
-        const pointId = `prayer:${date}:${key}`;
+        const pointId = `${session.user.id}:prayer:${date}:${key}`;
         let pointsAmount = 0;
         let reason = `${t(prayerDef.nameKey)} - ${t(status === 'done' ? 'performed' : 'missed')}`;
 
@@ -244,7 +244,7 @@ const PrayerService = {
         if (!session) return { success: false };
 
         const prayerDef = PRAYERS[key];
-        const pointId = `prayer:${date}:${key}`;
+        const pointId = `${session.user.id}:prayer:${date}:${key}`;
 
         try {
             if (prayerDef.required) await this.removeQada(date, key);
