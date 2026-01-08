@@ -5,7 +5,7 @@
 // WARNING: Most methods are now ASYNC. Old synchronous calls will fail or return Promises.
 
 const STORAGE_KEY = 'salatk_data';
-const DATA_VERSION = '3.2.0';
+const DATA_VERSION = '5.3.7';
 
 // Re-export PRAYERS for compatibility if needed, though PrayerService has it.
 const PRAYERS_LEGACY = {
