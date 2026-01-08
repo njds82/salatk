@@ -151,6 +151,12 @@ async function getStatistics() {
 
     let daysWithoutSin = habitHistory.filter(h => h.action === 'avoided').length;
 
+    // Dispatch update for header if available
+    if (window.updatePointsDisplay) {
+        // Don't await, just trigger sync
+        updatePointsDisplay();
+    }
+
     return {
         prayersPerformed,
         prayersMissed,
