@@ -153,10 +153,8 @@ async function handleAddManualQada() {
 
     try {
         const date = dateInput || null;
-        for (let i = 0; i < count; i++) {
-            const rakaat = PrayerService.getDefinitions()[prayerType]?.rakaat || 0;
-            await PrayerService.addQada(date, prayerType, rakaat, true);
-        }
+        const rakaat = PrayerService.getDefinitions()[prayerType]?.rakaat || 0;
+        await PrayerService.addMultipleQada(date, prayerType, rakaat, count, true);
 
         const message = t('added_prayers_success')
             .replace('{count}', count)
