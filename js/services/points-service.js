@@ -28,13 +28,22 @@ const PointsService = {
                 { data: null, error: 'timeout' }
             );
 
-            if (error) {
-                console.error('PointsService: Error fetching total from view', error);
-                // Fallback to manual sum if view fails (might happen if view not created yet)
-                const { data: fallbackData } = await window.supabaseClient
+            if (error || !data) {
+                if (error && error !== 'timeout') {
+                    console.error('PointsService: Error fetching total from view', error);
+                }
+
+                // Fallback to manual sum if view fails or user not in view yet
+                const { data: fallbackData, error: fallbackError } = await window.supabaseClient
                     .from('points_history')
                     .select('amount')
                     .eq('user_id', session.user.id);
+
+                if (fallbackError) {
+                    console.error('PointsService: Fallback fetch failed', fallbackError);
+                    return 0;
+                }
+
                 return (fallbackData || []).reduce((sum, item) => sum + (item.amount || 0), 0);
             }
 
