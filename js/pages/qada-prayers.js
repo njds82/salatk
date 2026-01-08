@@ -5,6 +5,7 @@
 async function renderQadaPrayersPage() {
     const qadaPrayers = await PrayerService.getQadaPrayers();
     const totalRakaat = qadaPrayers.reduce((sum, prayer) => sum + prayer.rakaat, 0);
+    const PRAYERS = PrayerService.getDefinitions();
 
     let html = `
         <div class="page-header">
@@ -133,6 +134,20 @@ function showAddQadaModal() {
             }
         ]
     );
+
+    // Add listener to disable count if date is selected
+    const dateInput = document.getElementById('qadaPrayerDateInput');
+    const countInput = document.getElementById('qadaPrayerCountInput');
+    if (dateInput && countInput) {
+        dateInput.addEventListener('change', () => {
+            if (dateInput.value) {
+                countInput.value = 1;
+                countInput.disabled = true;
+            } else {
+                countInput.disabled = false;
+            }
+        });
+    }
 }
 
 // Handle add manual qada
@@ -151,10 +166,20 @@ async function handleAddManualQada() {
         return;
     }
 
+    // Logic Check: Can't have multiple counts for a specific date
+    if (dateInput && count > 1) {
+        showToast(t('error_date_count_mismatch') || "Cannot add multiple prayers for a specific date", 'error');
+        return;
+    }
+
     try {
         const date = dateInput || null;
         const rakaat = PrayerService.getDefinitions()[prayerType]?.rakaat || 0;
-        await PrayerService.addMultipleQada(date, prayerType, rakaat, count, true);
+        const result = await PrayerService.addMultipleQada(date, prayerType, rakaat, count, true);
+
+        if (!result || !result.success) {
+            throw new Error('Failed to add qada prayer');
+        }
 
         const message = t('added_prayers_success')
             .replace('{count}', count)

@@ -121,35 +121,48 @@ const PrayerService = {
     },
 
     async addMultipleQada(originalDate, key, rakaat, count = 1, isManual = false) {
-        if (!window.supabaseClient || count < 1) return;
+        if (!window.supabaseClient || count < 1) return { success: false };
         const session = await window.AuthManager.getSession();
-        if (!session) return;
+        if (!session) return { success: false };
 
         try {
-            const rows = [];
-            for (let i = 0; i < count; i++) {
-                rows.push({
-                    id: crypto.randomUUID(),
+            // Case 1: Specific Date provided
+            if (originalDate) {
+                // We can only have one record per date/prayer_key combination due to existing DB unique index.
+                // We need to upsert safely.
+                const { error } = await window.supabaseClient.from('qada_prayers').upsert({
                     user_id: session.user.id,
                     prayer_key: key,
-                    original_date: originalDate || null,
+                    original_date: originalDate,
                     rakaat: rakaat,
                     recorded_at: new Date().toISOString(),
                     is_manual: isManual
-                });
+                }, { onConflict: 'user_id,original_date,prayer_key' });
+
+                if (error) throw error;
+            }
+            // Case 2: No specific date (unknown date) - Allow duplicates
+            else {
+                const rows = [];
+                for (let i = 0; i < count; i++) {
+                    rows.push({
+                        id: crypto.randomUUID(),
+                        user_id: session.user.id,
+                        prayer_key: key,
+                        original_date: null,
+                        rakaat: rakaat,
+                        recorded_at: new Date().toISOString(),
+                        is_manual: isManual
+                    });
+                }
+                const { error } = await window.supabaseClient.from('qada_prayers').insert(rows);
+                if (error) throw error;
             }
 
-            if (isManual || !originalDate || count > 1) {
-                // For manual, unknown date, or batch, always insert new
-                await window.supabaseClient.from('qada_prayers').insert(rows);
-            } else {
-                // For specific dates (single), upsert to avoid duplicates
-                await window.supabaseClient.from('qada_prayers').upsert(rows[0], {
-                    onConflict: 'user_id,original_date,prayer_key'
-                });
-            }
+            return { success: true };
         } catch (e) {
             console.error('PrayerService: Error adding Qada', e);
+            return { success: false, error: e };
         }
     },
 

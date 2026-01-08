@@ -75,6 +75,7 @@ const translations = {
         invalid_count: 'يرجى إدخال عدد صحيح',
         count_too_large: 'العدد كبير جداً',
         added_prayers_success: 'تمت إضافة {count} صلاة {prayer}',
+        error_date_count_mismatch: 'لا يمكن إضافة أكثر من صلاة واحدة لنفس التاريخ',
 
         // Habits Page
         habits_title: 'متتبع العادات',
@@ -418,6 +419,7 @@ const translations = {
         invalid_count: 'Please enter a valid count',
         count_too_large: 'Count is too large',
         added_prayers_success: 'Added {count} {prayer} prayers',
+        error_date_count_mismatch: 'Cannot add more than one prayer for the same date',
 
         // Habits Page
         habits_title: 'Habit Tracker',
