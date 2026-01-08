@@ -222,41 +222,46 @@ async function handlePurchaseTheme(themeId, price, themeName) {
         }
 
         const confirmMsg = t('purchase_confirm').replace('{name}', themeName).replace('{price}', price);
-        const confirmed = confirm(confirmMsg);
-        if (!confirmed) return;
 
-        showToast(t('loading_auth') || 'Processing...', 'info');
+        confirmDialog(confirmMsg, async () => {
+            try {
+                showToast(t('loading_auth') || 'Processing...', 'info');
 
-        const session = await AuthManager.getSession();
-        if (!session) {
-            showToast(t('error_login_required'), 'error');
-            return;
-        }
+                const session = await AuthManager.getSession();
+                if (!session) {
+                    showToast(t('error_login_required'), 'error');
+                    return;
+                }
 
-        // 1. Record ownership
-        const { error: purchaseError } = await window.supabaseClient
-            .from('owned_themes')
-            .upsert({
-                user_id: session.user.id,
-                theme_id: themeId
-            }, { onConflict: 'user_id,theme_id' });
+                // 1. Record ownership
+                const { error: purchaseError } = await window.supabaseClient
+                    .from('owned_themes')
+                    .upsert({
+                        user_id: session.user.id,
+                        theme_id: themeId
+                    }, { onConflict: 'user_id,theme_id' });
 
-        if (purchaseError) throw purchaseError;
+                if (purchaseError) throw purchaseError;
 
-        // 2. Deduct points
-        const success = await PointsService.addPoints(-price, `Purchase Theme: ${themeName}`);
-        if (!success) {
-            console.error('Points deduction failed but theme was recorded.');
-        }
+                // 2. Deduct points
+                const success = await PointsService.addPoints(-price, `Purchase Theme: ${themeName}`);
+                if (!success) {
+                    console.error('Points deduction failed but theme was recorded.');
+                }
 
-        showToast(t('purchase_success'), 'success');
+                showToast(t('purchase_success'), 'success');
 
-        // Refresh UI
-        if (typeof renderPage === 'function') {
-            renderPage('store', true);
-        }
+                // Refresh UI
+                if (typeof renderPage === 'function') {
+                    renderPage('store', true);
+                }
+            } catch (e) {
+                console.error('Purchase failed:', e);
+                showToast(t('error_general'), 'error');
+            }
+        });
     } catch (e) {
-        console.error('Purchase failed:', e);
+        console.error('Purchase check failed:', e);
         showToast(t('error_general'), 'error');
     }
 }
