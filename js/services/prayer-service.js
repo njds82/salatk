@@ -117,20 +117,37 @@ const PrayerService = {
     },
 
     async addQada(originalDate, key, rakaat, isManual = false) {
-        if (!window.supabaseClient) return;
+        return this.addMultipleQada(originalDate, key, rakaat, 1, isManual);
+    },
+
+    async addMultipleQada(originalDate, key, rakaat, count = 1, isManual = false) {
+        if (!window.supabaseClient || count < 1) return;
         const session = await window.AuthManager.getSession();
         if (!session) return;
 
         try {
-            await window.supabaseClient.from('qada_prayers').upsert({
-                id: crypto.randomUUID(),
-                user_id: session.user.id,
-                prayer_key: key,
-                original_date: originalDate || null,
-                rakaat: rakaat,
-                recorded_at: new Date().toISOString(),
-                is_manual: isManual
-            }, { onConflict: 'user_id,original_date,prayer_key' });
+            const rows = [];
+            for (let i = 0; i < count; i++) {
+                rows.push({
+                    id: crypto.randomUUID(),
+                    user_id: session.user.id,
+                    prayer_key: key,
+                    original_date: originalDate || null,
+                    rakaat: rakaat,
+                    recorded_at: new Date().toISOString(),
+                    is_manual: isManual
+                });
+            }
+
+            if (isManual || !originalDate || count > 1) {
+                // For manual, unknown date, or batch, always insert new
+                await window.supabaseClient.from('qada_prayers').insert(rows);
+            } else {
+                // For specific dates (single), upsert to avoid duplicates
+                await window.supabaseClient.from('qada_prayers').upsert(rows[0], {
+                    onConflict: 'user_id,original_date,prayer_key'
+                });
+            }
         } catch (e) {
             console.error('PrayerService: Error adding Qada', e);
         }
@@ -200,8 +217,10 @@ const PrayerService = {
 
             if (deleteError) throw deleteError;
 
-            // Add points
-            await PointsService.addPoints(3, t('made_up') + ' (' + t(PRAYERS[qada.prayer_key].nameKey) + ')', `qada:${qadaId}`);
+            // Add points (include user ID in point ID to prevent collisions)
+            const session = await window.AuthManager.getSession();
+            const pointId = session ? `${session.user.id}:qada:${qadaId}` : `qada:${qadaId}`;
+            await PointsService.addPoints(3, t('made_up') + ' (' + t(PRAYERS[qada.prayer_key].nameKey) + ')', pointId);
 
             return { success: true };
         } catch (e) {

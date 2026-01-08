@@ -219,15 +219,15 @@ document.addEventListener('click', (e) => {
         const menu = btn.nextElementSibling;
         if (menu && menu.classList.contains('dropdown-menu')) {
             // Close all other open dropdowns
-            document.querySelectorAll('.dropdown-menu.active').forEach(m => {
-                if (m !== menu) m.classList.remove('active');
+            document.querySelectorAll('.options-menu.active').forEach(m => {
+                if (m !== btn.parentElement) m.classList.remove('active');
             });
-            menu.classList.toggle('active');
+            btn.parentElement.classList.toggle('active');
             e.stopPropagation();
         }
     } else {
         // Close all dropdowns when clicking outside
-        document.querySelectorAll('.dropdown-menu.active').forEach(menu => {
+        document.querySelectorAll('.options-menu.active').forEach(menu => {
             menu.classList.remove('active');
         });
     }
