@@ -127,7 +127,8 @@
             </a>
 
             <a href="#store" class="nav-item" data-page="store">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
                     <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
                     <path d="M3 6h18"></path>
                     <path d="M16 10a4 4 0 0 1-8 0"></path>
@@ -172,9 +173,26 @@
     <!-- Modal Container -->
     <div class="modal-overlay" id="modalOverlay" style="display: none;"></div>
 
+    <!-- Splash Screen -->
+    <div id="splashScreen" class="splash-screen">
+        <div class="splash-content">
+            <img src="assets/images/logo.png" alt="Salatk Logo" class="splash-logo" width="80" height="80">
+            <h1 class="splash-title">صلاتك</h1>
+            <div class="splash-quote-container">
+                <p id="splashQuote" class="splash-quote">...</p>
+                <div class="splash-loader">
+                    <div class="loader-dot"></div>
+                    <div class="loader-dot"></div>
+                    <div class="loader-dot"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <!-- Adhan.js for Prayer Times -->
     <script src="https://cdn.jsdelivr.net/npm/adhan@4.4.3/lib/bundles/adhan.umd.min.js"></script>
+
     <!-- Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 

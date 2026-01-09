@@ -349,22 +349,49 @@ async function handleCalculationSettingsChange() {
 }
 
 // Handle manual location save
-function handleSaveManualLocation() {
+async function handleSaveManualLocation() {
     const lat = document.getElementById('latInput').value;
     const long = document.getElementById('longInput').value;
+    const btn = document.querySelector('button[onclick="handleSaveManualLocation()"]');
 
     if (!lat || !long) {
         showToast(t('error_invalid_input'), 'error');
         return;
     }
 
-    if (window.PrayerManager) {
-        PrayerManager.saveManualLocation(lat, long);
-        PrayerManager.clearCache();
+    // Disable button to prevent double clicks
+    if (btn) {
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `<span class="loading-spinner-small"></span> ${t('saving')}...`;
+
+        try {
+            if (window.PrayerManager) {
+                await PrayerManager.saveManualLocation(lat, long);
+                PrayerManager.clearCache();
+            }
+            showToast(t('manual_mode_on'), 'success');
+            // Allow small delay for storage/sync
+            setTimeout(() => {
+                renderPage('settings', true);
+            }, 500);
+        } catch (e) {
+            showToast(t('error_general'), 'error');
+            console.error(e);
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    } else {
+        // Fallback if button not found
+        if (window.PrayerManager) {
+            await PrayerManager.saveManualLocation(lat, long);
+            PrayerManager.clearCache();
+        }
+        showToast(t('manual_mode_on'), 'success');
+        renderPage('settings', true);
     }
-    showToast(t('manual_mode_on'), 'success');
-    renderPage('settings', true);
 }
+
 
 // Handle region selection change
 function handleRegionChange() {
