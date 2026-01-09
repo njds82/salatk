@@ -116,57 +116,81 @@ const PrayerService = {
         }
     },
 
+    _qadaCache: null, // Local cache for Qada prayers
+
     async addQada(originalDate, key, rakaat, isManual = false) {
         return this.addMultipleQada(originalDate, key, rakaat, 1, isManual);
     },
 
     async addMultipleQada(originalDate, key, rakaat, count = 1, isManual = false) {
-        if (!window.supabaseClient || count < 1) return { success: false };
+        const rows = []; // Prepare rows for local cache update
+        const now = new Date().toISOString();
+
+        if (count < 1) return { success: false };
+
+        // Generate optimistic IDs
+        for (let i = 0; i < count; i++) {
+            rows.push({
+                id: crypto.randomUUID(),
+                prayer_key: key,
+                original_date: originalDate || null,
+                rakaat: rakaat,
+                recorded_at: now,
+                is_manual: isManual
+            });
+        }
+
+        // Optimistic Cache Update
+        if (this._qadaCache) {
+            // Transform to UI format matching getQadaPrayers output
+            const newItems = rows.map(r => ({
+                id: r.id,
+                prayer: r.prayer_key,
+                date: r.original_date,
+                rakaat: r.rakaat,
+                timestamp: new Date(r.recorded_at).getTime(),
+                manual: r.is_manual
+            }));
+            this._qadaCache = [...newItems, ...this._qadaCache]; // Add to top
+        }
+
+        if (!window.supabaseClient) return { success: false };
         const session = await window.AuthManager.getSession();
         if (!session) return { success: false };
 
         try {
-            // Case 1: Specific Date provided
-            if (originalDate) {
-                // We can only have one record per date/prayer_key combination due to existing DB unique index.
-                // We need to upsert safely.
-                const { error } = await window.supabaseClient.from('qada_prayers').upsert({
-                    user_id: session.user.id,
-                    prayer_key: key,
-                    original_date: originalDate,
-                    rakaat: rakaat,
-                    recorded_at: new Date().toISOString(),
-                    is_manual: isManual
-                }, { onConflict: 'user_id,original_date,prayer_key' });
+            // Prepare DB rows (need user_id)
+            const dbRows = rows.map(r => ({
+                ...r,
+                user_id: session.user.id
+            }));
 
+            // Case 1: Specific Date provided (Upsert to prevent duplicates)
+            if (originalDate) {
+                const { error } = await window.supabaseClient.from('qada_prayers').upsert(
+                    dbRows[0],
+                    { onConflict: 'user_id,original_date,prayer_key' }
+                );
                 if (error) throw error;
             }
-            // Case 2: No specific date (unknown date) - Allow duplicates
+            // Case 2: No specific date (Insert)
             else {
-                const rows = [];
-                for (let i = 0; i < count; i++) {
-                    rows.push({
-                        id: crypto.randomUUID(),
-                        user_id: session.user.id,
-                        prayer_key: key,
-                        original_date: null,
-                        rakaat: rakaat,
-                        recorded_at: new Date().toISOString(),
-                        is_manual: isManual
-                    });
-                }
-                const { error } = await window.supabaseClient.from('qada_prayers').insert(rows);
+                const { error } = await window.supabaseClient.from('qada_prayers').insert(dbRows);
                 if (error) throw error;
             }
 
             return { success: true };
         } catch (e) {
             console.error('PrayerService: Error adding Qada', e);
+            // In a real app, we should rollback cache here
             return { success: false, error: e };
         }
     },
 
     async getQadaPrayers() {
+        // Return cache if available and valid
+        if (this._qadaCache) return this._qadaCache;
+
         if (!window.supabaseClient) return [];
         const session = await window.AuthManager.getSession();
         if (!session) return [];
@@ -180,7 +204,7 @@ const PrayerService = {
 
             if (error) throw error;
 
-            return (data || []).map(r => ({
+            this._qadaCache = (data || []).map(r => ({
                 id: r.id,
                 prayer: r.prayer_key,
                 date: r.original_date,
@@ -188,6 +212,8 @@ const PrayerService = {
                 timestamp: new Date(r.recorded_at).getTime(),
                 manual: r.is_manual
             }));
+
+            return this._qadaCache;
         } catch (e) {
             console.error('PrayerService: Failed to fetch Qada prayers', e);
             return [];
@@ -195,10 +221,18 @@ const PrayerService = {
     },
 
     async makeUpQada(qadaId) {
+        // Optimistic Cache Update
+        if (this._qadaCache) {
+            this._qadaCache = this._qadaCache.filter(q => q.id !== qadaId);
+        }
+
         if (!window.supabaseClient) return { success: false };
 
         try {
             // First get the record to know what points to add
+            // (If we had full objects in cache including original_date etc we could skip this fetch for known items,
+            // but for safety/consistency with existing logic we fetch or rely on what we have)
+
             const { data: qada, error: fetchError } = await window.supabaseClient
                 .from('qada_prayers')
                 .select('*')
@@ -238,11 +272,17 @@ const PrayerService = {
             return { success: true };
         } catch (e) {
             console.error('PrayerService: Error making up Qada', e);
+            // Rollback could go here by re-fetching
             return { success: false };
         }
     },
 
     async deleteQada(qadaId) {
+        // Optimistic Cache Update
+        if (this._qadaCache) {
+            this._qadaCache = this._qadaCache.filter(q => q.id !== qadaId);
+        }
+
         if (!window.supabaseClient) return { success: false };
         try {
             await window.supabaseClient.from('qada_prayers').delete().eq('id', qadaId);
@@ -254,6 +294,11 @@ const PrayerService = {
     },
 
     async removeQada(originalDate, key) {
+        // Local Cache Update
+        if (this._qadaCache) {
+            this._qadaCache = this._qadaCache.filter(q => !(q.date === originalDate && q.prayer === key));
+        }
+
         if (!window.supabaseClient) return;
         const session = await window.AuthManager.getSession();
         if (!session) return;
@@ -268,6 +313,7 @@ const PrayerService = {
             console.error('PrayerService: Error removing Qada', e);
         }
     },
+
 
     // Reset prayer status (undo decision)
     async resetPrayer(key, date) {

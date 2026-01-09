@@ -32,9 +32,16 @@ const SettingsService = {
             );
 
             if (data) {
+                // Merge strategies:
+                // 1. Theme/Language: LocalStorage is usually the "latest" truth if the user just toggled it.
+                // However, if we are loading clean on a new device, Cloud is truth.
+                // Our set() updates both. 
+                // To avoid "flash of wrong theme" on slow network, we already loaded LS in app.js.
+                // Here we just update the cache.
+
                 this._cache = {
-                    language: data.language || 'ar',
-                    theme: data.theme || 'light',
+                    language: data.language || localStorage.getItem('salatk_lang') || 'ar',
+                    theme: data.theme || localStorage.getItem('salatk_theme') || 'light',
                     calculationMethod: data.calculation_method || 'UmmAlQura',
                     madhab: data.madhab || 'Shafi',
                     lastVisit: data.last_visit || new Date().toISOString().split('T')[0],
@@ -42,6 +49,7 @@ const SettingsService = {
                 };
                 return this._cache;
             }
+
         } catch (e) {
             console.error('SettingsService: Failed to fetch cloud settings', e);
         }
@@ -69,22 +77,22 @@ const SettingsService = {
 
     // Set setting
     async set(key, value) {
-        // Update cache immediately (Optimistic)
-        if (!this._cache) await this.getSettings();
+        // 1. Update cache immediately (Optimistic)
+        if (!this._cache) this._cache = this.getDefaultSettings(); // Ensure cache exists
         this._cache[key] = value;
+
+        // 2. Persist to LocalStorage IMMEDIATELY (Synchronous) to prevent race conditions on reload
+        localStorage.setItem(`salatk_${key}`, value);
+
+        // 3. Apply side effects (DOM, etc)
         this.applySettings({ [key]: value });
 
-        if (!window.supabaseClient) {
-            localStorage.setItem(`salatk_${key}`, value);
-            return;
-        }
+        if (!window.supabaseClient) return;
 
         const session = await window.AuthManager.getSession();
-        if (!session) {
-            localStorage.setItem(`salatk_${key}`, value);
-            return;
-        }
+        if (!session) return;
 
+        // 4. Background Sync to Cloud
         const updates = { user_id: session.user.id };
         const fieldMap = {
             'language': 'language',
@@ -97,9 +105,13 @@ const SettingsService = {
         if (fieldMap[key]) {
             updates[fieldMap[key]] = value;
             try {
+                // Determine update strategy based on importance
+                // Theme/Lang: fire and forget mostly, but we await to be safe against quick reloads
+                const timeout = (key === 'theme' || key === 'language') ? 2000 : 5000;
+
                 await withTimeout(
                     window.supabaseClient.from('user_settings').upsert(updates),
-                    5000
+                    timeout
                 );
 
                 // If calculation/madhab changed, clear prayer cache
@@ -111,6 +123,7 @@ const SettingsService = {
             }
         }
     },
+
 
     async init() {
         const settings = await this.getSettings();

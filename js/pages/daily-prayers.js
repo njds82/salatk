@@ -87,7 +87,7 @@ async function renderDailyPrayersPage() {
             }
         }
 
-        html += createPrayerCard(prayerKey, status, timeDisplay, isTimeValid);
+        html += createPrayerCard(prayerKey, status, timeDisplay, isTimeValid).replace('class="prayer-card', `data-prayer="${prayerKey}" class="prayer-card`);
     }
 
     html += `</div>`;
@@ -127,40 +127,81 @@ function handleNextDay() {
     setSelectedDate(formatDate(date));
 }
 
+// Helper to update card UI immediately
+function optimisticUpdateCard(prayerKey, status) {
+    const card = document.querySelector(`.prayer-card[data-prayer="${prayerKey}"]`);
+    if (!card) return;
+
+    // Remove old classes
+    card.classList.remove('done', 'missed');
+
+    // Add new status class if applicable
+    if (status === 'done') card.classList.add('done');
+    if (status === 'missed') card.classList.add('missed');
+
+    // Update buttons UI (Optional: could disable them or show spinner)
+    // For now, the visual change of the card is feedback enough.
+}
+
 // Handle prayer performed
 async function handlePrayerPerformed(prayerKey) {
+    if (!canEditDate(window.selectedDate)) {
+        showToast(t('last_7_days_only'), 'error');
+        return;
+    }
+
+    // Capture previous state in case of revert
+    // (This is tricky without state management, we assume reset on failure)
+
     try {
-        if (!canEditDate(window.selectedDate)) {
-            showToast(t('last_7_days_only'), 'error');
-            return;
-        }
+        // Optimistic UI Update
+        optimisticUpdateCard(prayerKey, 'done');
+
+        // Background Service Call
         const result = await PrayerService.markPrayer(prayerKey, window.selectedDate, 'done');
+
         if (result.success) {
             showToast(t('prayer_performed_message'), 'success');
             await updatePointsDisplay();
+            // We call updatePrayerCard just to ensure points/details are synced, 
+            // but the visual state 'done' is already there.
             await updatePrayerCard(prayerKey);
+        } else {
+            throw new Error('Action failed');
         }
     } catch (error) {
         console.error('Error in handlePrayerPerformed:', error);
         showToast(t('error_general'), 'error');
+        // Revert UI by refreshing the card
+        await updatePrayerCard(prayerKey);
     }
 }
 
 // Handle prayer missed
 async function handlePrayerMissed(prayerKey) {
+    if (!canEditDate(window.selectedDate)) {
+        showToast(t('last_7_days_only'), 'error');
+        return;
+    }
+
     try {
-        if (!canEditDate(window.selectedDate)) {
-            showToast(t('last_7_days_only'), 'error');
-            return;
-        }
+        // Optimistic UI Update
+        optimisticUpdateCard(prayerKey, 'missed');
+
         const result = await PrayerService.markPrayer(prayerKey, window.selectedDate, 'missed');
+
         if (result.success) {
-            showToast(t('prayer_missed_message'), 'warning'); // Changed error to warning (yellow) for UI feel
+            showToast(t('prayer_missed_message'), 'warning');
             await updatePointsDisplay();
             await updatePrayerCard(prayerKey);
+        } else {
+            throw new Error('Action failed');
         }
     } catch (error) {
         console.error('Error in handlePrayerMissed:', error);
         showToast(t('error_general'), 'error');
+        // Revert UI
+        await updatePrayerCard(prayerKey);
     }
 }
+

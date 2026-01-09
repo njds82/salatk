@@ -83,28 +83,74 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+const ATHKAR = [
+    "سُبْحـانَ اللهِ وَبِحَمْـدِهِ عَدَدَ خَلْـقِه ، وَرِضـا نَفْسِـه ، وَزِنَـةَ عَـرْشِـه ، وَمِـدادَ كَلِمـاتِـه",
+    "اللّهُـمَّ إِنِّـي أَسْأَلُـكَ عِلْمـاً نافِعـاً ، وَرِزْقـاً طَيِّبـاً ، وَعَمَـلاً مُتَقَبَّـلاً",
+    "رَبِّ اشْرَحْ لِي صَدْرِي وَيَسِّرْ لِي أَمْرِي",
+    "اللَّهُمَّ أَعِنِّي عَلَى ذِكْرِكَ، وَشُكْرِكَ، وَحُسْنِ عِبَادَتِكَ",
+    "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ",
+    "سُبْحَانَ اللَّهِ، وَالْحَمْدُ لِلَّهِ، وَلَا إِلَهَ إِلَّا اللَّهُ، وَاللَّهُ أَكْبَرُ",
+    "أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ"
+];
+
+function showRandomQuote() {
+    const quoteEl = document.getElementById('splashQuote');
+    if (quoteEl) {
+        const randomQuote = ATHKAR[Math.floor(Math.random() * ATHKAR.length)];
+        quoteEl.textContent = randomQuote;
+    }
+}
+
 async function checkAuthAndInit() {
-    // Navigate to initial page FAST (don't wait for services)
-    navigateToHash();
+    // Show random quote on splash
+    showRandomQuote();
+
+    const splashScreen = document.getElementById('splashScreen');
 
     // Start initializations in parallel
     const initTasks = [];
     if (window.SettingsService) {
         initTasks.push(SettingsService.init());
     }
+
+    // CRITICAL: We MUST wait for prayer times before main render to avoid stale data
+    // This solves the race condition where UI loads with empty data then snaps
+    let prayerTimesPromise = null;
     if (window.PrayerManager) {
-        initTasks.push(PrayerManager.init().then(times => {
-            if (window.NotificationManager) {
-                NotificationManager.scheduleNextPrayer(times);
-            }
-        }));
+        prayerTimesPromise = PrayerManager.init();
+        initTasks.push(prayerTimesPromise);
     }
 
-    // Wait for inits but they are now non-blocking for the first render
-    await Promise.all(initTasks);
+    // Wait for essential services
+    // We add a minimum delay to let users read the Athkar (at least 1.5s total)
+    const minDelay = new Promise(resolve => setTimeout(resolve, 1500));
+
+    try {
+        await Promise.all([...initTasks, minDelay]);
+
+        // Schedule next prayer notification if we have times
+        if (prayerTimesPromise && window.NotificationManager) {
+            const times = await prayerTimesPromise;
+            NotificationManager.scheduleNextPrayer(times);
+        }
+    } catch (e) {
+        console.error("Initialization error:", e);
+    }
+
+    // Determine target page
+    navigateToHash();
 
     // Update points display after potential sync
     updatePointsDisplay();
+
+    // Hide Splash Screen
+    if (splashScreen) {
+        splashScreen.classList.add('hidden');
+        // Remove from DOM after transition
+        setTimeout(() => {
+            splashScreen.style.display = 'none';
+        }, 500);
+    }
 
     // BACKGROUND TASKS: Non-critical cleanup and sync
     setTimeout(async () => {
@@ -115,11 +161,11 @@ async function checkAuthAndInit() {
 
         // Sync data if configured (Now Cloud-Only)
         if (window.SyncManager) {
-            // Realtime subscriptions are still useful for cloud-only mode
             SyncManager.subscribeToChanges();
         }
     }, 100);
 }
+
 
 // Set up event listeners
 function setupEventListeners() {
