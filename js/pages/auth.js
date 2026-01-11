@@ -43,12 +43,13 @@ function renderAuthPage(type = 'login') {
                     </button>
                 </form>
                 
-                <div class="auth-footer">
-                    <p>${isLogin ? t('no_account_text') : t('have_account_text')} 
-                        <a href="#${isLogin ? 'signup' : 'login'}">
-                            ${isLogin ? t('signup_link') : t('login_link')}
-                        </a>
+                <div class="auth-footer" style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--color-border);">
+                    <p style="margin-bottom: 10px; color: var(--color-text-secondary); font-size: 0.95em;">
+                        ${isLogin ? t('no_account_text') : t('have_account_text')}
                     </p>
+                    <a href="#${isLogin ? 'signup' : 'login'}" class="btn btn-secondary" style="display: block; width: 100%; text-decoration: none; padding: 12px;">
+                        ${isLogin ? t('signup_link') : t('login_link')}
+                    </a>
                 </div>
             </div>
         </div>

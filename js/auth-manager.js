@@ -98,6 +98,14 @@ const AuthManager = {
             if (err.message && (err.message.includes('already registered') || err.message.includes('duplicate key'))) {
                 return { error: { message: t('error_username_taken') } };
             }
+            if (err.message && err.message.includes('Password should be at least')) {
+                return { error: { message: t('error_password_too_short') } };
+            }
+            if (err.message && err.message.toLowerCase().includes('password')) {
+                // General password error fallback
+                // But typically "Password should be at least..." is the main one during signup
+            }
+
             return { error: err.message === 'timeout' ? { message: t('error_timeout') || 'Operation timed out' } : err };
         }
     },
@@ -115,7 +123,13 @@ const AuthManager = {
             }
             return { data, error };
         } catch (err) {
-            return { error: err.message === 'timeout' ? { message: t('error_timeout') || 'Operation timed out' } : err };
+            let message = err.message;
+            if (message === 'Invalid login credentials') {
+                message = t('error_invalid_credentials');
+            } else if (message === 'timeout') {
+                message = t('error_timeout') || 'Operation timed out';
+            }
+            return { error: { message } };
         }
     },
 
