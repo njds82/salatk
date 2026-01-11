@@ -1,4 +1,9 @@
 // Supabase Client Initialization (Global Scope)
+console.log('supabaseClient.js loading...');
+console.log('window.CONFIG check:', window.CONFIG);
+console.log('window.supabase check:', !!window.supabase, 'window.Supabase check:', !!window.Supabase);
+
+// Credentials are loaded from config.js (not committed to git)
 // Credentials are loaded from config.js (not committed to git)
 const supabaseUrl = window.CONFIG ? window.CONFIG.SUPABASE_URL : null;
 const supabaseKey = window.CONFIG ? window.CONFIG.SUPABASE_ANON_KEY : null;
@@ -40,6 +45,10 @@ if (!window.supabaseClient) {
             getUser: () => Promise.resolve({ data: { user: null }, error: { message: 'Supabase Client not initialized' } }),
             onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => { } } } }),
         },
+        channel: () => ({
+            on: () => ({ subscribe: () => { } }),
+            subscribe: () => { }
+        }),
         from: () => ({
             select: () => ({
                 eq: () => ({

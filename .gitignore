@@ -5,5 +5,3 @@
 .env.production.local
 
 # Configuration files with sensitive data
-js/config.js
-config.js
