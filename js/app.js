@@ -251,8 +251,12 @@ function navigateTo(page) {
     window.location.hash = page;
 
     // Update navigation active state
+    // Secondary pages should highlight "More"
+    const morePages = ['statistics', 'challenge', 'store', 'athkar', 'settings', 'more'];
+
     document.querySelectorAll('.nav-item').forEach(item => {
-        if (item.getAttribute('data-page') === page) {
+        const itemPage = item.getAttribute('data-page');
+        if (itemPage === page || (itemPage === 'more' && morePages.includes(page))) {
             item.classList.add('active');
         } else {
             item.classList.remove('active');
@@ -355,6 +359,9 @@ async function renderPage(page, noScroll = false) {
             case 'athkar':
                 html = await renderAthkarPage();
                 break;
+            case 'more':
+                html = await renderMorePage();
+                break;
             case 'challenge':
                 if (window.renderChallengePage) {
                     html = await window.renderChallengePage();
@@ -385,3 +392,5 @@ async function renderPage(page, noScroll = false) {
         window.scrollTo(0, 0);
     }
 }
+
+
