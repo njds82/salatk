@@ -1,4 +1,4 @@
-import { challenges } from '../data/questions.js';
+import { getChallenges } from '../data/questions.js';
 
 // State
 let currentStageIndex = 0;
@@ -14,6 +14,15 @@ let modalOverlay;
 export async function initChallengePage() {
     console.log('Initializing Challenge Page...');
     challengeContainer = document.getElementById('challenge-container');
+
+    // Subscribe to language changes to re-render if needed
+    window.addEventListener('languageChanged', (e) => {
+        const content = document.getElementById('pageContent');
+        // Only re-render if we are currently viewing the challenge page
+        if (content && content.querySelector('#challenge-page')) {
+            renderChallengePage(true).then(html => content.innerHTML = html);
+        }
+    });
 
     // Ensure container exists
     if (!challengeContainer) {
@@ -34,8 +43,9 @@ async function renderChallengePage(skipFetch = false) {
 
     // 2. Build HTML
     let stagesHtml = '';
+    const currentChallenges = getChallenges(document.documentElement.lang || 'ar');
 
-    challenges.forEach((stage, index) => {
+    currentChallenges.forEach((stage, index) => {
         // ... (rest of the loop is same)
 
         const isLocked = stage.id > lastCompletedStageId + 1;
@@ -43,13 +53,15 @@ async function renderChallengePage(skipFetch = false) {
         const statusClass = isLocked ? 'locked' : (isCompleted ? 'completed' : 'unlocked');
         const icon = isLocked ? '🔒' : (isCompleted ? '✅' : '🌟');
 
+        const statusText = isLocked ? t('stage_locked') : (isCompleted ? t('stage_completed') : t('start_challenge'));
+
         stagesHtml += `
             <div class="challenge-card ${statusClass}" onclick="window.handleStageClick(${stage.id})" data-id="${stage.id}">
                 <div class="card-icon">${icon}</div>
                 <div class="card-content">
                     <h3 class="card-title">${stage.title}</h3>
                     <p class="card-status">
-                        ${isLocked ? 'مغلق' : (isCompleted ? 'مكتمل' : 'ابدأ التحدي')}
+                        ${statusText}
                     </p>
                 </div>
             </div>
@@ -59,8 +71,8 @@ async function renderChallengePage(skipFetch = false) {
     const html = `
         <div class="challenge-page" id="challenge-page">
              <header class="page-header">
-                <h2>صفحة التحدي</h2>
-                <p>اختبر معلوماتك الدينية واجمع النقاط!</p>
+                <h2>${t('challenge_title')}</h2>
+                <p>${t('challenge_desc')}</p>
             </header>
             
             <div class="challenges-grid" id="challenge-container">
@@ -82,7 +94,7 @@ async function renderChallengePage(skipFetch = false) {
                     </div>
                 </div>
                 <div class="quiz-footer">
-                    <button class="btn btn-secondary" onclick="window.closeQuizModal()">خروج</button>
+                    <button class="btn btn-secondary" onclick="window.closeQuizModal()">${t('quiz_exit')}</button>
                 </div>
             </div>
         </div>
@@ -124,14 +136,15 @@ async function fetchUserProgress() {
 // Handle Stage Click
 window.handleStageClick = (stageId) => {
     // Find stage
-    const stage = challenges.find(c => c.id === stageId);
+    const currentChallenges = getChallenges(document.documentElement.lang || 'ar');
+    const stage = currentChallenges.find(c => c.id === stageId);
     if (!stage) return;
 
     // Check lock status
     // Stage is locked if its ID is greater than lastCompletedStageId + 1
     // e.g. if last done is 0, stage 1 is open (1 <= 0+1), stage 2 is locked (2 > 1)
     if (stage.id > lastCompletedStageId + 1) {
-        showToast('هذه المرحلة مغلقة، أكمل المراحل السابقة أولاً', 'error');
+        showToast(t('stage_locked_msg'), 'error');
         return;
     }
 
@@ -206,7 +219,7 @@ function renderQuestion() {
     if (question.type === 'fill_blank') {
         const parts = question.text.split('____');
         questionTextElement.innerHTML = `
-            ${parts[0]} <span class="blank-spot" id="blank-spot">ــــــ</span> ${parts[1] || ''}
+            ${parts[0]} <span class="blank-spot" id="blank-spot">${t('fill_blank_placeholder')}</span> ${parts[1] || ''}
         `;
         optionsContainer.classList.add('fill-blank-mode');
     } else {
@@ -240,12 +253,12 @@ function renderQuestion() {
     if (!confirmBtn) {
         const footer = document.querySelector('.quiz-footer');
         // Clear existing footer content first to avoid duplicates or old buttons
-        footer.innerHTML = '<button class="btn btn-secondary" onclick="window.closeQuizModal()">خروج</button>';
+        footer.innerHTML = `<button class="btn btn-secondary" onclick="window.closeQuizModal()">${t('quiz_exit')}</button>`;
 
         confirmBtn = document.createElement('button');
         confirmBtn.id = 'confirm-btn';
         confirmBtn.className = 'btn btn-primary';
-        confirmBtn.textContent = 'تأكيد الإجابة';
+        confirmBtn.textContent = t('confirm_answer');
         confirmBtn.style.display = 'none'; // Hidden initially
         confirmBtn.style.marginRight = '10px';
         confirmBtn.onclick = confirmAnswer;
@@ -254,7 +267,7 @@ function renderQuestion() {
         confirmBtn.style.display = 'none';
         confirmBtn.disabled = false;
         confirmBtn.className = 'btn btn-primary'; // Reset classes (remove btn-danger if present)
-        confirmBtn.textContent = 'تأكيد الإجابة';
+        confirmBtn.textContent = t('confirm_answer');
     }
 }
 
@@ -309,7 +322,7 @@ async function confirmAnswer() {
             }
         }
 
-        confirmBtn.textContent = 'إجابة صحيحة!';
+        confirmBtn.textContent = t('correct_answer_exclamation');
 
         // Wait and go next
         setTimeout(() => {
@@ -340,7 +353,7 @@ async function confirmAnswer() {
         // Push question to end of queue to retry later
         activeStage.questions.push(question);
 
-        confirmBtn.textContent = 'إجابة خاطئة - سنعيد السؤال لاحقاً';
+        confirmBtn.textContent = t('wrong_answer_retry');
         confirmBtn.classList.replace('btn-primary', 'btn-danger');
 
         // Wait and go next (instead of failing)
@@ -355,7 +368,7 @@ async function confirmAnswer() {
 
 async function finishStage(success) {
     if (!success) {
-        showToast('إجابة خاطئة، حاول مرة أخرى!', 'error');
+        showToast(t('wrong_answer_toast'), 'error');
         return;
     }
 
@@ -398,18 +411,18 @@ async function finishStage(success) {
     const quizHeader = document.querySelector('.quiz-header');
 
     // Update Header
-    document.getElementById('quiz-title').textContent = '🎉 اكتملت المرحلة!';
+    document.getElementById('quiz-title').textContent = t('stage_complete_title');
     document.getElementById('quiz-progress').style.display = 'none';
 
     // Update Body
     quizBody.innerHTML = `
         <div class="completion-summary" style="text-align: center; padding: 2rem 0;">
             <div class="summary-stat">
-                <h3>دقة الإجابة</h3>
+                <h3>${t('accuracy')}</h3>
                 <p class="stat-value" style="font-size: 2rem; color: var(--color-primary); font-weight: bold;">${accuracy}%</p>
             </div>
             <div class="summary-stat" style="margin-top: 1rem;">
-                <h3>الوقت المستغرق</h3>
+                <h3>${t('time_taken')}</h3>
                 <p class="stat-value" style="font-size: 1.5rem;">${timeString}</p>
             </div>
         </div>
@@ -425,7 +438,7 @@ async function finishStage(success) {
 
     quizFooter.innerHTML = `
         <button class="btn btn-primary" id="claim-btn" onclick="window.claimReward(${activeStage.id})" style="width: 100%;">
-            ${isNewCompletion ? 'استلام النقاط وفتح المرحلة التالية' : 'إغلاق'}
+            ${isNewCompletion ? t('claim_reward_btn') : t('close')}
         </button>
     `;
 }
@@ -434,7 +447,10 @@ window.claimReward = async (stageId) => {
     const btn = document.getElementById('claim-btn');
     if (btn) {
         btn.disabled = true;
-        btn.textContent = 'جاري المعالجة...';
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = t('processing');
+        }
     }
 
     // Determine if we need to award points
@@ -446,14 +462,14 @@ window.claimReward = async (stageId) => {
         console.log('Claiming reward for stage:', stageId);
         const success = await awardPoints(stageId);
         if (success) {
-            showToast('تم إضافة النقاط وفتح المرحلة التالية!', 'success');
+            showToast(t('reward_claimed_toast'), 'success');
             // Update local state and UI
             lastCompletedStageId = stageId;
             const content = document.getElementById('pageContent');
             const html = await renderChallengePage(true);
             content.innerHTML = html;
         } else {
-            showToast('حدث خطأ أثناء حفظ التقدم، لكن تم فتح المرحلة مؤقتاً.', 'warning');
+            showToast(t('error_saving_progress_toast'), 'warning');
             // Optimistic unlock
             lastCompletedStageId = stageId;
             const content = document.getElementById('pageContent');
@@ -462,7 +478,7 @@ window.claimReward = async (stageId) => {
         }
     } else {
         // Just close and go back
-        showToast('تم إكمال المرحلة مسبقاً.', 'info');
+        showToast(t('stage_already_completed'), 'info');
     }
 
     window.closeQuizModal();

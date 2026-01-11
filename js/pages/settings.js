@@ -603,7 +603,7 @@ async function handleApplyReferralCode() {
                 id: crypto.randomUUID(),
                 user_id: referrer.id,
                 amount: 7,
-                reason: t('referral_section_title') + ' (Referrer reward)',
+                reason: t('referral_section_title') + ' ' + t('referrer_reward'),
                 recorded_at: new Date().toISOString()
             });
 
@@ -652,9 +652,9 @@ async function toggleLeaderboardPrivacy(currentStatus) {
 function copyReferralCode(code) {
     if (!code) return;
     navigator.clipboard.writeText(code).then(() => {
-        showToast(t('copy_success') || 'Copied!', 'success');
+        showToast(t('copy_success'), 'success');
     }).catch(() => {
-        showToast('Failed to copy', 'error');
+        showToast(t('copy_failed'), 'error');
     });
 }
 
@@ -671,7 +671,7 @@ function handleShareApp(code) {
         });
     } else {
         navigator.clipboard.writeText(shareMessage).then(() => {
-            showToast(t('copy_success') || 'Copied!', 'success');
+            showToast(t('copy_success'), 'success');
         });
     }
 }

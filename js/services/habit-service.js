@@ -94,7 +94,7 @@ const HabitService = {
 
         // Fetch habit details for point calculation
         const { data: habit } = await window.supabaseClient.from('habits').select('*').eq('id', habitId).single();
-        if (!habit) throw new Error('Habit not found');
+        if (!habit) throw new Error(t('error_general'));
 
         const pointId = `habit:${habitId}:${date}`;
         let pointsAmount = 0;
