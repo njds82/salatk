@@ -15,17 +15,44 @@ const AuthManager = {
         ]).finally(() => clearTimeout(timeoutId));
     },
 
+    // Helper to validate username
+    _validateUsername(username) {
+        if (!username) throw new Error(t('error_invalid_input'));
+
+        const cleanUsername = username.trim().toLowerCase();
+
+        // 1. Length check
+        if (cleanUsername.length < 3) throw new Error(t('username_too_short'));
+
+        // 2. Forbidden words check
+        const forbiddenTerms = ['admin', 'root', 'system', 'moderator', 'support', 'help', 'info', 'salatk', 'allah', 'god', 'prophet', 'test', 'testing', 'tester'];
+
+        // Check for exact forbidden terms
+        if (forbiddenTerms.includes(cleanUsername)) {
+            throw new Error(t('error_username_forbidden'));
+        }
+
+        // Check for "test" variations (starts with test followed by digit/separator, or ends with test preceded by digit/separator)
+        // This bans: test1, test_user, user_test, 1test
+        // This ALLOWS: contest, latest, protest
+        if (/(^test[\d_])|([\d_]test$)/.test(cleanUsername)) {
+            throw new Error(t('error_username_forbidden'));
+        }
+
+        // Also ban pure numbers to avoid confusion? (Optional, but good for username-like feel)
+        // For now, adhere to "test and similar".
+
+        return cleanUsername;
+    },
+
     // Helper to resolve username to an email address
     _resolveAuthEmail(username) {
-        // Enforce username only - no spaces, specific regex if needed, but for now simple trim
-        // We will strictly treat any input as a username and append @salatk.local
-
         let cleanUsername = username.trim();
         // Remove @ if user added it
         if (cleanUsername.startsWith('@')) cleanUsername = cleanUsername.substring(1);
 
-        // Basic validation for username
-        if (cleanUsername.length < 3) throw new Error(t('username_too_short') || 'Username too short');
+        // Validate content
+        this._validateUsername(cleanUsername);
 
         // Generate dummy email
         return {
@@ -67,6 +94,10 @@ const AuthManager = {
 
             return { data, error };
         } catch (err) {
+            // Map Supabase "User already registered" to "Username taken"
+            if (err.message && (err.message.includes('already registered') || err.message.includes('duplicate key'))) {
+                return { error: { message: t('error_username_taken') } };
+            }
             return { error: err.message === 'timeout' ? { message: t('error_timeout') || 'Operation timed out' } : err };
         }
     },
@@ -122,14 +153,24 @@ const AuthManager = {
 
     async updateProfile(updates) {
         const user = await this.getCurrentUser();
-        if (!user) throw new Error('No user logged in');
+        if (!user) throw new Error(t('error_login_required'));
+
+        // Validate username if being updated
+        if (updates.username) {
+            this._validateUsername(updates.username);
+        }
 
         // Update user metadata
         const { error: metaError } = await this._withTimeout(window.supabaseClient.auth.updateUser({
             data: updates
         }));
 
-        if (metaError) throw metaError;
+        if (metaError) {
+            if (metaError.message && (metaError.message.includes('already registered') || metaError.message.includes('duplicate'))) {
+                throw new Error(t('error_username_taken'));
+            }
+            throw metaError;
+        }
 
         // Also update profiles table if it exists
         try {

@@ -167,7 +167,7 @@ async function handlePrayerPerformed(prayerKey) {
             // but the visual state 'done' is already there.
             await updatePrayerCard(prayerKey);
         } else {
-            throw new Error('Action failed');
+            throw new Error(t('error_general'));
         }
     } catch (error) {
         console.error('Error in handlePrayerPerformed:', error);
@@ -195,7 +195,7 @@ async function handlePrayerMissed(prayerKey) {
             await updatePointsDisplay();
             await updatePrayerCard(prayerKey);
         } else {
-            throw new Error('Action failed');
+            throw new Error(t('error_general'));
         }
     } catch (error) {
         console.error('Error in handlePrayerMissed:', error);

@@ -240,6 +240,8 @@ const translations = {
         login_success: 'تم تسجيل الدخول بنجاح',
         signup_success: 'تم إنشاء الحساب بنجاح',
         username_too_short: 'اسم المستخدم قصير جداً',
+        error_username_forbidden: 'اسم المستخدم هذا غير مسموح به',
+        error_username_taken: 'اسم المستخدم هذا مأخوذ بالفعل',
 
         // Leaderboard
         nav_leaderboard: 'لوحة الصدارة',
@@ -286,7 +288,7 @@ const translations = {
         error_general: 'حدث خطأ ما، يرجى المحاولة لاحقاً',
 
         // Leaderboard Errors & Help
-        error_login_required: 'يجب تسجيل الدخول لعرض لوحة المتصدرين',
+        error_login_required: 'يجب تسجيل الدخول للقيام بهذا الإجراء',
         error_leaderboard_disabled: 'لوحة المتصدرين غير مُفعّلة. يرجى تشغيل سكريبت SQL: supabase_leaderboard_view.sql',
         error_sql_help_title: 'خطأ في تحميل البيانات',
         error_sql_help_intro: 'خطوات الإصلاح:',
@@ -355,6 +357,35 @@ const translations = {
         read_btn: 'قرأت',
         athkar_progress_hint: 'اقرأ 10 أذكار لتكسب نقطة',
         point_earned_athkar: 'أحسنت! كسبت نقطة للأذكار',
+
+        // Challenge Page
+        nav_challenge: 'التحدي',
+        challenge_title: 'صفحة التحدي',
+        challenge_desc: 'اختبر معلوماتك الدينية واجمع النقاط!',
+        stage_locked: 'مغلق',
+        stage_completed: 'مكتمل',
+        start_challenge: 'ابدأ التحدي',
+        stage_locked_msg: 'هذه المرحلة مغلقة، أكمل المراحل السابقة أولاً',
+        quiz_exit: 'خروج',
+        confirm_answer: 'تأكيد الإجابة',
+        correct_answer_exclamation: 'إجابة صحيحة!',
+        wrong_answer_retry: 'إجابة خاطئة - سنعيد السؤال لاحقاً',
+        wrong_answer_toast: 'إجابة خاطئة، حاول مرة أخرى!',
+        fill_blank_placeholder: 'ــــــ',
+        stage_complete_title: '🎉 اكتملت المرحلة!',
+        accuracy: 'دقة الإجابة',
+        time_taken: 'الوقت المستغرق',
+        claim_reward_btn: 'استلام النقاط وفتح المرحلة التالية',
+        reward_claimed_toast: 'تم إضافة النقاط وفتح المرحلة التالية!',
+        error_saving_progress_toast: 'حدث خطأ أثناء حفظ التقدم، لكن تم فتح المرحلة مؤقتاً.',
+        stage_already_completed: 'تم إكمال المرحلة مسبقاً.',
+        processing: 'جاري المعالجة...',
+        theme_updated: 'تم تحديث الثيم!',
+        more_coming_soon: 'المزيد من الواجهات والأيقونات قريباً!',
+        copy_success: 'تم النسخ!',
+        copy_failed: 'فشل النسخ',
+        referrer_reward: '(مكافأة دعوة صديق)',
+        saving: 'جاري الحفظ',
     },
 
     en: {
@@ -594,6 +625,8 @@ const translations = {
         login_success: 'Login successful',
         signup_success: 'Account created successfully',
         username_too_short: 'Username too short',
+        error_username_forbidden: 'This username is not allowed',
+        error_username_taken: 'This username is already taken',
 
         // Leaderboard
         nav_leaderboard: 'Leaderboard',
@@ -640,7 +673,7 @@ const translations = {
         error_general: 'Something went wrong, please try again later',
 
         // Leaderboard Errors & Help
-        error_login_required: 'You must be logged in to view the leaderboard',
+        error_login_required: 'You must be logged in to perform this action',
         error_leaderboard_disabled: 'Leaderboard is disabled. Please run SQL script: supabase_leaderboard_view.sql',
         error_sql_help_title: 'Error Loading Data',
         error_sql_help_intro: 'Fix Steps:',
@@ -709,6 +742,35 @@ const translations = {
         read_btn: 'Read',
         athkar_progress_hint: 'Read 10 Athkar to earn a point',
         point_earned_athkar: 'Well done! You earned a point',
+
+        // Challenge Page
+        nav_challenge: 'Challenge',
+        challenge_title: 'Challenge Page',
+        challenge_desc: 'Test your Islamic knowledge and earn points!',
+        stage_locked: 'Locked',
+        stage_completed: 'Completed',
+        start_challenge: 'Start Challenge',
+        stage_locked_msg: 'This stage is locked, complete previous stages first',
+        quiz_exit: 'Exit',
+        confirm_answer: 'Confirm Answer',
+        correct_answer_exclamation: 'Correct Answer!',
+        wrong_answer_retry: 'Wrong Answer - Question will reappear later',
+        wrong_answer_toast: 'Wrong answer, try again!',
+        fill_blank_placeholder: '_____',
+        stage_complete_title: '🎉 Stage Completed!',
+        accuracy: 'Accuracy',
+        time_taken: 'Time Taken',
+        claim_reward_btn: 'Claim Points & Unlock Next Stage',
+        reward_claimed_toast: 'Points added and next stage unlocked!',
+        error_saving_progress_toast: 'Error saving progress, but stage unlocked temporarily.',
+        stage_already_completed: 'Stage already completed.',
+        processing: 'Processing...',
+        theme_updated: 'Theme updated!',
+        more_coming_soon: 'More interfaces and icons coming soon!',
+        copy_success: 'Copied!',
+        copy_failed: 'Failed to copy',
+        referrer_reward: '(Referrer reward)',
+        saving: 'Saving',
     }
 };
 

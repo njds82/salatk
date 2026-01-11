@@ -168,7 +168,7 @@ async function handleAddManualQada() {
 
     // Logic Check: Can't have multiple counts for a specific date
     if (dateInput && count > 1) {
-        showToast(t('error_date_count_mismatch') || "Cannot add multiple prayers for a specific date", 'error');
+        showToast(t('error_date_count_mismatch'), 'error');
         return;
     }
 
@@ -178,7 +178,7 @@ async function handleAddManualQada() {
         const result = await PrayerService.addMultipleQada(date, prayerType, rakaat, count, true);
 
         if (!result || !result.success) {
-            throw new Error('Failed to add qada prayer');
+            throw new Error(t('error_general'));
         }
 
         const message = t('added_prayers_success')

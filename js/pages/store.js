@@ -160,8 +160,8 @@ async function renderStorePage() {
     // Future Designs Section
     html += `
         <div style="margin-top: var(--spacing-xl); text-align: center; padding: var(--spacing-lg); border: 2px dashed var(--color-border); border-radius: 12px; opacity: 0.7;">
-            <p style="margin: 0; color: var(--color-text-secondary);">${t('premium_designs')}...</p>
-            <p style="font-size: 0.8em; margin-top: 4px;">More interfaces and icons coming soon!</p>
+            <p style="margin: 0; color: var(--color-text-secondary);">${t('premium_designs')}</p>
+            <p style="font-size: 0.8em; margin-top: 4px;">${t('more_coming_soon')}</p>
         </div>
     `;
 
@@ -225,7 +225,7 @@ async function handlePurchaseTheme(themeId, price, themeName) {
 
         confirmDialog(confirmMsg, async () => {
             try {
-                showToast(t('loading_auth') || 'Processing...', 'info');
+                showToast(t('processing'), 'info');
 
                 const session = await AuthManager.getSession();
                 if (!session) {
