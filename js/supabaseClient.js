@@ -1,7 +1,11 @@
 // Supabase Client Initialization (Global Scope)
 // Credentials are loaded from config.js (not committed to git)
-const supabaseUrl = CONFIG.SUPABASE_URL;
-const supabaseKey = CONFIG.SUPABASE_ANON_KEY;
+const supabaseUrl = window.CONFIG ? window.CONFIG.SUPABASE_URL : null;
+const supabaseKey = window.CONFIG ? window.CONFIG.SUPABASE_ANON_KEY : null;
+
+if (!supabaseUrl || !supabaseKey) {
+    console.error('Supabase Config Missing! Make sure js/config.js is loaded and contains SUPABASE_URL and SUPABASE_ANON_KEY');
+}
 
 // supabase is provided by the CDN script in index.html
 if (window.supabase) {
