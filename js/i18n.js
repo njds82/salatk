@@ -15,6 +15,7 @@ const translations = {
         nav_statistics: 'الإحصائيات',
         nav_leaderboard: 'لوحة الصدارة',
         nav_store: 'المتجر',
+        nav_athkar: 'الأذكار',
         nav_settings: 'الإعدادات',
 
         // Prayer names
@@ -144,6 +145,7 @@ const translations = {
         auto_mode_on: 'تم تفعيل التحديد التلقائي للموقع',
         data_management: 'إدارة البيانات',
         about: 'حول التطبيق',
+        contact_us: 'للتواصل',
         version: 'الإصدار',
         download_app: 'لتنزيل التطبيق الخاص بالهاتف',
         error_invalid_input: 'البيانات المدخلة غير صحيحة',
@@ -345,6 +347,12 @@ const translations = {
         'The absolute dark void theme': 'ثيم الفراغ المظلم المطلق',
         'Majestic peaks with warm sunset glow': 'قمم مهيبة مع توهج الغروب الدافئ',
         'Ultimate high-contrast monochrome dark theme': 'ثيم الظلام المطلق عالي التباين بالأبيض والأسود',
+
+        // Athkar Page
+        athkar_subtitle: 'رطب لسانك بذكر الله',
+        read_btn: 'قرأت',
+        athkar_progress_hint: 'اقرأ 10 أذكار لتكسب نقطة',
+        point_earned_athkar: 'أحسنت! كسبت نقطة للأذكار',
     },
 
     en: {
@@ -359,6 +367,7 @@ const translations = {
         nav_statistics: 'Statistics',
         nav_leaderboard: 'Leaderboard',
         nav_store: 'Store',
+        nav_athkar: 'Athkar',
         nav_settings: 'Settings',
 
         // Prayer names
@@ -488,6 +497,7 @@ const translations = {
         auto_mode_on: 'Auto-detect location enabled',
         data_management: 'Data Management',
         about: 'About',
+        contact_us: 'Contact Us',
         version: 'Version',
         download_app: 'To download the mobile app',
         error_invalid_input: 'Invalid input data',
@@ -689,6 +699,12 @@ const translations = {
         'The absolute dark void theme': 'The absolute dark void theme',
         'Majestic peaks with warm sunset glow': 'Majestic peaks with warm sunset glow',
         'Ultimate high-contrast monochrome dark theme': 'Ultimate high-contrast monochrome dark theme',
+
+        // Athkar Page
+        athkar_subtitle: 'Moisten your tongue with the remembrance of Allah',
+        read_btn: 'Read',
+        athkar_progress_hint: 'Read 10 Athkar to earn a point',
+        point_earned_athkar: 'Well done! You earned a point',
     }
 };
 

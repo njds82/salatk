@@ -441,6 +441,116 @@ body::after {
 }
 
 /* ========================================
+   Athkar Page
+   ======================================== */
+.athkar-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    gap: var(--spacing-xl);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.athkar-card {
+    width: 100%;
+    padding: var(--spacing-2xl) var(--spacing-xl);
+    text-align: center;
+    border-radius: var(--radius-xl);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-xl);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xl);
+    min-height: 300px;
+    justify-content: space-between;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.athkar-card.celebrate {
+    transform: scale(1.05);
+    box-shadow: 0 0 30px var(--color-success);
+    border-color: var(--color-success);
+}
+
+.athkar-text {
+    font-size: 1.75rem;
+    font-family: var(--font-display);
+    font-weight: 600;
+    line-height: 1.6;
+    color: var(--color-text-primary);
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.athkar-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    width: 100%;
+    justify-content: center;
+}
+
+.large-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--color-bg-elevated);
+}
+
+.rtl-flip {
+    /* Icons are LTR by default, flip for RTL logic if needed, but arrows usually keep direction */
+    /* Only flip if the logic requires visual mirroring (next = left in RTL) */
+    /* Our code handles RTL logic via index decrement/increment */
+}
+
+[dir="rtl"] .rtl-flip {
+    transform: scaleX(-1);
+}
+
+.lg-btn {
+    padding: var(--spacing-md) var(--spacing-2xl);
+    font-size: 1.2rem;
+    border-radius: var(--radius-full);
+    min-width: 160px;
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-sm);
+}
+
+.count-badge {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+}
+
+.athkar-progress {
+    width: 100%;
+    text-align: center;
+    color: var(--color-text-secondary);
+}
+
+.progress-bar-bg {
+    width: 100%;
+    height: 8px;
+    background: var(--color-border);
+    border-radius: var(--radius-full);
+    margin-top: var(--spacing-sm);
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: var(--color-primary);
+    width: 0;
+    transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+/* ========================================
    Header
    ======================================== */
 
