@@ -242,6 +242,8 @@ const translations = {
         username_too_short: 'اسم المستخدم قصير جداً',
         error_username_forbidden: 'اسم المستخدم هذا غير مسموح به',
         error_username_taken: 'اسم المستخدم هذا مأخوذ بالفعل',
+        error_invalid_credentials: 'اسم المستخدم أو كلمة المرور غير صحيحة',
+        error_password_too_short: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل',
 
         // Leaderboard
         nav_leaderboard: 'لوحة الصدارة',
@@ -627,6 +629,8 @@ const translations = {
         username_too_short: 'Username too short',
         error_username_forbidden: 'This username is not allowed',
         error_username_taken: 'This username is already taken',
+        error_invalid_credentials: 'Invalid username or password',
+        error_password_too_short: 'Password must be at least 6 characters',
 
         // Leaderboard
         nav_leaderboard: 'Leaderboard',
