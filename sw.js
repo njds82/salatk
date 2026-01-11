@@ -1,6 +1,6 @@
 
 // Service Worker for Salatk
-const CACHE_NAME = 'salatk-v2';
+const CACHE_NAME = 'salatk-v3';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
@@ -64,10 +64,41 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-    // Skip cross-origin requests regarding Supabase API or other APIs differently if needed
-    // But for CDN scripts (adhan, supabase-js), we can cache them!
+    // Check if it's a Supabase API request
+    const isSupabaseApi = event.request.url.includes('supabase.co');
 
-    // Strategy: Stale-While-Revalidate for most things
+    if (isSupabaseApi) {
+        // Network First Strategy for Supabase API
+        // This ensures the user always gets the latest data.
+        // If network fails, it falls back to cache (Offline mode).
+        event.respondWith(
+            fetch(event.request).then((networkResponse) => {
+                // Check if we received a valid response
+                if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic' && networkResponse.type !== 'cors') {
+                    return networkResponse;
+                }
+
+                // Clone the response
+                const responseToCache = networkResponse.clone();
+
+                caches.open(CACHE_NAME).then((cache) => {
+                    // Cache GET requests for offline support
+                    if (event.request.method === 'GET') {
+                        cache.put(event.request, responseToCache);
+                    }
+                });
+
+                return networkResponse;
+            }).catch(() => {
+                // Network failed, try to return cached response
+                return caches.match(event.request);
+            })
+        );
+        return;
+    }
+
+    // Connect to Supabase or other APIs are handled above.
+    // Strategy: Stale-While-Revalidate for static assets (HTML, CSS, JS, Images)
     event.respondWith(
         caches.match(event.request).then((cachedResponse) => {
             const fetchPromise = fetch(event.request).then((networkResponse) => {
