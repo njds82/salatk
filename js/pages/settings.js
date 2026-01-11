@@ -153,6 +153,17 @@ async function renderSettingsPage() {
             ` : ''}
         </div>
         
+        <!-- Privacy Settings -->
+        <div class="card" style="margin-bottom: var(--spacing-lg);">
+            <h3 style="margin-bottom: var(--spacing-md);">🔒 ${t('account_settings')}</h3>
+            <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
+                <button class="btn ${profile?.is_public === false ? 'btn-success' : 'btn-secondary'}" 
+                        onclick="toggleLeaderboardPrivacy(${profile?.is_public})">
+                    ${profile?.is_public === false ? '✅ ' + t('return_to_leaderboard') : '👁️ ' + t('remove_from_leaderboard')}
+                </button>
+            </div>
+        </div>
+        
         <!-- Theme Settings -->
         <div class="card" style="margin-bottom: var(--spacing-lg);">
             <h3 style="margin-bottom: var(--spacing-md);">${t('theme')}</h3>
@@ -609,6 +620,35 @@ async function handleApplyReferralCode() {
     }
 }
 
+// Toggle Leaderboard Privacy
+async function toggleLeaderboardPrivacy(currentStatus) {
+    // currentStatus might be undefined (true by default) or boolean
+    // If it's explicitly false, we want to set it to true.
+    // If it's true or undefined, we want to set it to false.
+    const newStatus = (currentStatus === false) ? true : false;
+
+    try {
+        const user = await AuthManager.getCurrentUser();
+        if (!user) return;
+
+        const { error } = await window.supabaseClient
+            .from('profiles')
+            .update({ is_public: newStatus })
+            .eq('id', user.id);
+
+        if (error) throw error;
+
+        showToast(newStatus ? t('return_to_leaderboard') : t('remove_from_leaderboard'), 'success');
+
+        // Refresh page to update button state
+        renderPage('settings', true);
+
+    } catch (error) {
+        console.error('Error toggling privacy:', error);
+        showToast(t('error_general'), 'error');
+    }
+}
+
 function copyReferralCode(code) {
     if (!code) return;
     navigator.clipboard.writeText(code).then(() => {
@@ -645,5 +685,6 @@ window.addEventListener('pageRendered', (e) => {
 
 // Expose to window
 window.handleThemeChange = handleThemeChange;
+window.toggleLeaderboardPrivacy = toggleLeaderboardPrivacy;
 
 
