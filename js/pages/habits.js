@@ -65,7 +65,7 @@ async function renderHabitsPage() {
 
 // Show add habit modal
 function showAddHabitModal() {
-    const formContent = `
+    let formContent = `
         <div class="form-group">
             <label class="form-label">${t('habit_name')}</label>
             <input type="text" class="form-input" id="habitNameInput" placeholder="${t('habit_name')}">
