@@ -4,12 +4,10 @@
 
 const PRAYERS = {
     fajr: { nameKey: 'fajr', rakaat: 2, points: 5, required: true },
-    duha: { nameKey: 'duha', rakaat: 2, points: 3, required: false },
     dhuhr: { nameKey: 'dhuhr', rakaat: 4, points: 5, required: true },
     asr: { nameKey: 'asr', rakaat: 4, points: 5, required: true },
     maghrib: { nameKey: 'maghrib', rakaat: 3, points: 5, required: true },
-    isha: { nameKey: 'isha', rakaat: 4, points: 5, required: true },
-    qiyam: { nameKey: 'qiyam', rakaat: 0, points: 3, required: false }
+    isha: { nameKey: 'isha', rakaat: 4, points: 5, required: true }
 };
 
 const PrayerService = {
