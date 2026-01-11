@@ -1213,14 +1213,25 @@ body::after {
     .nav-item {
         flex-direction: column;
         gap: 4px;
-        padding: 8px 4px;
-        font-size: 11px;
+        padding: 6px 2px;
+        font-size: 10px;
         flex: 1;
         min-width: 0;
         text-align: center;
         border-radius: var(--radius-lg);
         background: transparent;
         color: var(--color-text-secondary);
+        justify-content: center;
+    }
+    
+    .nav-item span {
+        display: none; /* Hide labels on mobile to save space */
+    }
+
+    .nav-item.active span {
+        display: inline-block; /* Show label only for active item if needed, or keep hidden */
+        font-weight: bold;
+        display: none; /* Actually, keep it hidden to be cleaner, or make it very small */
     }
 
     .nav-item:hover {
@@ -1236,8 +1247,9 @@ body::after {
     }
 
     .nav-item svg {
-        width: 20px;
-        height: 20px;
+        width: 24px;
+        height: 24px;
+        margin-bottom: 2px;
     }
 
     .page-content {

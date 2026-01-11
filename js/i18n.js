@@ -93,6 +93,7 @@ const translations = {
         days: 'يوم',
         no_habits: 'لا توجد عادات مضافة',
         habits_empty_message: 'ابدأ بإضافة عادة جديدة لتتبعها',
+        suggested_habits: 'اقتراحات للعادات',
 
         // Statistics Page
         statistics_title: 'الإحصائيات',
@@ -480,6 +481,7 @@ const translations = {
         days: 'days',
         no_habits: 'No habits added',
         habits_empty_message: 'Start by adding a new habit to track',
+        suggested_habits: 'Suggested Habits',
 
         // Statistics Page
         statistics_title: 'Statistics',

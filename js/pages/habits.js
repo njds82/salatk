@@ -79,6 +79,24 @@ function showAddHabitModal() {
         </div>
     `;
 
+    // Append suggestions (easier than injecting inside the template string cleanly with replace)
+    formContent += `
+        <div style="margin-top: 15px; border-top: 1px solid var(--color-border); padding-top: 15px;">
+            <p style="margin-bottom: 10px; font-size: 0.9em; color: var(--color-text-secondary);">${t('suggested_habits') || 'Suggested Habits'}:</p>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button type="button" style="padding: 4px 8px; font-size: 0.85em;" class="btn btn-secondary" onclick="setHabitInput('${t('duha')}', 'worship')">${t('duha')}</button>
+                <button type="button" style="padding: 4px 8px; font-size: 0.85em;" class="btn btn-secondary" onclick="setHabitInput('${t('qiyam')}', 'worship')">${t('qiyam')}</button>
+            </div>
+        </div>
+    `;
+
+    window.setHabitInput = (name, type) => {
+        const nameInput = document.getElementById('habitNameInput');
+        const typeSelect = document.getElementById('habitTypeSelect');
+        if (nameInput) nameInput.value = name;
+        if (typeSelect) typeSelect.value = type;
+    };
+
     showModal(
         t('add_new_habit'),
         formContent,

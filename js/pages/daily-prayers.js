@@ -65,7 +65,8 @@ async function renderDailyPrayersPage() {
     `;
 
     // Render all prayers
-    for (const prayerKey of Object.keys(PRAYERS)) {
+    const definitions = PrayerService.getDefinitions();
+    for (const prayerKey of Object.keys(definitions)) {
         const status = dailyPrayers[prayerKey]?.status || null;
         let timeDisplay = null;
         let isTimeValid = true; // Default true (for past days)
@@ -101,7 +102,7 @@ async function renderDailyPrayersPage() {
             // But updatePrayerCard does async fetch. Maybe better to just re-render page quietly? 
             // Or update the specific changed cards.
             // Let's iterate keys and call updatePrayerCard - it handles fetching fresh state.
-            Object.keys(PRAYERS).forEach(key => updatePrayerCard(key));
+            Object.keys(PrayerService.getDefinitions()).forEach(key => updatePrayerCard(key));
         }, 60000); // Check every minute
     }
 
