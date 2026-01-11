@@ -113,13 +113,6 @@ function setupAthkarListeners() {
         readBtn.classList.add('clicked');
         setTimeout(() => readBtn.classList.remove('clicked'), 100);
 
-        // Automatically move to next after reading? user asked for scroll or arrows.
-        // Let's auto-advance for better flow after a short delay
-        setTimeout(() => {
-            currentAthkarIndex = (currentAthkarIndex + 1) % ATHKAR_LIST.length;
-            updateText('next');
-        }, 300);
-
         // Check for points
         if (athkarSessionCount % 10 === 0) {
             PointsService.addPoints(1, 'athkar_read');
