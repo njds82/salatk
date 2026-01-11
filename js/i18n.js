@@ -17,6 +17,7 @@ const translations = {
         nav_store: 'المتجر',
         nav_athkar: 'الأذكار',
         nav_settings: 'الإعدادات',
+        nav_more: 'المزيد',
 
         // Prayer names
         fajr: 'الفجر',
@@ -405,6 +406,7 @@ const translations = {
         nav_store: 'Store',
         nav_athkar: 'Athkar',
         nav_settings: 'Settings',
+        nav_more: 'More',
 
         // Prayer names
         fajr: 'Fajr',
