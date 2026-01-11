@@ -286,6 +286,14 @@ async function renderSettingsPage() {
                 📢 ${t('share_app_button')}
             </button>
         </div>
+
+        <!-- Contact Us -->
+        <div class="card" style="text-align: center; margin-top: var(--spacing-lg); margin-bottom: var(--spacing-xl);">
+            <h3 style="margin-bottom: var(--spacing-sm);">${t('contact_us')}</h3>
+            <a href="mailto:ofsorfufhg@gmail.com" style="color: var(--color-primary); text-decoration: none; font-weight: bold; font-size: 1.1em;">
+                ofsorfufhg@gmail.com
+            </a>
+        </div>
     `;
 
     return html;

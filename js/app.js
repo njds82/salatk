@@ -352,6 +352,9 @@ async function renderPage(page, noScroll = false) {
             case 'settings':
                 html = await renderSettingsPage();
                 break;
+            case 'athkar':
+                html = await renderAthkarPage();
+                break;
             case 'challenge':
                 if (window.renderChallengePage) {
                     html = await window.renderChallengePage();
