@@ -3,5 +3,5 @@
 
 window.CONFIG = {
     SUPABASE_URL: 'https://xdvnweeorbuqmrgbtxuu.supabase.co',
-    SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkdm53ZWVvcmJ1cW1yZ2J0eHV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODgyMjksImV4cCI6MjA4MjA2NDIyOX0.VBK6Be32w89FRJDEu8ypBsSji12CuwxZVX2Jp-5LyXA'
+    SUPABASE_ANON_KEY: 'sb_publishable_eHXON1ifMqmCGCqBIUd01A_WTaVq1Qu'
 };
