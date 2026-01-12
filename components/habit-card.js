@@ -62,20 +62,23 @@ async function createHabitCard(habit) {
                     <button class="btn btn-success" 
                             onclick="handleMarkHabit('${habit.id}', 'done')"
                             ${todayStatus === 'done' ? 'disabled' : ''}
-                            style="flex: 1;">
+                            style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         ${t('mark_done')}
                     </button>
                 ` : `
                     <button class="btn btn-danger" 
                             onclick="handleMarkHabit('${habit.id}', 'committed')"
                             ${todayStatus ? 'disabled' : ''}
-                            style="flex: 1;">
+                            style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         ${t('mark_committed')}
                     </button>
                     <button class="btn btn-success" 
                             onclick="handleMarkHabit('${habit.id}', 'avoided')"
                             ${todayStatus ? 'disabled' : ''}
-                            style="flex: 1;">
+                            style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         ${t('mark_avoided')}
                     </button>
                 `}

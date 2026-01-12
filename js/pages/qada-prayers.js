@@ -74,7 +74,8 @@ async function renderQadaPrayersPage() {
                             </p>
                         </div>
                     </div>
-                    <button class="btn btn-success" onclick="handleMakeUpQada('${qadaPrayer.id}')" style="width: 100%;">
+                    <button class="btn btn-success" onclick="handleMakeUpQada('${qadaPrayer.id}')" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         ${t('made_up')} (+3 ${t('points_plural')})
                     </button>
                 </div>

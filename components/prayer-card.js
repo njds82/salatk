@@ -52,18 +52,28 @@ function createPrayerCard(prayerKey, status = null, prayerTime = null, isTimeVal
             <div class="prayer-actions">
                 ${isDisabled ? `
                     <div style="flex: 1; display: flex; gap: var(--spacing-sm);" onclick="${clickHandler}">
-                        <button class="btn btn-success" disabled style="pointer-events: none;">${t('performed')}</button>
-                        <button class="btn btn-danger" disabled style="pointer-events: none;">${t('missed')}</button>
+                        <button class="btn btn-success" disabled style="pointer-events: none; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            ${t('performed')}
+                        </button>
+                        <button class="btn btn-danger" disabled style="pointer-events: none; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            ${t('missed')}
+                        </button>
                     </div>
                 ` : `
                     <button class="btn btn-success" 
                             onclick="handlePrayerPerformed('${prayerKey}')"
-                            ${hasStatus ? 'disabled' : ''}>
+                            ${hasStatus ? 'disabled' : ''}
+                            style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         ${t('performed')}
                     </button>
                     <button class="btn btn-danger" 
                             onclick="handlePrayerMissed('${prayerKey}')"
-                            ${hasStatus ? 'disabled' : ''}>
+                            ${hasStatus ? 'disabled' : ''}
+                            style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         ${t('missed')}
                     </button>
                 `}
