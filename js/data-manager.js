@@ -105,7 +105,7 @@ async function exportData() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `salatk-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `salatk-backup-${getCurrentDate()}.json`;
     a.click();
 }
 

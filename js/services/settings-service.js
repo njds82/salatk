@@ -44,7 +44,7 @@ const SettingsService = {
                     theme: data.theme || localStorage.getItem('salatk_theme') || 'light',
                     calculationMethod: data.calculation_method || 'UmmAlQura',
                     madhab: data.madhab || 'Shafi',
-                    lastVisit: data.last_visit || new Date().toISOString().split('T')[0],
+                    lastVisit: data.last_visit || getCurrentDate(),
                     initialized: data.initialized_at || Date.now()
                 };
                 return this._cache;
@@ -64,7 +64,7 @@ const SettingsService = {
             theme: localStorage.getItem('salatk_theme') || 'light',
             calculationMethod: 'UmmAlQura',
             madhab: 'Shafi',
-            lastVisit: new Date().toISOString().split('T')[0],
+            lastVisit: getCurrentDate(),
             initialized: Date.now()
         };
     },
