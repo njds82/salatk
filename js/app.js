@@ -231,8 +231,7 @@ function setupEventListeners() {
 
     // Language changed event
     window.addEventListener('languageChanged', (e) => {
-        // Only re-render if we are NOT currently rendering another page or if triggered externally
-        // But since LangToggle handles navigation, we can just let it be or bail if same lang.
+        // Navigation handler already triggers the page render.
         console.log('Language changed to:', e.detail.language);
     });
 }
@@ -392,5 +391,4 @@ async function renderPage(page, noScroll = false) {
         window.scrollTo(0, 0);
     }
 }
-
 

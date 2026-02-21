@@ -8,11 +8,6 @@ async function renderStatisticsPage() {
 
     // Get weekly prayer data (Async)
     const weekDates = getWeekDates();
-    // We need to fetch prayer status for these dates.
-    // Inefficient loop? Better to use db.prayers.where('date').anyOf(weekDates) if Dexie supports it easily,
-    // or just fetch all prayers (already done in getStatistics? No, getStatistics fetches ALL).
-    // Let's refactor: getStatistics could return the raw prayers array?
-    // Or we just re-fetch for this specific chart.
 
     // Use rawPrayers already fetched in getStatistics
     const allPrayers = stats.rawPrayers || [];
@@ -28,12 +23,7 @@ async function renderStatisticsPage() {
         return t(`day_${d.getDay()}`);
     });
 
-    // Calculate completion rate
-    // We assume 5 prayers a day * number of days tracked? 
-    // Or just total performed / (total performed + total missed)?
-    // Old logic: "totalPossiblePrayers = Object.keys(data.prayers).length * 5"
-    // This means "days tracked * 5".
-    // We can get unique dates from allPrayers.
+    // Completion rate based on tracked days and 5 required prayers/day.
     const uniqueDates = [...new Set(allPrayers.map(p => p.date))].length;
     const totalPossiblePrayers = uniqueDates * 5;
 

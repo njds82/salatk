@@ -75,9 +75,7 @@ function setupAthkarListeners() {
     const badge = document.getElementById('readCountBadge');
     const progressBar = document.getElementById('athkarProgressFill');
 
-    // Reset session count on page load if desired, or keep it.
-    // Let's keep it 0 for fresh start each page visit or persistence?
-    // User requested "Click 10 times increases point". Implies session based.
+    // Reset per page visit; points are awarded each 10 reads in this session.
     athkarSessionCount = 0;
     updateProgressUI();
 

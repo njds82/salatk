@@ -1,19 +1,12 @@
 import { getChallenges } from '../data/questions.js';
 
 // State
-let currentStageIndex = 0;
 let currentQuestionIndex = 0;
 let lastCompletedStageId = 0;
-let userProfile = null;
-
-// DOM Elements
-let challengeContainer;
-let modalOverlay;
 
 // Initialize
 export async function initChallengePage() {
     console.log('Initializing Challenge Page...');
-    challengeContainer = document.getElementById('challenge-container');
 
     // Subscribe to language changes to re-render if needed
     window.addEventListener('languageChanged', (e) => {
@@ -23,17 +16,9 @@ export async function initChallengePage() {
             renderChallengePage(true).then(html => content.innerHTML = html);
         }
     });
-
-    // Ensure container exists
-    if (!challengeContainer) {
-        // If rendered via app.js main router, the container might not be there yet? 
-        // We should expose a render function that returns HTML string, similar to other pages.
-    }
 }
 
-// Just like other pages, we export a global render function or attach it to window
-// Since app.js uses vanilla JS global functions for other pages, but this is a module.
-// We need to attach it to window.
+// Expose the renderer for the main router.
 
 async function renderChallengePage(skipFetch = false) {
     // 1. Fetch user progress (unless skipped)
@@ -45,9 +30,7 @@ async function renderChallengePage(skipFetch = false) {
     let stagesHtml = '';
     const currentChallenges = getChallenges(document.documentElement.lang || 'ar');
 
-    currentChallenges.forEach((stage, index) => {
-        // ... (rest of the loop is same)
-
+    currentChallenges.forEach((stage) => {
         const isLocked = stage.id > lastCompletedStageId + 1;
         const isCompleted = stage.id <= lastCompletedStageId;
         const statusClass = isLocked ? 'locked' : (isCompleted ? 'completed' : 'unlocked');
@@ -148,9 +131,7 @@ window.handleStageClick = (stageId) => {
         return;
     }
 
-    // Check if already completed? (Optional: allow replay without points)
-    // For now, let's allow replay.
-
+    // Replay is allowed; rewards are handled in claimReward.
     startStage(stage);
 };
 
@@ -166,8 +147,11 @@ function shuffleArray(array) {
 
 let stageStartTime = 0;
 let stageMistakes = 0;
+let stageBaseQuestionCount = 0;
 
 function startStage(stage) {
+    stageBaseQuestionCount = stage.questions.length;
+
     // Clone and shuffle questions, and shuffle their options within each question
     activeStage = {
         ...stage,
@@ -380,35 +364,12 @@ async function finishStage(success) {
     const seconds = durationSec % 60;
     const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
 
-    // Accuracy: Base questions / (Base questions + mistakes)
-    // Note: activeStage.questions grows as we push mistakes.
-    // The "original" count was 10. `activeStage.questions.length` is currently 10 + mistakes?
-    // Wait, we push to `activeStage.questions`.
-    // So `activeStage.questions.length` - `stageMistakes` is roughly the original count?
-    // Total attempts = Original Length + Mistakes.
-    // We can get original length by filtering unique or just checking data.
-    // But since we are at the end, currentQuestionIndex matches length.
-
-    // Better way: Initial questions count.
-    // We only pushed mistakes.
-    // So total attempts = activeStage.questions.length (at the end).
-    // Correct unique answers = activeStage.questions.length - stageMistakes. 
-    // Wait, no. If I fail Q1, it goes to Q11. Total 11. 
-    // Correct answers (successfully passed) = 11? No.
-    // We have N unique questions. We answered all of them correctly eventually.
-    // So standard count is N.
-    // Attempts = N + mistakes.
-
-    const uniqueQuestionsCount = 10; // Or calculate based on ID if we had them. Let's approximate: 
-    // activeStage.questions.length includes duplicates now.
-    // Or Accuracy = (Total Questions / (Total Questions + Mistakes)) * 100
-    const totalQuestions = 10;
+    const totalQuestions = stageBaseQuestionCount || 10;
     const accuracy = Math.round((totalQuestions / (totalQuestions + stageMistakes)) * 100);
 
     // Render Summary View in Modal
     const quizBody = document.querySelector('.quiz-body');
     const quizFooter = document.querySelector('.quiz-footer');
-    const quizHeader = document.querySelector('.quiz-header');
 
     // Update Header
     document.getElementById('quiz-title').textContent = t('stage_complete_title');
@@ -428,13 +389,7 @@ async function finishStage(success) {
         </div>
     `;
 
-    // Update Footer
-    // Only show Claim button if not previously completed (or always? User asked to "increase 3 points and unlock next")
-    // Use lastCompletedStageId to check if new.
     const isNewCompletion = activeStage.id > lastCompletedStageId;
-
-    // But user request implies they want the button to trigger the unlock/points.
-    // So we provide the button regardless, but logic inside might differ.
 
     quizFooter.innerHTML = `
         <button class="btn btn-primary" id="claim-btn" onclick="window.claimReward(${activeStage.id})" style="width: 100%;">
@@ -447,17 +402,10 @@ window.claimReward = async (stageId) => {
     const btn = document.getElementById('claim-btn');
     if (btn) {
         btn.disabled = true;
-        if (btn) {
-            btn.disabled = true;
-            btn.textContent = t('processing');
-        }
+        btn.textContent = t('processing');
     }
 
-    // Determine if we need to award points
-    // "عند الضغط على هذا الزر تزيد 3 نقاط و يزول القفل عن المرحلة التالية"
-    // Usually challenges are one-time rewards. I will assume one-time for safety, 
-    // However, if I just "unlock next", that implies progress.
-
+    // Award points once per newly completed stage.
     if (stageId > lastCompletedStageId) {
         console.log('Claiming reward for stage:', stageId);
         const success = await awardPoints(stageId);
@@ -528,7 +476,7 @@ async function awardPoints(stageId) {
 
             if (error) {
                 console.error('Error saving progress to profile:', error);
-                // We return true because points are verified/added. 
+                // Profile sync can fail independently from point award.
             } else {
                 console.log('Profile updated successfully.');
             }
@@ -543,16 +491,11 @@ async function awardPoints(stageId) {
 }
 
 function showToast(msg, type) {
-    // app.js seems to use a toast component
-    // Checking index.html... <div class="toast-container" id="toastContainer"></div>
-    // Checked components/toast.js ? 
-    // Usually a global showToast exists or we can dispatch event
-
     if (window.Toast) {
         window.Toast.show(msg, type);
-    } else {
-        alert(msg);
+        return;
     }
+    alert(msg);
 }
 
 // Expose render function to global scope for app.js

@@ -19,7 +19,7 @@ const THEMES = [
     },
     {
         id: 'emerald',
-        nameKey: 'Emerald', // Hardcoded for now, can add to i18n later
+        nameKey: 'Emerald',
         descKey: 'Premium emerald green theme',
         price: 50,
         preview: 'linear-gradient(135deg, #10b981, #059669)'
@@ -193,9 +193,7 @@ async function handleApplyStoreTheme(themeId) {
 
     // Optimistic UI update
     if (typeof renderPage === 'function') {
-        // We set a temporary flag for the active theme so the re-render picked it up
-        // or we just call renderPage with the themeId override logic.
-        // So we need to update the settings cache in memory if possible.
+        // Keep settings cache aligned before re-render.
         if (window.SettingsService && window.SettingsService._cache) {
             window.SettingsService._cache.theme = themeId;
         }

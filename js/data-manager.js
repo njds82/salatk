@@ -83,17 +83,18 @@ async function clearAllData() {
     return true;
 }
 
+// Export / Import
 async function exportData() {
     // Reconstruct full JSON from DB
     const data = {
         version: DATA_VERSION,
         settings: await SettingsService.getSettings(),
-        prayers: {}, // Need to fetch all? Expensive.
+        prayers: {},
         qadaPrayers: await db.qada.toArray(),
         habits: await HabitService.getAll(),
         points: { history: await db.points.toArray() }
     };
-    // Fetch all prayers... 
+    // Fetch all prayers
     const allPrayers = await db.prayers.toArray();
     allPrayers.forEach(p => {
         if (!data.prayers[p.date]) data.prayers[p.date] = {};

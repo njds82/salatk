@@ -79,13 +79,12 @@ const MigrationService = {
 
             // 5. Points
             if (data.points && data.points.history) {
-                // Assuming history is array
-                // We might need to handle huge history carefully, but bulkAdd is fast.
-                // We don't have IDs in legacy, so let auto-increment handle it.
+                // Legacy points history may not contain IDs; db auto-increment handles it.
                 await db.points.bulkAdd(data.points.history);
             }
 
             console.log('Migration complete.');
+            // Keep legacy backup in localStorage for manual recovery.
         } catch (e) {
             console.error('Migration failed:', e);
         }

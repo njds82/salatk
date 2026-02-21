@@ -77,10 +77,7 @@ async function renderDailyPrayersPage() {
             // Only validate time if viewing TODAY's list
             if (isTodayDate) {
                 const prayerMinutes = timeToMinutes(timeDisplay);
-                // Allow interaction if current time >= prayer time
-                // Or if it's already 'done'/'missed' (handled inside createPrayerCard logic mostly to show status, 
-                // but checking here ensures we don't accidentally disable a completed prayer if logic changes)
-                // Requirement says: disable if time is BEFORE prayer time.
+                // Disable interactions before the prayer time starts.
                 if (currentMinutes < prayerMinutes) {
                     isTimeValid = false;
                 }
@@ -96,11 +93,7 @@ async function renderDailyPrayersPage() {
     if (interactionCheckInterval) clearInterval(interactionCheckInterval);
     if (isTodayDate) {
         interactionCheckInterval = setInterval(() => {
-            // Re-check times without full re-render if possible, or just call updatePrayerCard loop
-            // For simplicity, we can just iterate and call updatePrayerCard if status might change
-            // But updatePrayerCard does async fetch. Maybe better to just re-render page quietly? 
-            // Or update the specific changed cards.
-            // Let's iterate keys and call updatePrayerCard - it handles fetching fresh state.
+            // Refresh prayer card interactivity every minute.
             Object.keys(PrayerService.getDefinitions()).forEach(key => updatePrayerCard(key));
         }, 60000); // Check every minute
     }
@@ -139,8 +132,7 @@ function optimisticUpdateCard(prayerKey, status) {
     if (status === 'done') card.classList.add('done');
     if (status === 'missed') card.classList.add('missed');
 
-    // Update buttons UI (Optional: could disable them or show spinner)
-    // For now, the visual change of the card is feedback enough.
+    // Visual state update is enough feedback here.
 }
 
 // Handle prayer performed
@@ -149,9 +141,6 @@ async function handlePrayerPerformed(prayerKey) {
         showToast(t('last_7_days_only'), 'error');
         return;
     }
-
-    // Capture previous state in case of revert
-    // (This is tricky without state management, we assume reset on failure)
 
     try {
         // Optimistic UI Update
@@ -163,8 +152,7 @@ async function handlePrayerPerformed(prayerKey) {
         if (result.success) {
             showToast(t('prayer_performed_message'), 'success');
             await updatePointsDisplay();
-            // We call updatePrayerCard just to ensure points/details are synced, 
-            // but the visual state 'done' is already there.
+            // Ensure card data and points stay synced.
             await updatePrayerCard(prayerKey);
         } else {
             throw new Error(t('error_general'));
@@ -204,4 +192,3 @@ async function handlePrayerMissed(prayerKey) {
         await updatePrayerCard(prayerKey);
     }
 }
-

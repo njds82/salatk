@@ -77,11 +77,8 @@ const NotificationManager = {
             }
         }
 
-        // If no more prayers today, we could schedule Fajr for tomorrow, 
-        // but since the app likely reloads/refreshes date, we can just wait.
-        // A robust system would calculate tomorrow's Fajr delta.
-        // Given the requirement is "calculate remaining time based on prayer_records or current times",
-        // we will focus on the next immediate prayer.
+        // This scheduler handles only remaining prayers for the current day.
+        // A separate daily refresh will recalculate tomorrow's first prayer.
 
         if (!nextPrayer) {
             console.log('No more prayers remaining today for notification.');
