@@ -2,10 +2,20 @@
 // Habit Card Component
 // ========================================
 
-async function createHabitCard(habit) {
-    const streak = await HabitService.getStreak(habit.id);
-    const history = await HabitService.getHistory(habit.id);
-    const todayStatus = history[window.selectedDate] || null;
+async function createHabitCard(habit, cardMeta = null) {
+    const hasStreakMeta = cardMeta && typeof cardMeta.streak === 'number';
+    const hasStatusMeta = cardMeta && Object.prototype.hasOwnProperty.call(cardMeta, 'todayStatus');
+
+    const streak = hasStreakMeta ? cardMeta.streak : await HabitService.getStreak(habit.id);
+
+    let todayStatus = null;
+    if (hasStatusMeta) {
+        todayStatus = cardMeta.todayStatus || null;
+    } else {
+        const history = await HabitService.getHistory(habit.id);
+        todayStatus = history[window.selectedDate] || null;
+    }
+
     const isWorshipHabit = habit.type === 'worship';
 
     return `
@@ -14,7 +24,7 @@ async function createHabitCard(habit) {
                 <div>
                     <div style="display: flex; align-items: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-xs);">
                         <h3 style="margin: 0;">${habit.name}</h3>
-                        <button class="btn btn-secondary" onclick="showHabitDetailsModal('${habit.id}')" style="padding: 4px 10px; font-size: 0.8rem;">
+                        <button class="btn btn-secondary habit-details-btn" onclick="showHabitDetailsModal('${habit.id}')">
                             ${t('details')}
                         </button>
                         <div class="options-menu">

@@ -3,7 +3,10 @@
 // ========================================
 
 async function renderHabitsPage() {
-    const habits = await HabitService.getAll();
+    const [habits, habitsMeta] = await Promise.all([
+        HabitService.getAll(),
+        HabitService.getHabitsCardMeta(selectedDate)
+    ]);
     const today = getCurrentDate();
     const hijriDate = getHijriDate(parseDate(selectedDate));
 
@@ -55,7 +58,11 @@ async function renderHabitsPage() {
     } else {
         html += `<div class="card-grid">`;
         for (const habit of habits) {
-            html += await createHabitCard(habit);
+            const cardMeta = {
+                todayStatus: habitsMeta.statusByHabitId[habit.id] || null,
+                streak: habitsMeta.streakByHabitId[habit.id] || 0
+            };
+            html += await createHabitCard(habit, cardMeta);
         }
         html += `</div>`;
     }
@@ -154,51 +161,74 @@ async function handleMarkHabit(habitId, action) {
 }
 
 function renderHabitStatsSection(titleKey, stats) {
-    const lastAction = stats.lastActionDate
-        ? formatDisplayDate(stats.lastActionDate)
-        : t('no_data_yet');
+    const statItems = stats.items || [];
+    const itemsHtml = statItems.map((item) => {
+        let value = item.value;
+        if (item.format === 'percent') {
+            value = `${value}%`;
+        } else if (item.format === 'date') {
+            value = value ? formatDisplayDate(value) : t('no_data_yet');
+        }
+
+        return `
+            <div class="habit-stat-item">
+                <span class="habit-stat-label">${t(item.labelKey)}</span>
+                <strong class="habit-stat-value">${value}</strong>
+            </div>
+        `;
+    }).join('');
+
+    if (!itemsHtml) {
+        return `
+            <section class="habit-stats-section">
+                <h3>${t(titleKey)}</h3>
+                <p class="habit-stats-empty">${t('no_data_yet')}</p>
+            </section>
+        `;
+    }
 
     return `
-        <div class="card" style="margin-bottom: var(--spacing-md); padding: var(--spacing-md);">
-            <h3 style="margin-bottom: var(--spacing-sm);">${t(titleKey)}</h3>
-            ${stats.totalLoggedDays === 0 ? `
-                <p style="color: var(--color-text-secondary); margin-bottom: var(--spacing-sm);">${t('no_data_yet')}</p>
-            ` : ''}
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--spacing-xs);">
-                <p><strong>${t('total_logged_days')}:</strong> ${stats.totalLoggedDays}</p>
-                <p><strong>${t('successful_days')}:</strong> ${stats.successCount}</p>
-                <p><strong>${t('unsuccessful_days')}:</strong> ${stats.failureCount}</p>
-                <p><strong>${t('success_rate')}:</strong> ${stats.successRate}%</p>
-                <p><strong>${t('current_streak')}:</strong> ${stats.currentStreak}</p>
-                <p><strong>${t('longest_streak')}:</strong> ${stats.longestStreak}</p>
-                <p><strong>${t('last_action')}:</strong> ${lastAction}</p>
+        <section class="habit-stats-section">
+            <h3>${t(titleKey)}</h3>
+            <div class="habit-stats-grid">
+                ${itemsHtml}
             </div>
-        </div>
+        </section>
     `;
 }
 
 async function showHabitDetailsModal(habitId) {
     try {
-        const habits = await HabitService.getAll();
-        const habit = habits.find(h => h.id === habitId);
-
-        if (!habit) {
+        const details = await HabitService.getHabitDetailsStats(habitId);
+        if (!details || !details.habit) {
             showToast(t('error_general'), 'error');
             return;
         }
 
-        const [allTimeStats, last30DaysStats] = await Promise.all([
-            HabitService.getStats(habitId),
-            HabitService.getStats(habitId, 30)
-        ]);
+        const trend = details.viewModel.trendVsAllTime;
+        const trendText = typeof trend === 'number'
+            ? `${trend > 0 ? '+' : ''}${trend}%`
+            : t('no_trend_data');
+        const habitTypeLabel = details.habit.type === 'worship' ? t('worship_habit') : t('sin_habit');
+        const trendClass = typeof trend === 'number'
+            ? (trend >= 0 ? 'trend-positive' : 'trend-negative')
+            : 'trend-neutral';
 
         const content = `
-            ${renderHabitStatsSection('all_time_stats', allTimeStats)}
-            ${renderHabitStatsSection('last_30_days', last30DaysStats)}
+            <div class="habit-details-modal">
+                <div class="habit-details-meta">
+                    <span class="habit-details-type">${habitTypeLabel}</span>
+                    <span class="habit-details-trend ${trendClass}">
+                        ${t('trend_vs_all_time')}: ${trendText}
+                    </span>
+                </div>
+                ${renderHabitStatsSection('all_time_stats', { items: details.viewModel.allTimeItems })}
+                ${renderHabitStatsSection('last_30_days', { items: details.viewModel.last30Items })}
+            </div>
         `;
 
         showModal(
-            `${t('habit_details')} - ${habit.name}`,
+            `${t('habit_details')} - ${details.habit.name}`,
             content,
             [
                 {
