@@ -14,6 +14,9 @@ async function createHabitCard(habit) {
                 <div>
                     <div style="display: flex; align-items: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-xs);">
                         <h3 style="margin: 0;">${habit.name}</h3>
+                        <button class="btn btn-secondary" onclick="showHabitDetailsModal('${habit.id}')" style="padding: 4px 10px; font-size: 0.8rem;">
+                            ${t('details')}
+                        </button>
                         <div class="options-menu">
                             <button class="options-btn">
                                 <svg width="20" height="20" viewBox="0 0 20 20">

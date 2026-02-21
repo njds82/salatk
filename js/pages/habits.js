@@ -153,6 +153,67 @@ async function handleMarkHabit(habitId, action) {
     }
 }
 
+function renderHabitStatsSection(titleKey, stats) {
+    const lastAction = stats.lastActionDate
+        ? formatDisplayDate(stats.lastActionDate)
+        : t('no_data_yet');
+
+    return `
+        <div class="card" style="margin-bottom: var(--spacing-md); padding: var(--spacing-md);">
+            <h3 style="margin-bottom: var(--spacing-sm);">${t(titleKey)}</h3>
+            ${stats.totalLoggedDays === 0 ? `
+                <p style="color: var(--color-text-secondary); margin-bottom: var(--spacing-sm);">${t('no_data_yet')}</p>
+            ` : ''}
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--spacing-xs);">
+                <p><strong>${t('total_logged_days')}:</strong> ${stats.totalLoggedDays}</p>
+                <p><strong>${t('successful_days')}:</strong> ${stats.successCount}</p>
+                <p><strong>${t('unsuccessful_days')}:</strong> ${stats.failureCount}</p>
+                <p><strong>${t('success_rate')}:</strong> ${stats.successRate}%</p>
+                <p><strong>${t('current_streak')}:</strong> ${stats.currentStreak}</p>
+                <p><strong>${t('longest_streak')}:</strong> ${stats.longestStreak}</p>
+                <p><strong>${t('last_action')}:</strong> ${lastAction}</p>
+            </div>
+        </div>
+    `;
+}
+
+async function showHabitDetailsModal(habitId) {
+    try {
+        const habits = await HabitService.getAll();
+        const habit = habits.find(h => h.id === habitId);
+
+        if (!habit) {
+            showToast(t('error_general'), 'error');
+            return;
+        }
+
+        const [allTimeStats, last30DaysStats] = await Promise.all([
+            HabitService.getStats(habitId),
+            HabitService.getStats(habitId, 30)
+        ]);
+
+        const content = `
+            ${renderHabitStatsSection('all_time_stats', allTimeStats)}
+            ${renderHabitStatsSection('last_30_days', last30DaysStats)}
+        `;
+
+        showModal(
+            `${t('habit_details')} - ${habit.name}`,
+            content,
+            [
+                {
+                    label: t('close'),
+                    className: 'btn-secondary',
+                    onclick: () => closeModal()
+                }
+            ]
+        );
+    } catch (error) {
+        console.error('Error showing habit details:', error);
+        showToast(t('error_general'), 'error');
+    }
+}
+
 // Handle delete habit
 function handleDeleteHabit(habitId) {
     confirmDialog(t('confirm_delete'), async () => {
@@ -166,3 +227,5 @@ function handleDeleteHabit(habitId) {
         }
     });
 }
+
+window.showHabitDetailsModal = showHabitDetailsModal;
