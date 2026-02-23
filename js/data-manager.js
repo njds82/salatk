@@ -52,8 +52,8 @@ async function getStatistics() {
 
     // Fetch all relevant data from Cloud
     const [prayersRes, habitHistoryRes, points] = await Promise.all([
-        window.supabaseClient.from('prayer_records').select('*').eq('user_id', userId),
-        window.supabaseClient.from('habit_history').select('*').eq('user_id', userId),
+        window.supabaseClient.from('prayer_records').select('date,prayer_key,status').eq('user_id', userId),
+        window.supabaseClient.from('habit_history').select('action').eq('user_id', userId),
         PointsService.getTotal()
     ]);
 
@@ -79,12 +79,6 @@ async function getStatistics() {
     });
 
     let daysWithoutSin = habitHistory.filter(h => h.action === 'avoided').length;
-
-    // Dispatch update for header if available
-    if (window.updatePointsDisplay) {
-        // Don't await, just trigger sync
-        updatePointsDisplay();
-    }
 
     return {
         prayersPerformed,

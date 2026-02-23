@@ -2134,6 +2134,68 @@ body::after {
 }
 
 /* ========================================
+   Page Skeletons
+   ======================================== */
+
+.page-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-sm) 0;
+}
+
+.page-skeleton-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.page-skeleton-title,
+.page-skeleton-subtitle,
+.page-skeleton-card {
+    border-radius: var(--radius-md);
+    background: linear-gradient(90deg,
+            color-mix(in oklab, var(--color-bg-card) 92%, var(--color-text-primary) 8%) 0%,
+            color-mix(in oklab, var(--color-bg-card) 82%, var(--color-text-primary) 18%) 50%,
+            color-mix(in oklab, var(--color-bg-card) 92%, var(--color-text-primary) 8%) 100%);
+    background-size: 220% 100%;
+}
+
+.page-skeleton-title {
+    height: 30px;
+    width: min(260px, 72%);
+}
+
+.page-skeleton-subtitle {
+    height: 18px;
+    width: min(420px, 92%);
+}
+
+.page-skeleton-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.page-skeleton-card {
+    height: 150px;
+}
+
+.shimmer {
+    animation: skeletonShimmer 1.1s linear infinite;
+}
+
+@keyframes skeletonShimmer {
+    0% {
+        background-position: 100% 0;
+    }
+
+    100% {
+        background-position: -100% 0;
+    }
+}
+
+/* ========================================
    Auth Pages
    ======================================== */
 

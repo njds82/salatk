@@ -27,6 +27,7 @@ export const DEFAULT_BOOT_ORDER = [
     'js/services/habit-service.js',
     'js/services/points-service.js',
     'js/services/task-service.js',
+    'js/services/page-data-cache.js',
     'js/data-manager.js',
     'js/points-manager.js',
     'components/toast.js',

@@ -931,7 +931,10 @@ function updatePageTranslations() {
     // Update lang toggle button
     const langToggle = document.getElementById('langToggle');
     if (langToggle) {
-        langToggle.querySelector('.lang-text').textContent = currentLanguage === 'ar' ? 'EN' : 'ع';
+        const langText = langToggle.querySelector('.lang-text');
+        if (langText) {
+            langText.textContent = currentLanguage === 'ar' ? 'EN' : 'ع';
+        }
     }
 
     // Trigger custom event for components to update

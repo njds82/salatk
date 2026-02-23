@@ -29,6 +29,7 @@ export const CLASSIC_SOURCE_FILES = [
     'js/prayer-manager.js',
     'js/services/habit-service.js',
     'js/services/migration-service.js',
+    'js/services/page-data-cache.js',
     'js/services/points-service.js',
     'js/services/prayer-service.js',
     'js/services/settings-service.js',

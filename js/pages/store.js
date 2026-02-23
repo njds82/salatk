@@ -90,12 +90,12 @@ const THEMES = [
 ];
 
 async function renderStorePage() {
-    const settings = await SettingsService.getSettings();
+    const [settings, totalPoints, ownedThemes] = await Promise.all([
+        SettingsService.getSettings(),
+        PointsService.getTotal(),
+        getOwnedThemes()
+    ]);
     const currentThemeId = settings.theme || 'light';
-    const totalPoints = await PointsService.getTotal();
-
-    // Fetch owned themes
-    const ownedThemes = await getOwnedThemes();
 
     let html = `
         <div class="page-header">

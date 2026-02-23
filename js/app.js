@@ -21,6 +21,8 @@ const VALID_PAGES = new Set([
     'more',
     'challenge'
 ]);
+const HEAVY_PAGES = new Set(['settings', 'statistics', 'habits', 'store', 'leaderboard']);
+let renderRequestToken = 0;
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
@@ -369,30 +371,94 @@ async function withTimeout(promise, timeoutMs, timeoutValue = null) {
     ]);
 }
 
-// Render page
-async function renderPage(page, noScroll = false) {
-    const content = document.getElementById('pageContent');
-    const isRefreshing = window.currentPage === page;
+function getPageCacheContext(page) {
+    if (page === 'habits') {
+        return { selectedDate: window.selectedDate || getCurrentDate() };
+    }
+    return {};
+}
 
-    // Only show loading spinner if we are navigating to a NEW page or if we want a full reload
-    if (!noScroll || !isRefreshing) {
-        content.innerHTML = `<div class="loading-spinner"></div>`;
+function getPageSkeleton(page) {
+    const cardCount = page === 'leaderboard' ? 6 : 4;
+    const cards = Array.from({ length: cardCount }, () => `
+        <div class="page-skeleton-card shimmer"></div>
+    `).join('');
+
+    return `
+        <div class="page-skeleton" data-page="${page}">
+            <div class="page-skeleton-header">
+                <div class="page-skeleton-title shimmer"></div>
+                <div class="page-skeleton-subtitle shimmer"></div>
+            </div>
+            <div class="page-skeleton-grid">
+                ${cards}
+            </div>
+        </div>
+    `;
+}
+
+// Render page
+async function renderPage(page, noScroll = false, options = { forceFresh: false, preferCache: true }) {
+    const content = document.getElementById('pageContent');
+    if (!content) return;
+    const requestToken = ++renderRequestToken;
+    const renderOptions = {
+        forceFresh: Boolean(noScroll || options?.forceFresh),
+        preferCache: options?.preferCache !== false
+    };
+    const isHeavyPage = HEAVY_PAGES.has(page);
+    const canUseCache = Boolean(window.PageDataCache && isHeavyPage && renderOptions.preferCache && !renderOptions.forceFresh);
+    const cacheContext = getPageCacheContext(page);
+    const cachedEntry = canUseCache ? window.PageDataCache.get(page, cacheContext) : null;
+
+    if (window.PageDataCache) {
+        window.PageDataCache.pruneExpired();
+    }
+
+    const commitPage = (nextHtml, detail = {}) => {
+        if (requestToken !== renderRequestToken) return false;
+
+        content.innerHTML = nextHtml;
+
+        if (page === 'login' || page === 'signup') {
+            setupAuthFormListeners(page);
+        }
+
+        window.dispatchEvent(new CustomEvent('pageRendered', {
+            detail: {
+                page,
+                ...detail
+            }
+        }));
+        return true;
+    };
+
+    if (cachedEntry) {
+        commitPage(cachedEntry.html, { stale: true, fromCache: true });
+    } else if (!noScroll) {
+        content.innerHTML = isHeavyPage
+            ? getPageSkeleton(page)
+            : `<div class="loading-spinner"></div>`;
     }
 
     let html = '';
 
     try {
+        let session = null;
+
         // Auth check - prioritize cached session
         if (window.AuthManager) {
             // For login/signup, use memory/snapshot synchronously to avoid blocking UI
             if (page === 'login' || page === 'signup') {
-                session = window.AuthManager._session;
+                session = window.AuthManager._session || null;
                 window.AuthManager.getSession(); // Background refresh
             } else {
                 // For other pages, getSession() will return snapshot instantly if available
                 session = await window.AuthManager.getSession();
             }
         }
+
+        if (requestToken !== renderRequestToken) return;
 
         // Resilient Navigation Logic:
         // 1. Only redirect to login if we EXPLICITLY have no session (null)
@@ -432,7 +498,7 @@ async function renderPage(page, noScroll = false) {
                 html = await renderStatisticsPage();
                 break;
             case 'leaderboard':
-                html = await renderLeaderboardPage();
+                html = await renderLeaderboardPage({ forceRefresh: renderOptions.forceFresh });
                 break;
             case 'store':
                 html = await renderStorePage();
@@ -457,22 +523,24 @@ async function renderPage(page, noScroll = false) {
                 html = await renderDailyPrayersPage();
         }
 
-        content.innerHTML = html;
+        if (requestToken !== renderRequestToken) return;
 
-        // Setup form listeners if on auth page
-        if (page === 'login' || page === 'signup') {
-            setupAuthFormListeners(page);
+        if (isHeavyPage && window.PageDataCache) {
+            window.PageDataCache.set(page, cacheContext, html);
         }
 
-        // Trigger pageRendered event
-        window.dispatchEvent(new CustomEvent('pageRendered', { detail: { page } }));
+        if (!cachedEntry || cachedEntry.html !== html || renderOptions.forceFresh) {
+            commitPage(html, { stale: false, fromCache: false });
+        }
     } catch (error) {
+        if (requestToken !== renderRequestToken) return;
         console.error('Error rendering page:', error);
         content.innerHTML = `<p class="error-message">${t('error_calculation')}</p>`;
     }
 
-    // Scroll to top only if navigating to a different page or forced
-    if (!noScroll && window.location.hash.replace('#', '') !== page) {
-        window.scrollTo(0, 0);
+    if (!noScroll) {
+        if (!window.__SALATK_TEST__ && typeof window.scrollTo === 'function') {
+            window.scrollTo(0, 0);
+        }
     }
 }

@@ -10,11 +10,52 @@ async function withTimeout(promise, timeoutMs, timeoutValue = null) {
     ]);
 }
 
+const POINTS_TOTAL_TTL_MS = 10000;
+
 const PointsService = {
-    async getTotal() {
+    _totalCache: {
+        userId: null,
+        total: 0,
+        expiresAt: 0
+    },
+
+    _setTotalCache(userId, total) {
+        const safeTotal = Number.isFinite(Number(total)) ? Number(total) : 0;
+        this._totalCache = {
+            userId,
+            total: safeTotal,
+            expiresAt: Date.now() + POINTS_TOTAL_TTL_MS
+        };
+        return safeTotal;
+    },
+
+    _getCachedTotal(userId) {
+        if (this._totalCache.userId !== userId) return null;
+        if (this._totalCache.expiresAt <= Date.now()) return null;
+        return this._totalCache.total;
+    },
+
+    invalidateTotalCache(userId = null) {
+        if (userId && this._totalCache.userId !== userId) return;
+        this._totalCache = {
+            userId: null,
+            total: 0,
+            expiresAt: 0
+        };
+    },
+
+    async getTotal(options = { forceRefresh: false }) {
         if (!window.supabaseClient) return 0;
+
         const session = await window.AuthManager.getSession();
         if (!session) return 0;
+
+        const forceRefresh = Boolean(options?.forceRefresh);
+        const userId = session.user.id;
+        if (!forceRefresh) {
+            const cachedTotal = this._getCachedTotal(userId);
+            if (cachedTotal !== null) return cachedTotal;
+        }
 
         try {
             // Fetch from leaderboard view for pre-calculated total
@@ -22,7 +63,7 @@ const PointsService = {
                 window.supabaseClient
                     .from('leaderboard')
                     .select('total_points')
-                    .eq('user_id', session.user.id)
+                    .eq('user_id', userId)
                     .maybeSingle(),
                 5000,
                 { data: null, error: 'timeout' }
@@ -38,7 +79,7 @@ const PointsService = {
                 const { data: fallbackData, error: fallbackError } = await window.supabaseClient
                     .from('points_history')
                     .select('amount')
-                    .eq('user_id', session.user.id)
+                    .eq('user_id', userId)
                     .limit(10000);
 
                 if (fallbackError) {
@@ -46,13 +87,15 @@ const PointsService = {
                     return 0;
                 }
 
-                return (fallbackData || []).reduce((sum, item) => sum + (item.amount || 0), 0);
+                const total = (fallbackData || []).reduce((sum, item) => sum + (item.amount || 0), 0);
+                return this._setTotalCache(userId, total);
             }
 
-            return data ? data.total_points : 0;
+            return this._setTotalCache(userId, data.total_points);
         } catch (e) {
             console.error('PointsService: Failed to fetch total points', e);
-            return 0;
+            const cachedTotal = this._getCachedTotal(userId);
+            return cachedTotal !== null ? cachedTotal : 0;
         }
     },
 
@@ -98,7 +141,12 @@ const PointsService = {
 
         if (amount === 0 && providedId) {
             const { error } = await window.supabaseClient.from('points_history').delete().eq('id', providedId);
-            return !error;
+            if (error) return false;
+
+            this.invalidateTotalCache(session.user.id);
+            const total = await this.getTotal({ forceRefresh: true });
+            window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { totalPoints: total } }));
+            return true;
         }
 
         try {
@@ -116,8 +164,10 @@ const PointsService = {
             }
 
             console.log('[PointsService] Points added successfully');
+            this.invalidateTotalCache(session.user.id);
+
             // Dispatch update event for local UI components
-            const total = await this.getTotal();
+            const total = await this.getTotal({ forceRefresh: true });
             window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { totalPoints: total } }));
             return true;
         } catch (e) {

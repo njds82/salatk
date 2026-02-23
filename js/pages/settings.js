@@ -3,16 +3,17 @@
 // ========================================
 
 async function renderSettingsPage() {
-    const settings = await SettingsService.getSettings();
+    const [settings, loc, user, profile] = await Promise.all([
+        SettingsService.getSettings(),
+        PrayerManager.getUserLocation(),
+        AuthManager.getCurrentUser(),
+        AuthManager.getProfile()
+    ]);
     const currentTheme = settings.theme || 'light';
     const currentLang = settings.language || 'ar'; // Use settings directly, getCurrentLanguage() might still rely on something else
 
-    // Fetch current location info for display
-    const loc = await PrayerManager.getUserLocation();
+    // Keep latest location for location controls in render
     PrayerManager.lastLoc = loc; // Store temporarily for render
-
-    const user = await AuthManager.getCurrentUser();
-    const profile = await AuthManager.getProfile();
 
     let html = `
         <div class="page-header">
@@ -672,7 +673,7 @@ function handleShareApp(code) {
 
 // Update stats when page loads
 window.addEventListener('pageRendered', (e) => {
-    if (e.detail?.page === 'settings') {
+    if (e.detail?.page === 'settings' && !e.detail?.stale) {
         setTimeout(updateAccountStats, 100);
     }
 });
@@ -680,4 +681,3 @@ window.addEventListener('pageRendered', (e) => {
 // Expose to window
 window.handleThemeChange = handleThemeChange;
 window.toggleLeaderboardPrivacy = toggleLeaderboardPrivacy;
-

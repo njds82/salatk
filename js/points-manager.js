@@ -29,8 +29,8 @@ function getPointsForNextLevel(currentPoints) {
 }
 
 // Update points display in header
-async function updatePointsDisplay() {
-    const totalPoints = await PointsService.getTotal();
+async function updatePointsDisplay(options = {}) {
+    const totalPoints = await PointsService.getTotal({ forceRefresh: options?.forceRefresh === true });
     const pointsValue = document.getElementById('pointsValue');
 
     if (pointsValue) {

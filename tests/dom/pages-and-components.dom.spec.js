@@ -150,8 +150,10 @@ describe('Pages render and handlers', () => {
             ]
         });
 
-        window.HabitService.getAll = async () => [{ id: 'h1', name: 'Duha', type: 'worship' }];
-        window.HabitService.getHabitsCardMeta = async () => ({ statusByHabitId: {}, streakByHabitId: { h1: 2 } });
+        window.HabitService.getHabitsWithMeta = async () => ({
+            habits: [{ id: 'h1', name: 'Duha', type: 'worship' }],
+            meta: { statusByHabitId: {}, streakByHabitId: { h1: 2 } }
+        });
         window.selectedDate = window.getCurrentDate();
         globalThis.selectedDate = window.selectedDate;
 

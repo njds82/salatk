@@ -13,6 +13,15 @@ const LEVEL_ICONS = {
     miraculous: '✨',
     absolute_classifier: '💠'
 };
+const LEADERBOARD_CACHE_TTL_MS = 30000;
+
+let leaderboardCache = {
+    userId: null,
+    rows: [],
+    errorMessage: null,
+    expiresAt: 0
+};
+let leaderboardRefreshDebounceId = null;
 
 function getLeaderboardLevelInfo(totalPoints) {
     const parsedPoints = Number(totalPoints);
@@ -28,40 +37,76 @@ function getLeaderboardLevelInfo(totalPoints) {
     };
 }
 
-async function renderLeaderboardPage() {
+function getCachedLeaderboard(userId) {
+    if (!userId) return null;
+    if (leaderboardCache.userId !== userId) return null;
+    if (leaderboardCache.expiresAt <= Date.now()) return null;
+
+    return {
+        rows: leaderboardCache.rows || [],
+        errorMessage: leaderboardCache.errorMessage || null
+    };
+}
+
+function setCachedLeaderboard(userId, rows, errorMessage = null) {
+    leaderboardCache = {
+        userId,
+        rows: rows || [],
+        errorMessage,
+        expiresAt: Date.now() + LEADERBOARD_CACHE_TTL_MS
+    };
+}
+
+function clearLeaderboardCache() {
+    leaderboardCache = {
+        userId: null,
+        rows: [],
+        errorMessage: null,
+        expiresAt: 0
+    };
+}
+
+async function renderLeaderboardPage(options = {}) {
+    const forceRefresh = Boolean(options?.forceRefresh);
     let leaderboardData = [];
     let errorMessage = null;
     let currentUserSession = null;
 
     try {
-        const { data: { session } } = await window.supabaseClient.auth.getSession();
-        currentUserSession = session;
+        currentUserSession = window.AuthManager
+            ? await window.AuthManager.getSession()
+            : null;
 
-        // currentUserSession = session; (kept for ID check)
-
-
-
-
-        if (!session) {
+        if (!currentUserSession) {
             errorMessage = t('error_login_required');
         } else {
-            const { data, error } = await window.supabaseClient
-                .from('leaderboard')
-                .select('*')
-                .order('total_points', { ascending: false })
-                .order('full_name', { ascending: true })
-                .limit(100);
+            const currentUserId = currentUserSession.user.id;
+            const cached = forceRefresh ? null : getCachedLeaderboard(currentUserId);
 
-            if (error) {
-                console.error('Error fetching leaderboard:', error);
-                if (error.code === '42P01' || error.message.includes('does not exist')) {
-                    errorMessage = t('error_leaderboard_disabled');
-                } else {
-                    errorMessage = t('error_fetching_leaderboard');
-                }
-                showToast(errorMessage, 'error');
+            if (cached) {
+                leaderboardData = cached.rows;
+                errorMessage = cached.errorMessage;
             } else {
-                leaderboardData = data || [];
+                const { data, error } = await window.supabaseClient
+                    .from('leaderboard')
+                    .select('user_id,full_name,total_points')
+                    .order('total_points', { ascending: false })
+                    .order('full_name', { ascending: true })
+                    .limit(100);
+
+                if (error) {
+                    console.error('Error fetching leaderboard:', error);
+                    if (error.code === '42P01' || error.message.includes('does not exist')) {
+                        errorMessage = t('error_leaderboard_disabled');
+                    } else {
+                        errorMessage = t('error_fetching_leaderboard');
+                    }
+                    showToast(errorMessage, 'error');
+                    setCachedLeaderboard(currentUserId, [], errorMessage);
+                } else {
+                    leaderboardData = data || [];
+                    setCachedLeaderboard(currentUserId, leaderboardData, null);
+                }
             }
         }
     } catch (error) {
@@ -159,7 +204,14 @@ async function renderLeaderboardPage() {
 
 // Listen for points updates to refresh leaderboard
 window.addEventListener('pointsUpdated', () => {
-    if (window.currentPage === 'leaderboard') {
-        renderPage('leaderboard', true); // true = noScroll/silent refresh
-    }
+    clearLeaderboardCache();
+    if (window.currentPage !== 'leaderboard') return;
+
+    clearTimeout(leaderboardRefreshDebounceId);
+    leaderboardRefreshDebounceId = setTimeout(() => {
+        leaderboardRefreshDebounceId = null;
+        renderPage('leaderboard', true, { forceFresh: true });
+    }, 400);
 });
+
+window.addEventListener('authSessionChanged', clearLeaderboardCache);

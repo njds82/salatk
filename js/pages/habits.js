@@ -3,10 +3,7 @@
 // ========================================
 
 async function renderHabitsPage() {
-    const [habits, habitsMeta] = await Promise.all([
-        HabitService.getAll(),
-        HabitService.getHabitsCardMeta(selectedDate)
-    ]);
+    const { habits, meta: habitsMeta } = await HabitService.getHabitsWithMeta(selectedDate);
     const today = getCurrentDate();
     const hijriDate = getHijriDate(parseDate(selectedDate));
 

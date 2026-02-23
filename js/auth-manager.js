@@ -283,12 +283,24 @@ const AuthManager = {
     },
 
     setSession(session) {
+        const previousUserId = this._session?.user?.id || null;
         console.log('AuthManager: session updated');
         this._session = session;
+        const nextUserId = session?.user?.id || null;
+
         if (session) {
             localStorage.setItem('salatk_auth_snapshot', JSON.stringify(session));
         } else {
             localStorage.removeItem('salatk_auth_snapshot');
+        }
+
+        if (previousUserId !== nextUserId) {
+            window.dispatchEvent(new CustomEvent('authSessionChanged', {
+                detail: {
+                    previousUserId,
+                    nextUserId
+                }
+            }));
         }
     }
 };

@@ -1,6 +1,6 @@
 
 // Service Worker for Salatk
-const CACHE_NAME = 'salatk-v4';
+const CACHE_NAME = 'salatk-v5';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
@@ -20,6 +20,7 @@ const ASSETS_TO_CACHE = [
     '/js/services/habit-service.js',
     '/js/services/points-service.js',
     '/js/services/task-service.js',
+    '/js/services/page-data-cache.js',
     '/js/pages/daily-prayers.js',
     '/js/pages/qada-prayers.js',
     '/js/pages/habits.js',
@@ -70,31 +71,10 @@ self.addEventListener('fetch', (event) => {
     const isSupabaseApi = event.request.url.includes('supabase.co');
 
     if (isSupabaseApi) {
-        // Network First Strategy for Supabase API
-        // This ensures the user always gets the latest data.
-        // If network fails, it falls back to cache (Offline mode).
+        // Supabase traffic is always network-only to avoid stale sensitive data
+        // and to reduce cache write overhead on frequent API reads.
         event.respondWith(
-            fetch(event.request).then((networkResponse) => {
-                // Check if we received a valid response
-                if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic' && networkResponse.type !== 'cors') {
-                    return networkResponse;
-                }
-
-                // Clone the response
-                const responseToCache = networkResponse.clone();
-
-                caches.open(CACHE_NAME).then((cache) => {
-                    // Cache GET requests for offline support
-                    if (event.request.method === 'GET') {
-                        cache.put(event.request, responseToCache);
-                    }
-                });
-
-                return networkResponse;
-            }).catch(() => {
-                // Network failed, try to return cached response
-                return caches.match(event.request);
-            })
+            fetch(event.request).catch(() => Response.error())
         );
         return;
     }

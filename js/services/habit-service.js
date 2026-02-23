@@ -178,6 +178,81 @@ const HabitService = {
         };
     },
 
+    _mapHabitRow(row) {
+        if (!row) return null;
+        return {
+            id: row.id,
+            name: row.name,
+            type: row.type,
+            created: new Date(row.created_at).getTime()
+        };
+    },
+
+    _buildCardMeta(habits, history, selectedDate) {
+        const statusByHabitId = {};
+        const actionByHabitDate = {};
+
+        (history || []).forEach(record => {
+            if (!actionByHabitDate[record.habit_id]) {
+                actionByHabitDate[record.habit_id] = {};
+            }
+            actionByHabitDate[record.habit_id][record.date] = record.action;
+
+            if (record.date === selectedDate) {
+                statusByHabitId[record.habit_id] = record.action;
+            }
+        });
+
+        const streakByHabitId = {};
+        (habits || []).forEach(habit => {
+            const actionByDate = actionByHabitDate[habit.id] || {};
+            streakByHabitId[habit.id] = this._calculateCurrentStreak(actionByDate, habit.type);
+        });
+
+        return { statusByHabitId, streakByHabitId };
+    },
+
+    async getHabitsWithMeta(selectedDate) {
+        const emptyMeta = { statusByHabitId: {}, streakByHabitId: {} };
+        if (!window.supabaseClient) return { habits: [], meta: emptyMeta };
+
+        const session = await window.AuthManager.getSession();
+        if (!session) return { habits: [], meta: emptyMeta };
+
+        const { data: habitRows } = await withTimeout(
+            window.supabaseClient
+                .from('habits')
+                .select('id,name,type,created_at')
+                .eq('user_id', session.user.id),
+            8000,
+            { data: [] }
+        );
+
+        const habits = (habitRows || [])
+            .map((row) => this._mapHabitRow(row))
+            .filter(Boolean);
+
+        if (habits.length === 0) {
+            return { habits, meta: emptyMeta };
+        }
+
+        const habitIds = habits.map(habit => habit.id);
+        const { data: history } = await withTimeout(
+            window.supabaseClient
+                .from('habit_history')
+                .select('habit_id,date,action')
+                .eq('user_id', session.user.id)
+                .in('habit_id', habitIds),
+            8000,
+            { data: [] }
+        );
+
+        return {
+            habits,
+            meta: this._buildCardMeta(habits, history, selectedDate)
+        };
+    },
+
     async getAll() {
         if (!window.supabaseClient) return [];
         const session = await window.AuthManager.getSession();
@@ -192,12 +267,9 @@ const HabitService = {
             { data: [] }
         );
 
-        return (data || []).map(h => ({
-            id: h.id,
-            name: h.name,
-            type: h.type,
-            created: new Date(h.created_at).getTime()
-        }));
+        return (data || [])
+            .map((row) => this._mapHabitRow(row))
+            .filter(Boolean);
     },
 
     async add(name, type) {
@@ -313,57 +385,8 @@ const HabitService = {
     },
 
     async getHabitsCardMeta(selectedDate) {
-        const emptyResult = { statusByHabitId: {}, streakByHabitId: {} };
-
-        if (!window.supabaseClient) return emptyResult;
-        const session = await window.AuthManager.getSession();
-        if (!session) return emptyResult;
-
-        const { data: habits } = await withTimeout(
-            window.supabaseClient
-                .from('habits')
-                .select('id,type')
-                .eq('user_id', session.user.id),
-            8000,
-            { data: [] }
-        );
-
-        const safeHabits = habits || [];
-        if (safeHabits.length === 0) return emptyResult;
-
-        const habitIds = safeHabits.map(h => h.id);
-
-        const { data: history } = await withTimeout(
-            window.supabaseClient
-                .from('habit_history')
-                .select('habit_id,date,action')
-                .eq('user_id', session.user.id)
-                .in('habit_id', habitIds),
-            8000,
-            { data: [] }
-        );
-
-        const statusByHabitId = {};
-        const actionByHabitDate = {};
-
-        (history || []).forEach(record => {
-            if (!actionByHabitDate[record.habit_id]) {
-                actionByHabitDate[record.habit_id] = {};
-            }
-            actionByHabitDate[record.habit_id][record.date] = record.action;
-
-            if (record.date === selectedDate) {
-                statusByHabitId[record.habit_id] = record.action;
-            }
-        });
-
-        const streakByHabitId = {};
-        safeHabits.forEach(habit => {
-            const actionByDate = actionByHabitDate[habit.id] || {};
-            streakByHabitId[habit.id] = this._calculateCurrentStreak(actionByDate, habit.type);
-        });
-
-        return { statusByHabitId, streakByHabitId };
+        const { meta } = await this.getHabitsWithMeta(selectedDate);
+        return meta;
     },
 
     async getStats(habitId, days = null) {

@@ -103,7 +103,7 @@ describe('Points Service Critical Coverage', () => {
                 };
             }
         }));
-        expect(await window.PointsService.getTotal()).toBe(5);
+        expect(await window.PointsService.getTotal({ forceRefresh: true })).toBe(5);
 
         // fallback fetch failure -> 0
         installTableError(window, 'points_history', (query) => ({
@@ -119,7 +119,7 @@ describe('Points Service Critical Coverage', () => {
                 };
             }
         }));
-        expect(await window.PointsService.getTotal()).toBe(0);
+        expect(await window.PointsService.getTotal({ forceRefresh: true })).toBe(0);
         expect(await window.PointsService.getHistory()).toEqual([]);
 
         // getTotal catch branch
@@ -128,7 +128,7 @@ describe('Points Service Critical Coverage', () => {
                 throw new Error('boom');
             }
         });
-        expect(await window.PointsService.getTotal()).toBe(0);
+        expect(await window.PointsService.getTotal({ forceRefresh: true })).toBe(5);
 
         // restore client
         window.supabaseClient = createMockSupabaseClient({
