@@ -3420,6 +3420,11 @@ body.auth-mode {
         box-shadow: 0 10px 22px hsla(var(--color-primary-h), var(--color-primary-s), var(--color-primary-l), 0.16);
     }
 
+    .nav-item.active span {
+        display: block;
+        color: inherit;
+    }
+
     .nav-item.active::before {
         content: '';
         position: absolute;
