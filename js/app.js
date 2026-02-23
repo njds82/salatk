@@ -261,6 +261,7 @@ function closeMobileNavDrawer() {
 function setupMobileNavDrawer() {
     const navToggle = document.getElementById('navMenuToggle');
     const navBackdrop = document.getElementById('navDrawerBackdrop');
+    const navClose = document.getElementById('navDrawerClose');
     const mainNav = document.getElementById('mainNav');
 
     if (!navToggle || !navBackdrop || !mainNav) return;
@@ -274,6 +275,12 @@ function setupMobileNavDrawer() {
     navBackdrop.addEventListener('click', () => {
         closeMobileNavDrawer();
     });
+
+    if (navClose) {
+        navClose.addEventListener('click', () => {
+            closeMobileNavDrawer();
+        });
+    }
 
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
