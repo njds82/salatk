@@ -5,3 +5,11 @@
 .env.production.local
 
 # Configuration files with sensitive data
+node_modules/
+coverage/
+playwright-report/
+test-results/
+.cache/
+.supabase/
+
+.supabase.env

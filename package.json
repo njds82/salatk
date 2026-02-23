@@ -1,0 +1,30 @@
+{
+  "name": "salatk",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:unit": "vitest run --project unit",
+    "test:dom": "vitest run --project dom",
+    "test:sw": "vitest run --project sw",
+    "test:integration": "vitest run --project integration",
+    "test:integration:local": "bash -lc 'npm run supabase:start && npm run supabase:reset && npx supabase status -o env > .supabase.env && set -a && source .supabase.env && set +a && SUPABASE_URL=\"$API_URL\" SUPABASE_ANON_KEY=\"$ANON_KEY\" npm run test:integration; rc=$?; npm run supabase:stop; exit $rc'",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test": "npm run test:unit && npm run test:dom && npm run test:sw && npm run test:integration",
+    "coverage": "vitest run --coverage",
+    "supabase:start": "npx supabase start --exclude studio,imgproxy,mailpit,vector,logflare,edge-runtime,supavisor --ignore-health-check",
+    "supabase:stop": "npx supabase stop",
+    "supabase:reset": "npx supabase db reset --local --yes"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@supabase/supabase-js": "^2.57.4",
+    "@vitest/coverage-v8": "^2.1.8",
+    "cross-env": "^7.0.3",
+    "http-server": "^14.1.1",
+    "jsdom": "^26.1.0",
+    "service-worker-mock": "^2.0.5",
+    "vitest": "^2.1.8"
+  }
+}

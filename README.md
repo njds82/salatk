@@ -216,3 +216,27 @@
 
 ---
 *تم التحديث بتاريخ: 2026-02-23*
+
+---
+
+## 🧪 Testing & QA
+
+المشروع يحتوي الآن على منظومة اختبارات متعددة الطبقات:
+
+- `npm run test:unit` لاختبارات الوحدة
+- `npm run test:dom` لاختبارات DOM/الصفحات/المكونات
+- `npm run test:sw` لاختبارات Service Worker
+- `npm run test:integration` لاختبارات التكامل (Supabase محلي)
+- `npm run test:integration:local` لتشغيل Supabase محليًا + reset + تشغيل التكامل تلقائيًا
+- `npm run test:e2e` لاختبارات المتصفح (Playwright)
+- `npm run coverage` لتقرير التغطية
+
+أوامر Supabase المحلية:
+
+- `npm run supabase:start`
+- `npm run supabase:reset`
+- `npm run supabase:stop`
+
+> ملاحظة: أمر `test:integration` يحتاج متغيرين بيئيين:
+> `SUPABASE_URL` و `SUPABASE_ANON_KEY`.
+> أمر `test:integration:local` يضبطهما تلقائيًا.
