@@ -2,6 +2,32 @@
 // Leaderboard Page
 // ========================================
 
+const LEVEL_ICONS = {
+    new: '🌱',
+    beginner: '🔰',
+    intermediate: '📈',
+    excellent: '⭐',
+    legendary: '🏆',
+    heroic: '🛡️',
+    royal: '👑',
+    miraculous: '✨',
+    absolute_classifier: '💠'
+};
+
+function getLeaderboardLevelInfo(totalPoints) {
+    const parsedPoints = Number(totalPoints);
+    const safePoints = Number.isFinite(parsedPoints) ? Math.max(0, parsedPoints) : 0;
+    const levelKey = getUserLevel(safePoints);
+    const levelIcon = LEVEL_ICONS[levelKey] || '⭐';
+
+    return {
+        safePoints,
+        levelKey,
+        levelIcon,
+        levelLabel: t(levelKey)
+    };
+}
+
 async function renderLeaderboardPage() {
     let leaderboardData = [];
     let errorMessage = null;
@@ -45,12 +71,6 @@ async function renderLeaderboardPage() {
     }
 
     const currentUserId = currentUserSession?.user?.id;
-    // Calculate max score for progress bars (avoid division by zero)
-    let maxPointsInList = 0;
-    if (leaderboardData.length > 0) {
-        maxPointsInList = Math.max(...leaderboardData.map(u => u.total_points || 0));
-    }
-    const maxScore = maxPointsInList > 0 ? maxPointsInList : 1;
 
     let html = `
         <div class="page-header">
@@ -83,13 +103,13 @@ async function renderLeaderboardPage() {
                             <th class="rank-cell">${t('rank_header')}</th>
                             <th>${t('user_header')}</th>
                             <th>${t('points_header')}</th>
-                            <th>${t('progress_header')}</th>
+                            <th>${t('level')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${leaderboardData.map((user, index) => {
         const isCurrentUser = user.user_id === currentUserId;
-        const progressPercent = Math.min(100, Math.max(0, (user.total_points / maxScore) * 100));
+        const { safePoints, levelIcon, levelLabel } = getLeaderboardLevelInfo(user.total_points);
 
         // Rank Icons - Use index instead of user.ranking since ORDER BY already sorted by total_points
         const actualRank = index + 1;
@@ -110,14 +130,12 @@ async function renderLeaderboardPage() {
                                         </span>
                                     </td>
                                     <td class="score-cell">
-                                        ${user.total_points.toLocaleString()}
+                                        ${safePoints.toLocaleString()}
                                     </td>
-                                    <td class="progress-cell">
-                                        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 2px; color: var(--color-text-tertiary);">
-                                            <span>${Math.round(progressPercent)}%</span>
-                                        </div>
-                                        <div class="progress-bar-bg">
-                                            <div class="progress-bar-fill" style="width: ${progressPercent}%"></div>
+                                    <td class="level-cell">
+                                        <div class="level-badge">
+                                            <span class="level-icon">${levelIcon}</span>
+                                            <span class="level-text">${levelLabel}</span>
                                         </div>
                                     </td>
                                 </tr>
