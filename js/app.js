@@ -159,6 +159,17 @@ async function checkAuthAndInit() {
             await PrayerService.cleanupQada();
         }
 
+        // Daily Tasks background maintenance
+        if (window.TaskService) {
+            try {
+                const today = getCurrentDate();
+                await TaskService.rolloverPendingTasks(today);
+                await TaskService.cleanupCompletedTasks(30);
+            } catch (taskError) {
+                console.warn('Task maintenance skipped:', taskError);
+            }
+        }
+
         // Sync data if configured (Now Cloud-Only)
         if (window.SyncManager) {
             SyncManager.subscribeToChanges();
@@ -343,6 +354,9 @@ async function renderPage(page, noScroll = false) {
             case 'habits':
                 html = await renderHabitsPage();
                 break;
+            case 'daily-tasks':
+                html = await renderDailyTasksPage();
+                break;
             case 'statistics':
                 html = await renderStatisticsPage();
                 break;
@@ -391,4 +405,3 @@ async function renderPage(page, noScroll = false) {
         window.scrollTo(0, 0);
     }
 }
-

@@ -112,6 +112,11 @@ const SyncManager = {
                         // For now, keep it manual or throttle.
                     }
                     break;
+                case 'tasks':
+                    if (window.currentPage === 'daily-tasks' && window.renderPage) {
+                        renderPage('daily-tasks', true);
+                    }
+                    break;
             }
         } catch (err) {
             console.error('Error handling realtime event:', err);
