@@ -20,10 +20,10 @@ async function createHabitCard(habit, cardMeta = null) {
 
     return `
         <div class="card">
-            <div class="habit-header" style="display: flex; justify-content: space-between; align-items: start; margin-bottom: var(--spacing-md);">
-                <div>
-                    <div style="display: flex; align-items: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-xs);">
-                        <h3 style="margin: 0;">${habit.name}</h3>
+            <div class="habit-header">
+                <div class="habit-header-main">
+                    <div class="habit-header-row">
+                        <h3 class="habit-name">${habit.name}</h3>
                         <button class="btn btn-secondary habit-details-btn" onclick="showHabitDetailsModal('${habit.id}')">
                             ${t('details')}
                         </button>
@@ -55,42 +55,42 @@ async function createHabitCard(habit, cardMeta = null) {
                             </div>
                         </div>
                     </div>
-                    <span style="display: inline-block; padding: var(--spacing-xs) var(--spacing-sm); border-radius: var(--radius-full); font-size: 0.75rem; font-weight: 600; background: ${isWorshipHabit ? 'var(--color-worship)' : 'var(--color-sin)'}; color: white;">
+                    <span class="habit-type-badge" style="background: ${isWorshipHabit ? 'var(--color-worship)' : 'var(--color-sin)'};">
                         ${t(habit.type + '_habit')}
                     </span>
                 </div>
             </div>
             
             ${streak > 0 ? `
-            <div style="display: flex; align-items: center; gap: var(--spacing-xs); margin-bottom: var(--spacing-md); color: var(--color-warning);">
+            <div class="habit-streak">
                 <svg width="20" height="20" viewBox="0 0 20 20">
                     <path d="M10 2 L12 8 L18 9 L13 13 L15 19 L10 15 L5 19 L7 13 L2 9 L8 8 Z" fill="currentColor"/>
                 </svg>
-                <span style="font-weight: 600;">${streak} ${t('days')}</span>
+                <span>${streak} ${t('days')}</span>
             </div>
             ` : ''}
             
-            <div class="habit-actions" style="display: flex; gap: var(--spacing-sm);">
+            <div class="habit-actions">
                 ${isWorshipHabit ? `
-                    <button class="btn btn-success" 
+                    <button class="btn btn-success habit-action-btn" 
                             onclick="handleMarkHabit('${habit.id}', 'done')"
                             ${todayStatus === 'done' ? 'disabled' : ''}
-                            style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         ${t('mark_done')}
                     </button>
                 ` : `
-                    <button class="btn btn-danger" 
+                    <button class="btn btn-danger habit-action-btn" 
                             onclick="handleMarkHabit('${habit.id}', 'committed')"
                             ${todayStatus ? 'disabled' : ''}
-                            style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         ${t('mark_committed')}
                     </button>
-                    <button class="btn btn-success" 
+                    <button class="btn btn-success habit-action-btn" 
                             onclick="handleMarkHabit('${habit.id}', 'avoided')"
                             ${todayStatus ? 'disabled' : ''}
-                            style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         ${t('mark_avoided')}
                     </button>
