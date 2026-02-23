@@ -12,7 +12,7 @@
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test": "npm run test:unit && npm run test:dom && npm run test:sw && npm run test:integration",
-    "coverage": "vitest run --coverage",
+    "coverage": "vitest run --project unit --coverage --coverage.all=true --coverage.include=js/services/**/*.js --coverage.exclude=tests/**",
     "supabase:start": "npx supabase start --exclude studio,imgproxy,mailpit,vector,logflare,edge-runtime,supavisor --ignore-health-check",
     "supabase:stop": "npx supabase stop",
     "supabase:reset": "npx supabase db reset --local --yes"

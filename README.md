@@ -229,7 +229,7 @@
 - `npm run test:integration` لاختبارات التكامل (Supabase محلي)
 - `npm run test:integration:local` لتشغيل Supabase محليًا + reset + تشغيل التكامل تلقائيًا
 - `npm run test:e2e` لاختبارات المتصفح (Playwright)
-- `npm run coverage` لتقرير التغطية
+- `npm run coverage` لتقرير تغطية طبقة الخدمات (`js/services/**/*.js`)
 
 أوامر Supabase المحلية:
 

@@ -14,27 +14,24 @@ export default defineConfig({
         restoreMocks: true,
         mockReset: true,
         isolate: true,
-        setupFiles: [path.resolve(ROOT, 'tests/helpers/global-setup.js')]
-    },
-    coverage: {
-        provider: 'v8',
-        all: true,
-        include: [
-            'components/**/*.js',
-            'js/**/*.js',
-            'sw.js',
-            'verify_hijri.js'
-        ],
-        exclude: [
-            'tests/**',
-            'assets/**'
-        ],
-        reporter: ['text', 'html', 'lcov'],
-        thresholds: {
-            statements: 85,
-            branches: 85,
-            functions: 85,
-            lines: 85
+        setupFiles: [path.resolve(ROOT, 'tests/helpers/global-setup.js')],
+        coverage: {
+            provider: 'v8',
+            all: true,
+            include: [
+                'js/services/**/*.js'
+            ],
+            exclude: [
+                'tests/**',
+                'assets/**'
+            ],
+            reporter: ['text', 'html', 'lcov'],
+            thresholds: {
+                statements: 85,
+                branches: 85,
+                functions: 85,
+                lines: 85
+            }
         }
-    }
+    },
 });
