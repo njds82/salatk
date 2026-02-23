@@ -3068,7 +3068,7 @@ body.auth-mode {
 @media (max-width: 768px) {
     :root {
         --mobile-header-height: 68px;
-        --mobile-nav-height: 152px;
+        --mobile-nav-height: 92px;
     }
 
     body {
@@ -3158,7 +3158,7 @@ body.auth-mode {
         max-width: none;
         flex-direction: column;
         gap: 14px;
-        padding: calc(var(--mobile-header-height) + env(safe-area-inset-top, 0px)) 12px calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px));
+        padding: calc(var(--mobile-header-height) + env(safe-area-inset-top, 0px)) 12px calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px) + 8px);
     }
 
     body.auth-mode .container {
@@ -3187,52 +3187,63 @@ body.auth-mode {
 
     .main-nav {
         position: fixed;
-        inset: auto 0 0 0;
-        width: 100%;
+        inset: auto 10px calc(8px + env(safe-area-inset-bottom, 0px)) 10px;
         margin: 0;
-        padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+        padding: 8px;
         background: linear-gradient(180deg, var(--glass-bg), var(--color-bg-card));
-        border: 0;
-        border-top: 1px solid var(--glass-border);
-        border-radius: 24px 24px 0 0;
-        box-shadow: 0 -14px 32px rgba(0, 0, 0, 0.15);
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 8px;
-        justify-items: stretch;
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 6px;
+        overflow-x: auto;
+        scrollbar-width: none;
         backdrop-filter: blur(calc(var(--glass-blur) + 8px));
         -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 8px));
         z-index: 1150;
     }
 
+    .main-nav::-webkit-scrollbar {
+        display: none;
+    }
+
     .nav-item {
-        min-width: 0;
-        min-height: 58px;
-        padding: 8px 4px;
-        gap: 5px;
-        border-radius: 14px;
-        flex-direction: column;
-        justify-content: center;
-        text-align: center;
+        min-width: 76px;
+        min-height: 50px;
+        padding: 7px 8px;
+        gap: 6px;
+        border-radius: 12px;
+        flex: 0 0 auto;
+        flex-direction: row;
+        justify-content: flex-start;
+        text-align: right;
         color: var(--color-text-secondary);
         border: 1px solid transparent;
         background: transparent;
         transform: none;
     }
 
+    [dir="ltr"] .nav-item {
+        text-align: left;
+    }
+
     .nav-item svg {
-        width: 20px;
-        height: 20px;
+        width: 18px;
+        height: 18px;
         margin: 0;
+        flex-shrink: 0;
     }
 
     .nav-item span {
         display: block;
-        font-size: 0.62rem;
+        font-size: 0.68rem;
         font-weight: 700;
-        line-height: 1.2;
+        line-height: 1.15;
         letter-spacing: 0;
-        max-width: 100%;
+        max-width: 66px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -3249,7 +3260,7 @@ body.auth-mode {
         transform: none;
         background: linear-gradient(140deg, var(--color-primary), var(--color-primary-light));
         color: var(--color-text-on-primary);
-        box-shadow: 0 8px 18px hsla(var(--color-primary-h), var(--color-primary-s), var(--color-primary-l), 0.32);
+        box-shadow: 0 6px 16px hsla(var(--color-primary-h), var(--color-primary-s), var(--color-primary-l), 0.3);
     }
 
     .nav-item.active svg {
@@ -3345,7 +3356,7 @@ body.auth-mode {
         left: 50%;
         right: auto;
         transform: translateX(-50%);
-        bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px) - 12px);
+        bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px) + 8px);
         padding-inline: 10px;
     }
 
@@ -3370,7 +3381,7 @@ body.auth-mode {
 @media (max-width: 480px) {
     :root {
         --mobile-header-height: 64px;
-        --mobile-nav-height: 146px;
+        --mobile-nav-height: 86px;
     }
 
     .header-content {
@@ -3399,19 +3410,22 @@ body.auth-mode {
     }
 
     .main-nav {
-        padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+        inset: auto 8px calc(6px + env(safe-area-inset-bottom, 0px)) 8px;
+        padding: 7px;
         gap: 6px;
-        border-radius: 20px 20px 0 0;
+        border-radius: 18px;
     }
 
     .nav-item {
-        min-height: 54px;
-        padding: 7px 2px;
-        border-radius: 12px;
+        min-width: 70px;
+        min-height: 46px;
+        padding: 6px 7px;
+        border-radius: 11px;
     }
 
     .nav-item span {
-        font-size: 0.58rem;
+        font-size: 0.62rem;
+        max-width: 58px;
     }
 
     .page-title {
