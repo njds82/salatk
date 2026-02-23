@@ -641,6 +641,21 @@ body::after {
     transform: scale(1.05);
 }
 
+.menu-toggle-btn {
+    display: none;
+}
+
+.nav-drawer-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-fast);
+    z-index: 1180;
+}
+
 .lang-text {
     font-weight: 600;
     font-size: 0.875rem;
@@ -3068,7 +3083,7 @@ body.auth-mode {
 @media (max-width: 768px) {
     :root {
         --mobile-header-height: 68px;
-        --mobile-nav-height: 92px;
+        --mobile-nav-height: 20px;
     }
 
     body {
@@ -3084,6 +3099,23 @@ body.auth-mode {
         height: 360px;
         filter: blur(90px);
         opacity: 0.22;
+    }
+
+    body.mobile-nav-open {
+        overflow: hidden;
+    }
+
+    .menu-toggle-btn {
+        display: inline-flex;
+    }
+
+    .nav-drawer-backdrop {
+        display: block;
+    }
+
+    body.mobile-nav-open .nav-drawer-backdrop {
+        opacity: 1;
+        pointer-events: auto;
     }
 
     .app-header {
@@ -3158,7 +3190,7 @@ body.auth-mode {
         max-width: none;
         flex-direction: column;
         gap: 14px;
-        padding: calc(var(--mobile-header-height) + env(safe-area-inset-top, 0px)) 12px calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px) + 8px);
+        padding: calc(var(--mobile-header-height) + env(safe-area-inset-top, 0px)) 12px calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px) + 12px);
     }
 
     body.auth-mode .container {
@@ -3187,23 +3219,45 @@ body.auth-mode {
 
     .main-nav {
         position: fixed;
-        inset: auto 10px calc(8px + env(safe-area-inset-bottom, 0px)) 10px;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        width: min(84vw, 320px);
         margin: 0;
-        padding: 8px;
-        background: linear-gradient(180deg, var(--glass-bg), var(--color-bg-card));
-        border: 1px solid var(--glass-border);
-        border-radius: 20px;
-        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
+        padding: calc(var(--mobile-header-height) + env(safe-area-inset-top, 0px) + 10px) 12px calc(16px + env(safe-area-inset-bottom, 0px));
+        background: linear-gradient(180deg, var(--color-bg-card), var(--glass-bg));
+        border-left: 1px solid var(--glass-border);
+        border-radius: 20px 0 0 20px;
+        box-shadow: -18px 0 34px rgba(0, 0, 0, 0.18);
         display: flex;
-        flex-direction: row;
-        flex-wrap: nowrap;
-        align-items: center;
-        gap: 6px;
-        overflow-x: auto;
+        flex-direction: column;
+        gap: 8px;
+        overflow-y: auto;
+        overscroll-behavior: contain;
         scrollbar-width: none;
+        transform: translateX(108%);
+        visibility: hidden;
+        pointer-events: none;
+        transition: transform var(--transition-normal);
         backdrop-filter: blur(calc(var(--glass-blur) + 8px));
         -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 8px));
-        z-index: 1150;
+        z-index: 1220;
+    }
+
+    [dir="ltr"] .main-nav {
+        right: auto;
+        left: 0;
+        border-left: 0;
+        border-right: 1px solid var(--glass-border);
+        border-radius: 0 20px 20px 0;
+        box-shadow: 18px 0 34px rgba(0, 0, 0, 0.18);
+        transform: translateX(-108%);
+    }
+
+    body.mobile-nav-open .main-nav {
+        transform: translateX(0);
+        visibility: visible;
+        pointer-events: auto;
     }
 
     .main-nav::-webkit-scrollbar {
@@ -3211,14 +3265,15 @@ body.auth-mode {
     }
 
     .nav-item {
-        min-width: 76px;
+        width: 100%;
         min-height: 50px;
-        padding: 7px 8px;
-        gap: 6px;
+        padding: 10px 12px;
+        gap: 10px;
         border-radius: 12px;
         flex: 0 0 auto;
         flex-direction: row;
         justify-content: flex-start;
+        align-items: center;
         text-align: right;
         color: var(--color-text-secondary);
         border: 1px solid transparent;
@@ -3231,22 +3286,21 @@ body.auth-mode {
     }
 
     .nav-item svg {
-        width: 18px;
-        height: 18px;
+        width: 20px;
+        height: 20px;
         margin: 0;
         flex-shrink: 0;
     }
 
     .nav-item span {
         display: block;
-        font-size: 0.68rem;
+        font-size: 0.9rem;
         font-weight: 700;
-        line-height: 1.15;
+        line-height: 1.2;
         letter-spacing: 0;
-        max-width: 66px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        max-width: none;
+        white-space: normal;
+        overflow: visible;
     }
 
     .nav-item:hover,
@@ -3356,7 +3410,7 @@ body.auth-mode {
         left: 50%;
         right: auto;
         transform: translateX(-50%);
-        bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px) + 8px);
+        bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px));
         padding-inline: 10px;
     }
 
@@ -3381,7 +3435,7 @@ body.auth-mode {
 @media (max-width: 480px) {
     :root {
         --mobile-header-height: 64px;
-        --mobile-nav-height: 86px;
+        --mobile-nav-height: 16px;
     }
 
     .header-content {
@@ -3410,22 +3464,25 @@ body.auth-mode {
     }
 
     .main-nav {
-        inset: auto 8px calc(6px + env(safe-area-inset-bottom, 0px)) 8px;
-        padding: 7px;
+        width: min(88vw, 300px);
+        padding: calc(var(--mobile-header-height) + env(safe-area-inset-top, 0px) + 8px) 10px calc(14px + env(safe-area-inset-bottom, 0px));
         gap: 6px;
-        border-radius: 18px;
+        border-radius: 16px 0 0 16px;
+    }
+
+    [dir="ltr"] .main-nav {
+        border-radius: 0 16px 16px 0;
     }
 
     .nav-item {
-        min-width: 70px;
         min-height: 46px;
-        padding: 6px 7px;
-        border-radius: 11px;
+        padding: 9px 10px;
+        border-radius: 10px;
     }
 
     .nav-item span {
-        font-size: 0.62rem;
-        max-width: 58px;
+        font-size: 0.84rem;
+        max-width: none;
     }
 
     .page-title {

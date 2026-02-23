@@ -30,6 +30,17 @@
             </div>
 
             <div class="header-actions">
+                <!-- Mobile Navigation Toggle -->
+                <button class="icon-btn menu-toggle-btn" id="navMenuToggle" aria-label="Toggle navigation menu"
+                    aria-controls="mainNav" aria-expanded="false">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
+
                 <!-- Points Display -->
                 <div class="points-badge" id="pointsDisplay">
                     <svg width="20" height="20" viewBox="0 0 20 20">
@@ -68,11 +79,12 @@
             </div>
         </div>
     </header>
+    <div class="nav-drawer-backdrop" id="navDrawerBackdrop"></div>
 
     <!-- Main Container -->
     <div class="container">
         <!-- Navigation -->
-        <nav class="main-nav">
+        <nav class="main-nav" id="mainNav">
             <a href="#daily-prayers" class="nav-item active" data-page="daily-prayers">
                 <svg width="24" height="24" viewBox="0 0 24 24">
                     <rect x="4" y="10" width="16" height="12" rx="2" stroke="currentColor" stroke-width="2"

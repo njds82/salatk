@@ -207,10 +207,13 @@ function setupEventListeners() {
     });
 
     // Navigation
+    setupMobileNavDrawer();
+
     document.querySelectorAll('.nav-item').forEach(item => {
         item.addEventListener('click', (e) => {
             e.preventDefault();
             const page = item.getAttribute('data-page');
+            closeMobileNavDrawer();
             navigateTo(page);
         });
     });
@@ -247,6 +250,44 @@ function setupEventListeners() {
     });
 }
 
+function closeMobileNavDrawer() {
+    const navToggle = document.getElementById('navMenuToggle');
+    document.body.classList.remove('mobile-nav-open');
+    if (navToggle) {
+        navToggle.setAttribute('aria-expanded', 'false');
+    }
+}
+
+function setupMobileNavDrawer() {
+    const navToggle = document.getElementById('navMenuToggle');
+    const navBackdrop = document.getElementById('navDrawerBackdrop');
+    const mainNav = document.getElementById('mainNav');
+
+    if (!navToggle || !navBackdrop || !mainNav) return;
+
+    navToggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        const isOpen = document.body.classList.toggle('mobile-nav-open');
+        navToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    });
+
+    navBackdrop.addEventListener('click', () => {
+        closeMobileNavDrawer();
+    });
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeMobileNavDrawer();
+        }
+    });
+
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+            closeMobileNavDrawer();
+        }
+    });
+}
+
 // Set global selected date
 function setSelectedDate(date) {
     selectedDate = date;
@@ -255,6 +296,7 @@ function setSelectedDate(date) {
 
 // Navigate to page
 function navigateTo(page) {
+    closeMobileNavDrawer();
     currentPage = page;
 
     // Update URL hash
