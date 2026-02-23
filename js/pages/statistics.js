@@ -33,7 +33,6 @@ async function renderStatisticsPage() {
 
     // Get level info
     const level = getUserLevel(stats.totalPoints);
-    const levelProgress = getLevelProgress(stats.totalPoints);
     const pointsForNext = getPointsForNextLevel(stats.totalPoints);
 
     let html = `

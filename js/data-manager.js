@@ -4,9 +4,6 @@
 // This file is kept to avoid breaking imports but now redirects to new Async Services.
 // WARNING: Most methods are now ASYNC. Old synchronous calls will fail or return Promises.
 
-const STORAGE_KEY = 'salatk_data';
-const DATA_VERSION = '5.3.7';
-
 // Re-export PRAYERS for compatibility if needed, though PrayerService has it.
 const PRAYERS_LEGACY = {
     fajr: { nameKey: 'fajr', rakaat: 2, points: 5, required: true },
@@ -32,10 +29,6 @@ async function getDailyPrayers(date) {
     return await PrayerService.getDailyPrayers(date);
 }
 
-async function markPrayerPerformed(prayerKey, date) {
-    return await PrayerService.markPrayer(prayerKey, date, 'done');
-}
-
 async function markPrayerMissed(prayerKey, date) {
     return await PrayerService.markPrayer(prayerKey, date, 'missed');
 }
@@ -44,70 +37,8 @@ async function getQadaPrayers() {
     return await PrayerService.getQadaPrayers();
 }
 
-async function makeUpQadaPrayer(qadaId) {
-    return await PrayerService.makeUpQada(qadaId);
-}
-
-async function addManualQadaPrayer(prayerKey, count = 1, date = null) {
-    const rakaat = PRAYERS_LEGACY[prayerKey]?.rakaat || 0;
-    for (let i = 0; i < count; i++) {
-        await PrayerService.addQada(date, prayerKey, rakaat, true);
-    }
-    return { success: true };
-}
-
-async function getHabits() {
-    return await HabitService.getAll();
-}
-
-async function addHabit(name, type) {
-    return await HabitService.add(name, type);
-}
-
 async function deleteHabit(habitId) {
     return await HabitService.delete(habitId);
-}
-
-async function markHabit(habitId, action, date) {
-    return await HabitService.logAction(habitId, date, action);
-}
-
-// Helpers
-function generateId() {
-    return crypto.randomUUID();
-}
-
-async function clearAllData() {
-    await db.delete();
-    await db.open();
-    return true;
-}
-
-// Export / Import
-async function exportData() {
-    // Reconstruct full JSON from DB
-    const data = {
-        version: DATA_VERSION,
-        settings: await SettingsService.getSettings(),
-        prayers: {},
-        qadaPrayers: await db.qada.toArray(),
-        habits: await HabitService.getAll(),
-        points: { history: await db.points.toArray() }
-    };
-    // Fetch all prayers
-    const allPrayers = await db.prayers.toArray();
-    allPrayers.forEach(p => {
-        if (!data.prayers[p.date]) data.prayers[p.date] = {};
-        data.prayers[p.date][p.key] = { status: p.status, timestamp: p.timestamp };
-    });
-
-    // Download
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `salatk-backup-${getCurrentDate()}.json`;
-    a.click();
 }
 
 // Statistics Helper

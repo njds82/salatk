@@ -21,7 +21,6 @@ const ATHKAR_LIST = [
 
 let currentAthkarIndex = 0;
 let athkarSessionCount = 0; // Counts "reads" in this session or total
-let pointsAwardedForCurrentSet = false;
 
 async function renderAthkarPage() {
     return `

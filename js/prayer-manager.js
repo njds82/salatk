@@ -245,7 +245,6 @@ const PrayerManager = {
             }
 
             for (const slot of schedule) {
-                const startMinutes = timeToMinutes(slot.start);
                 const endMinutes = timeToMinutes(slot.end);
 
                 // If current time is PAST the end time

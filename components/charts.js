@@ -4,7 +4,6 @@
 
 function createBarChart(data, labels, title) {
     const maxValue = Math.max(...data, 1);
-    const barWidth = 100 / data.length;
 
     return `
         <div class="chart-container" style="margin-bottom: var(--spacing-lg);">

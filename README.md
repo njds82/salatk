@@ -1,16 +1,24 @@
 # Salatk (صلاتك) 🕌
 
-**Salatk** هو تطبيق ويب تقدمي (PWA) متكامل يهدف إلى مساعدة المسلم على المحافظة على صلواته، تتبع القضاء، وبناء عادات إيجابية من خلال نظام تحفيزي ذكي (Gamification). يعتمد التطبيق على تقنيات حديثة لضمان المزامنة اللحظية والعمل بكفاءة عالية.
+**Salatk** هو تطبيق ويب تقدمي (PWA) يساعد المستخدم على:
+- متابعة الصلوات اليومية.
+- إدارة صلوات القضاء.
+- تتبع العادات.
+- إدارة المهام اليومية.
+- التحفيز عبر نظام نقاط ولوحة صدارة.
+
+يعتمد التطبيق على **Supabase** مع مزامنة لحظية، وبنية Frontend تعتمد على JavaScript modules بنمط `window` globals.
 
 ---
 
 ## 📑 الفهرس
 1. [خارطة الملفات (File Map)](#-خارطة-الملفات-file-map)
-2. [شرح الملفات والمديرين (Modules)](#-شرح-الملفات-والمديرين-modules)
+2. [شرح الوحدات (Modules)](#-شرح-الوحدات-modules)
 3. [قاعدة البيانات (Database Schema)](#-قاعدة-البيانات-database-schema)
-4. [الاتصالات والعلاقات (Connections & Relationships)](#-الاتصالات-والعلاقات)
-5. [المتغيرات والثوابت (Variables & Constants)](#-المتغيرات-والثوابت)
-6. [الوظائف والعمليات (Functions & Processes)](#-الوظائف-والعمليات)
+4. [الاتصالات والعلاقات (Connections & Relationships)](#-الاتصالات-والعلاقات-connections--relationships)
+5. [الثوابت الأساسية (Core Constants)](#-الثوابت-الأساسية-core-constants)
+6. [العمليات الرئيسية (Core Flows)](#-العمليات-الرئيسية-core-flows)
+7. [مراجعة الكود (Code Review Snapshot)](#-مراجعة-الكود-code-review-snapshot)
 
 ---
 
@@ -18,155 +26,193 @@
 
 ```text
 /home/loid/code/salatk/
-├── index.html              # الصفحة الرئيسية ونقطة الدخول للتطبيق
-├── styles.css              # ملف التنسيقات الرئيسي (CSS Variables, Themes)
-├── sw.js                   # Service Worker للإشعارات والعمل في الخلفية
-├── verify_hijri.js         # سكربت مستقل للتحقق من صحة التاريخ الهجري
-├── assets/                 # مجلد الصور والأيقونات
-├── components/             # مكونات الواجهة (Modals, Cards)
-└── js/                     # الكود المصدري للجافاسكريبت
-    ├── app.js              # نقطة البداية وتشغيل التطبيق (Initialization)
-    ├── auth-manager.js     # إدارة تسجيل الدخول والمستخدمين
-    ├── prayer-manager.js   # منطق حساب أوقات الصلاة والموقع
-    ├── sync-manager.js     # إدارة المزامنة اللحظية (Realtime)
-    ├── notification-manager.js # إدارة التنبيهات والإشعارات
-    ├── data-manager.js     # (ملف مساعد للتعامل مع البيانات - إن وجد)
-    ├── date-utils.js       # دوال مساعدة للتواريخ (ميلادي/هجري)
-    ├── ui-helpers.js       # دوال مساعدة للواجهة (Toast, Loading)
-    ├── db.js               # إعداد قاعدة البيانات المحلية (إن وجدت)
-    ├── supabaseClient.js   # إعداد اتصال Supabase
-    ├── i18n.js             # ملف الترجمة (العربية/النجلزية)
-    ├── services/           # خدمات التعامل مع قاعدة البيانات
-    │   ├── prayer-service.js   # خدمة الصلوات (تسجيل، قضاء)
-    │   ├── points-service.js   # خدمة النقاط (إضافة، جلب المجموع)
-    │   ├── settings-service.js # خدمة الإعدادات (ثيم، لغة)
-    │   ├── habit-service.js    # خدمة العادات
-    │   └── migration-service.js # خدمة ترحيل البيانات (إن وجدت)
-    ├── pages/              # منطق كل صفحة في التطبيق
-    │   ├── daily-prayers.js    # صفحة الصلوات اليومية
-    │   ├── qada-prayers.js     # صفحة قضاء الصلوات
-    │   ├── habits.js           # صفحة العادات
-    │   ├── leaderboard.js      # صفحة المتصدرين
-    │   ├── store.js            # متجر النقاط والثيمات
-    │   ├── settings.js         # صفحة الإعدادات
-    │   ├── statistics.js       # صفحة الإحصائيات
-    │   └── challenge.js        # صفحة التحديات والمسابقات
-    └── data/               # ملفات البيانات الثابتة
-        └── questions.js        # أسئلة التحديات
+├── index.html                  # نقطة الدخول وترتيب تحميل السكربتات
+├── styles.css                  # التنسيقات العامة والثيمات
+├── sw.js                       # Service Worker
+├── supabase_tasks.sql          # SQL لإنشاء جدول المهام وسياساته
+├── verify_hijri.js             # سكربت تحقق مستقل للتاريخ الهجري
+├── components/                 # مكونات واجهة قابلة لإعادة الاستخدام
+│   ├── toast.js
+│   ├── modal.js
+│   ├── prayer-card.js
+│   ├── habit-card.js
+│   ├── charts.js
+│   └── points-display.js
+├── assets/images/logo.png
+└── js/
+    ├── app.js                  # الـ Router + bootstrap للتطبيق
+    ├── auth-manager.js
+    ├── prayer-manager.js
+    ├── notification-manager.js
+    ├── sync-manager.js
+    ├── data-manager.js         # واجهة توافق قديمة (legacy facade)
+    ├── points-manager.js
+    ├── date-utils.js
+    ├── i18n.js
+    ├── db.js
+    ├── config.js
+    ├── config.example.js
+    ├── supabaseClient.js
+    ├── ui-helpers.js
+    ├── data/questions.js
+    ├── services/
+    │   ├── prayer-service.js
+    │   ├── habit-service.js
+    │   ├── points-service.js
+    │   ├── settings-service.js
+    │   ├── task-service.js
+    │   └── migration-service.js   # موجود لكن غير مفعّل افتراضياً
+    └── pages/
+        ├── auth.js
+        ├── daily-prayers.js
+        ├── qada-prayers.js
+        ├── habits.js
+        ├── daily-tasks.js
+        ├── statistics.js
+        ├── leaderboard.js
+        ├── store.js
+        ├── athkar.js
+        ├── challenge.js
+        ├── settings.js
+        └── more.js
 ```
 
 ---
 
-## 📘 شرح الملفات والمديرين (Modules)
+## 📘 شرح الوحدات (Modules)
 
-### 1. **Managers (المديرون)**
-مسؤولون عن المنطق التشغيلي للتطبيق وربط الخدمات بالواجهة.
+### 1) Managers
+- **`AuthManager` (`js/auth-manager.js`)**  
+  مسؤول عن تسجيل الدخول/الخروج وإدارة الـ session والملف الشخصي.
 
-- **`AuthManager` (`js/auth-manager.js`)**:
-  - يدير عمليات المصادقة (تسجيل دخول/خروج).
-  - يقوم بإنشاء "إيميل وهمي" من اسم المستخدم (`username@salatk.local`) لتسهيل التسجيل.
-  - يحفظ جلسة المستخدم (`Session`) ويتحقق منها عند بدء التطبيق.
+- **`PrayerManager` (`js/prayer-manager.js`)**  
+  يحسب المواقيت (Adhan.js)، ويدير الفحص الدوري للصلاة الفائتة (`checkAndMarkMissedPrayers`).
 
-- **`PrayerManager` (`js/prayer-manager.js`)**:
-  - المسؤول عن حساب مواقيت الصلاة محلياً باستخدام مكتبة `Adhan.js`.
-  - يدير الموقع الجغرافي (تلقائي أو يدوي).
-  - يحتوي على `checkAndMarkMissedPrayers` التي تعمل بشكل دوري لفحص الصلوات الفائتة وتسجيلها تلقائياً.
+- **`NotificationManager` (`js/notification-manager.js`)**  
+  يدير أذونات الإشعارات وجدولة التنبيه للصلاة القادمة.
 
-- **`SyncManager` (`js/sync-manager.js`)**:
-  - يدير الاتصال الفوري (Realtime) مع `Supabase`.
-  - يستمع للتغييرات في جداول (`prayer_records`, `points_history`) ويحدث الواجهة فوراً دون إعادة تحميل الصفحة.
+- **`SyncManager` (`js/sync-manager.js`)**  
+  يدير الاشتراك في تغييرات Supabase (Realtime) وتحديث الواجهة عند التغييرات.
 
-- **`NotificationManager` (`js/notification-manager.js`)**:
-  - يطلب صلاحيات الإشعارات.
-  - يجدول التنبيهات لأوقات الصلاة القادمة باستخدام Service Worker لضمان وصولها حتى لو كان التطبيق مغلقاً.
+### 2) Services
+- **`PrayerService`**: CRUD للصلوات + قضاء + احتساب/إرجاع نقاط الصلاة.
+- **`HabitService`**: إدارة العادات وسجلّها اليومي.
+- **`PointsService`**: مجموع النقاط + سجل النقاط + الإضافة عبر `upsert`.
+- **`SettingsService`**: إعدادات اللغة/الثيم/الحساب الشرعي/الموقع.
+- **`TaskService`**: إدارة المهام اليومية (إنشاء/تعديل/إكمال/ترحيل/تنظيف).
 
-### 2. **Services (الخدمات)**
-واجهة التعامل المباشر مع قاعدة البيانات (CRUD Operations).
-
-- **`PrayerService`**: إضافة الصلوات، تحديث حالتها (أداء/قضاء)، وحساب سلسلة الالتزام (Streak).
-- **`PointsService`**: إدارة رصيد النقاط، عرض السجل، والتحقق من المجموع الكلي.
-- **`SettingsService`**: حفظ واسترجاع إعدادات المستخدم (اللغة، المذهب، طريقة الحساب) ومزامنتها بين الأجهزة.
+### 3) UI/Pages
+- ملفات `js/pages/*` تولّد HTML للصفحات وتربط أحداثها.
+- `js/ui-helpers.js` يوفر تحديثات جزئية للواجهة (مثل تحديث بطاقة صلاة/عادة دون إعادة تحميل الصفحة بالكامل).
 
 ---
 
 ## 🗄 قاعدة البيانات (Database Schema)
 
-يعتمد المشروع على **Supabase (PostgreSQL)**. فيما يلي شرح الجداول:
+التطبيق يعتمد على **Supabase (PostgreSQL)**. الجداول/العناصر الأساسية:
 
-### 1. `profiles` (المستخدمين)
-- **`id`**: (UUID) مفتاح أساسي، مرتبط بـ `auth.users`.
-- **`username`**: اسم المستخدم.
-- **`full_name`**: الاسم الكامل.
-- **`referral_code`**: كود الدعوة الخاص بالمستخدم.
-- **`referred_by`**: كود الشخص الذي قام بدعوة هذا المستخدم.
+### 1) `profiles`
+- `id` (UUID، مرتبط بـ `auth.users`)
+- `username`, `full_name`
+- `referral_code`, `referred_by`
+- `is_public` (للظهور في لوحة الصدارة)
 
-### 2. `prayer_records` (سجل الصلوات)
-- **`user_id`**: (Foreign Key) معرف المستخدم.
-- **`date`**: (Date) تاريخ اليوم (YYYY-MM-DD).
-- **`prayer_key`**: (Text) اسم الصلاة (`fajr`, `dhuhr`...).
-- **`status`**: (Text) الحالة (`done`, `missed`).
-- **`recorded_at`**: وقت التسجيل.
-- *قيد فريد (Unique Constraint)*: لا يمكن تكرار نفس الصلاة لنفس المستخدم في نفس التاريخ.
+### 2) `prayer_records`
+- `user_id`, `date`, `prayer_key`, `status`, `recorded_at`
+- فهرس/قيد فريد على (user_id, date, prayer_key)
 
-### 3. `qada_prayers` (الصلوات الفائتة/القضاء)
-- **`user_id`**: معرف المستخدم.
-- **`original_date`**: تاريخ الصلاة الأصلية (إن وجد).
-- **`prayer_key`**: الصلاة الفائتة.
-- **`rakaat`**: عدد الركعات (للمساعدة في التجميع).
-- **`is_manual`**: (Boolean) هل تمت إضافتها يدوياً أم تلقائياً؟
+### 3) `qada_prayers`
+- `id`, `user_id`, `original_date`, `prayer_key`, `rakaat`, `is_manual`, `recorded_at`
 
-### 4. `points_history` (سجل النقاط)
-- **`user_id`**: معرف المستخدم.
-- **`amount`**: قيمة النقاط (موجبة للإضافة، سالبة للخصم).
-- **`reason`**: سبب العملية (مثلاً: "صلاة الفجر حاضراً").
-- **`recorded_at`**: وقت العملية.
+### 4) `points_history`
+- `id`, `user_id`, `amount`, `reason`, `recorded_at`
 
-### 5. `user_settings` (الإعدادات)
-- **`user_id`**: المفتاح الأساسي.
-- **`theme`**: الثيم المختار.
-- **`language`**: اللغة (`ar`, `en`).
-- **`calculation_method`**: طريقة حساب المواقيت.
-- **`madhab`**: المذهب الفقهي (للعصر).
+### 5) `user_settings`
+- `user_id`, `theme`, `language`, `calculation_method`, `madhab`, إعدادات إضافية مرتبطة بالموقع
 
-### 6. `locations` (الموقع)
-- **`user_id`**: المفتاح الأساسي.
-- **`latitude`, `longitude`**: الإحداثيات.
-- **`name`**: اسم المدينة.
-- **`is_manual_mode`**: هل تم تحديد الموقع يدوياً؟
+### 6) `tasks`
+- `id`, `user_id`, `title`, `priority`, `due_date`, `status`
+- `completed_at`, `rollover_count`, `created_at`, `updated_at`
+- تفاصيل الإنشاء والسياسات في `supabase_tasks.sql`
+
+### 7) `leaderboard` (View)
+- View تُستخدم لجلب `total_points` وترتيب المستخدمين.
 
 ---
 
-## 🔗 الاتصالات والعلاقات
+## 🔗 الاتصالات والعلاقات (Connections & Relationships)
 
-1.  **Client-Server**: يتم الاتصال بـ Supabase مباشرة عبر `supabaseClient.js` باستخدام `REST API` للعمليات العادية و `WebSockets` للمزامنة اللحظية.
-2.  **Relationships**:
-    - كل الجداول (`prayer_records`, `qada_prayers`, etc.) مرتبطة بجدول `profiles` عبر حقل `user_id`.
-    - يتم تفعيل سياسات الأمان (RLS - Row Level Security) لضمان أن كل مستخدم يصل لبياناته فقط.
+1. **Client → Supabase**  
+   عبر `js/supabaseClient.js` (REST للعمليات + Realtime عبر channels).
 
----
+2. **العلاقات**  
+   أغلب الجداول مرتبطة بالمستخدم عبر `user_id`/`id`.
 
-## 🔢 المتغيرات والثوابت (Variables & Constants)
-
-- **`PRAYERS` (in `PrayerService`)**: كائن يحتوي على تعريف الصلوات (عدد الركعات، النقاط، وهل هي فرض أم سنة).
-- **`RANKS` (in `PointsManager`)**: مصفوفة تعرف الرتب (برونزي، فضي، ذهبي...) والحد الأدنى من النقاط لكل رتبة.
-- **`THEMES`**: معرفة كأسماء كلاسات في CSS (مثل `.theme-midnight`, `.theme-emerald`).
+3. **RLS**  
+   سياسات Row Level Security تقيّد وصول كل مستخدم إلى بياناته.
 
 ---
 
-## ⚙️ الوظائف والعمليات (Functions & Processes)
+## 🔢 الثوابت الأساسية (Core Constants)
 
-### دورة حياة الصلاة (Prayer Lifecycle)
-1.  يقوم `PrayerManager` بحساب المواقيت بناءً على الموقع والتاريخ.
-2.  عند دخول الوقت، يرسل `NotificationManager` إشعاراً.
-3.  عندما يؤدي المستخدم الصلاة، يستدعي `PrayerService.markPrayer`:
-    - يتم حفظ السجل في `prayer_records`.
-    - يتم إضافة نقاط عبر `PointsService`.
-    - يتم حذف أي قضاء مرتبط (إذا كان موجوداً) عبر `removeQada`.
-4.  إذا انتهى الوقت ولم تُصلَّ، يقوم `PrayerManager` بإضافتها تلقائياً إلى `qada_prayers`.
+- **`PRAYERS`** في `js/services/prayer-service.js`  
+  تعريف الصلوات (الاسم، الركعات، النقاط).
 
-### نظام النقاط (Gamification)
-- تعمل دالة `addPoints` في `PointsService` على ضمان عدم تكرار احتساب النقاط لنفس العملية (Idempotency) باستخدام معرف فريد لكل عملية (مثلاً `user_id:date:prayer`).
-- يتم تحديث إجمالي النقاط عبر `Realtime Subscription` ليظهر فوراً في الـ Header.
+- **`RANKS`** في `js/points-manager.js`  
+  تعريف مستويات النقاط.
+
+- **الثيمات** في `styles.css`  
+  تُفعل عبر `data-theme` على `<html>` (مثل: `light`, `dark`, `emerald`, `midnight`, ...).
 
 ---
-*تم التحديث بتاريخ: 2026-01-09*
+
+## ⚙️ العمليات الرئيسية (Core Flows)
+
+### 1) دورة الصلاة
+1. `PrayerManager` يحسب المواقيت بناءً على الإعدادات والموقع.
+2. المستخدم يحدد حالة الصلاة (`done` أو `missed`) من الواجهة.
+3. `PrayerService.markPrayer`:
+   - يحدّث `prayer_records`.
+   - يضيف/يخصم النقاط عبر `PointsService`.
+   - يضيف/يحذف سجل القضاء حسب الحالة.
+
+### 2) دورة المهام اليومية
+1. إنشاء/تعديل/حذف/إكمال المهمة عبر `TaskService`.
+2. عند الإكمال تُضاف نقطة (بنمط idempotent id: `task:<taskId>`).
+3. توجد عمليات صيانة تلقائية (ترحيل المهام المتأخرة، تنظيف المكتملة القديمة).
+
+### 3) النقاط ولوحة الصدارة
+- إجمالي النقاط يُقرأ من `leaderboard` مع fallback إلى جمع `points_history`.
+- تحديث الواجهة يتم عبر event `pointsUpdated` واشتراكات Realtime.
+
+---
+
+## 🔍 مراجعة الكود (Code Review Snapshot)
+
+هذه خلاصة مراجعة شاملة على كود الواجهة والمنطق التشغيلي (Managers/Services/Pages):
+
+### نقاط القوة الحالية
+- فصل منطقي جيد بين `Managers` و`Services` و`Pages`.
+- تدفق واضح للعمليات الأساسية (الصلاة/العادات/المهام).
+- وجود Realtime integration عبر `SyncManager`.
+- وجود دوال حماية نصية في صفحة المهام (`escapeTaskText`) يمنع حقن HTML هناك.
+
+### مخاطر/ديون تقنية معروفة (تحتاج معالجة)
+1. **XSS محتمل في أجزاء متعددة**  
+   بعض القيم القادمة من المستخدم/قاعدة البيانات تُحقن مباشرة داخل `innerHTML` أو template literals بدون تعقيم كافٍ.
+2. **عدم توحيد مفتاح اللغة في LocalStorage**  
+   يوجد استخدام مختلط بين `salatk_lang` و`salatk_language` مما قد يسبب سلوك حفظ/استرجاع غير متسق.
+3. **إعادة تهيئة PrayerManager قد تنشئ أكثر من interval**  
+   `PrayerManager.init()` يستدعي `startMissedPrayersCheck()` دون حراسة واضحة لمنع تكرار المؤقت.
+4. **قائمة كاش Service Worker غير متزامنة بالكامل مع ملفات runtime**  
+   بعض السكربتات المحملة في `index.html` غير موجودة في `ASSETS_TO_CACHE`.
+5. **ملف الإعدادات الحساس (`js/config.js`) موجود داخل المستودع**  
+   مع أن المفتاح `anon/publishable`، الأفضل تشغيلياً أن يُحقن عبر بيئة نشر وليس commit مباشر.
+
+### سياسة المراجعة المستمرة
+- أي ميزة جديدة تعتمد نصوصًا مُدخلة من المستخدم يجب أن تستخدم تعقيمًا مركزيًا قبل العرض.
+- أي تغيير في `index.html` (script list) يجب أن ينعكس مباشرة في `sw.js`.
+- توحيد مصدر الحقيقة للّغة/الثيم داخل طبقة `SettingsService`.
+
+---
+*تم التحديث بتاريخ: 2026-02-23*

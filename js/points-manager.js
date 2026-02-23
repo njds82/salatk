@@ -28,18 +28,6 @@ function getPointsForNextLevel(currentPoints) {
     return (rank.max + 1) - currentPoints;
 }
 
-// Get level progress percentage
-function getLevelProgress(points) {
-    const rank = RANKS.find(r => points >= r.min && points <= r.max);
-
-    if (!rank || rank.max === Infinity) return 100;
-
-    const range = (rank.max + 1) - rank.min;
-    const progress = points - rank.min;
-
-    return (progress / range) * 100;
-}
-
 // Update points display in header
 async function updatePointsDisplay() {
     const totalPoints = await PointsService.getTotal();

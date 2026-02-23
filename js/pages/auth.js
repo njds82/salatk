@@ -56,12 +56,6 @@ function renderAuthPage(type = 'login') {
     `;
 }
 
-function toggleAuthType(type) {
-    const content = document.getElementById('pageContent');
-    content.innerHTML = renderAuthPage(type);
-    setupAuthFormListeners(type);
-}
-
 function setupAuthFormListeners(type) {
     const form = document.getElementById('authForm');
     if (!form) return;

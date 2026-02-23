@@ -6,7 +6,6 @@ async function renderLeaderboardPage() {
     let leaderboardData = [];
     let errorMessage = null;
     let currentUserSession = null;
-    let localTotalPoints = 0;
 
     try {
         const { data: { session } } = await window.supabaseClient.auth.getSession();

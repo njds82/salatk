@@ -121,13 +121,6 @@ function parseDate(dateStr) {
     return new Date(dateStr + 'T00:00:00');
 }
 
-// Compare dates
-function compareDates(date1, date2) {
-    const d1 = typeof date1 === 'string' ? parseDate(date1) : date1;
-    const d2 = typeof date2 === 'string' ? parseDate(date2) : date2;
-    return d1.getTime() - d2.getTime();
-}
-
 // Get days difference
 function getDaysDifference(date1, date2) {
     const d1 = typeof date1 === 'string' ? parseDate(date1) : date1;
@@ -148,28 +141,11 @@ function getWeekDates() {
     return dates;
 }
 
-// Get month dates (last 30 days)
-function getMonthDates() {
-    const dates = [];
-    const today = new Date();
-    for (let i = 29; i >= 0; i--) {
-        const date = new Date(today);
-        date.setDate(date.getDate() - i);
-        dates.push(formatDate(date));
-    }
-    return dates;
-}
-
 // Format time (HH:MM)
 function formatTime(date = new Date()) {
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
     return `${hours}:${minutes}`;
-}
-
-// Get timestamp
-function getTimestamp() {
-    return new Date().toISOString();
 }
 
 // Check if date can be edited (last 7 days)

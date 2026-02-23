@@ -24,7 +24,7 @@ const SyncManager = {
     async pushSettings(settings) { /* Direct cloud call now in SettingsService */ },
     async pushPrayerRecord(date, prayerKey, status) { /* Direct cloud call in PrayerService */ },
     async deletePrayerRecord(date, prayerKey) { /* Direct cloud call in PrayerService */ },
-    async pushQadaRecord(qadaItem) { /* Direct cloud call in PrayerService */ },
+    async pushQadaRecord() { /* Direct cloud call in PrayerService */ },
     async removeQadaRecord(qadaId) { /* Direct cloud call in PrayerService */ },
     async pushHabit(habit) { /* Direct cloud call in HabitService */ },
     async deleteHabit(habitId) { /* Direct cloud call in HabitService */ },

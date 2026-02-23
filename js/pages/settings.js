@@ -541,12 +541,6 @@ async function updateAccountStats() {
     }
 }
 
-// Calculate prayer streak
-async function calculatePrayerStreak() {
-    return await PrayerService.getPrayerStreak();
-}
-
-
 // Referral system functions
 async function handleApplyReferralCode() {
     const input = document.getElementById('referralCodeInput');
@@ -686,5 +680,4 @@ window.addEventListener('pageRendered', (e) => {
 // Expose to window
 window.handleThemeChange = handleThemeChange;
 window.toggleLeaderboardPrivacy = toggleLeaderboardPrivacy;
-
 
