@@ -2,8 +2,11 @@ import { createBootstrappedWindow } from '../helpers/bootstrap.js';
 import { loadLegacyScripts } from '../helpers/load-legacy-script.js';
 
 describe('App controller', () => {
-    it('navigates and updates current page/hash', async () => {
-        const { window, cleanup } = createBootstrappedWindow({ loadCoreScripts: false });
+    function setupAppHarness(options = {}) {
+        const { window, cleanup } = createBootstrappedWindow({
+            loadCoreScripts: false,
+            ...options
+        });
 
         window.document.body.innerHTML = `
             <a href="#daily-prayers" class="nav-item" data-page="daily-prayers"></a>
@@ -42,6 +45,16 @@ describe('App controller', () => {
         window.renderMorePage = async () => '<div>more</div>';
         window.setupAuthFormListeners = () => { };
 
+        return { window, cleanup };
+    }
+
+    async function waitForRender() {
+        await new Promise(resolve => setTimeout(resolve, 0));
+    }
+
+    it('navigates and updates current page/hash', async () => {
+        const { window, cleanup } = setupAppHarness();
+
         window.AuthManager = {
             _session: null,
             async getSession() {
@@ -50,7 +63,60 @@ describe('App controller', () => {
         };
 
         window.navigateTo('login');
+        await waitForRender();
         expect(window.location.hash).toBe('#login');
+
+        cleanup();
+    });
+
+    it('navigates to default page when URL has no hash', async () => {
+        const session = {
+            user: {
+                id: 'test-user-id',
+                email: 'test@salatk.local'
+            }
+        };
+        const { window, cleanup } = setupAppHarness({ url: 'http://localhost/' });
+
+        window.AuthManager = {
+            _session: session,
+            async getSession() {
+                return session;
+            }
+        };
+
+        window.navigateToHash();
+        await waitForRender();
+
+        expect(window.location.hash).toBe('#daily-prayers');
+        expect(window.currentPage).toBe('daily-prayers');
+        expect(window.document.getElementById('pageContent').innerHTML).toContain('daily');
+
+        cleanup();
+    });
+
+    it('falls back to default page when URL hash is invalid', async () => {
+        const session = {
+            user: {
+                id: 'test-user-id',
+                email: 'test@salatk.local'
+            }
+        };
+        const { window, cleanup } = setupAppHarness({ url: 'http://localhost/#abc' });
+
+        window.AuthManager = {
+            _session: session,
+            async getSession() {
+                return session;
+            }
+        };
+
+        window.navigateToHash();
+        await waitForRender();
+
+        expect(window.location.hash).toBe('#daily-prayers');
+        expect(window.currentPage).toBe('daily-prayers');
+        expect(window.document.getElementById('pageContent').innerHTML).toContain('daily');
 
         cleanup();
     });

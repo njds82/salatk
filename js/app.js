@@ -3,8 +3,24 @@
 // ========================================
 
 // App State
-window.currentPage = 'daily-prayers';
+window.currentPage = null;
 window.selectedDate = getCurrentDate();
+const DEFAULT_PAGE = 'daily-prayers';
+const VALID_PAGES = new Set([
+    'login',
+    'signup',
+    'daily-prayers',
+    'qada-prayers',
+    'habits',
+    'daily-tasks',
+    'statistics',
+    'leaderboard',
+    'store',
+    'settings',
+    'athkar',
+    'more',
+    'challenge'
+]);
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
@@ -330,8 +346,14 @@ function navigateTo(page) {
  * Handles navigation based on the current URL hash.
  */
 function navigateToHash() {
-    const hash = window.location.hash.substring(1); // Remove the '#'
-    const targetPage = hash || 'daily-prayers';
+    const rawHash = window.location.hash.substring(1); // Remove the '#'
+    const targetPage = VALID_PAGES.has(rawHash) ? rawHash : DEFAULT_PAGE;
+
+    // Keep URL hash canonical when it is empty or invalid.
+    if (rawHash !== targetPage) {
+        navigateTo(targetPage);
+        return;
+    }
 
     // Check if the current page in state is different from the hash
     if (targetPage !== window.currentPage) {
