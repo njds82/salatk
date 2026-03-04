@@ -31,15 +31,41 @@ async function refreshAdminPage() {
 }
 
 async function renderAdminPage() {
-    const [usersResult, auditLogs] = await Promise.all([
-        window.AdminService.listUsers({
-            page: ADMIN_PAGE_STATE.page,
-            pageSize: ADMIN_PAGE_STATE.pageSize,
-            search: ADMIN_PAGE_STATE.search,
-            filter: ADMIN_PAGE_STATE.filter
-        }),
-        window.AdminService.getAuditLogs(25)
-    ]);
+    if (!window.AdminService) {
+        return `
+            <div class="page-header">
+                <h1 class="page-title">${t('admin_title')}</h1>
+                <p class="page-subtitle">${t('admin_subtitle')}</p>
+            </div>
+            <div class="card">
+                <p style="margin: 0 0 var(--spacing-sm) 0; color: var(--color-danger);">
+                    ${t('admin_operation_failed')}
+                </p>
+                <button class="btn btn-primary" onclick="handleAdminRefresh()">${t('admin_refresh')}</button>
+            </div>
+        `;
+    }
+
+    let usersResult;
+    let auditLogs;
+    let loadErrorCode = '';
+
+    try {
+        [usersResult, auditLogs] = await Promise.all([
+            window.AdminService.listUsers({
+                page: ADMIN_PAGE_STATE.page,
+                pageSize: ADMIN_PAGE_STATE.pageSize,
+                search: ADMIN_PAGE_STATE.search,
+                filter: ADMIN_PAGE_STATE.filter
+            }),
+            window.AdminService.getAuditLogs(25)
+        ]);
+    } catch (error) {
+        console.error('Admin page load failed', error);
+        loadErrorCode = error?.message || 'ADMIN_LOAD_FAILED';
+        usersResult = { users: [], total: 0 };
+        auditLogs = [];
+    }
 
     ADMIN_PAGE_STATE.users = usersResult.users || [];
     ADMIN_PAGE_STATE.total = usersResult.total || 0;
@@ -54,6 +80,16 @@ async function renderAdminPage() {
             <h1 class="page-title">${t('admin_title')}</h1>
             <p class="page-subtitle">${t('admin_subtitle')}</p>
         </div>
+
+        ${loadErrorCode ? `
+            <div class="card" style="margin-bottom: var(--spacing-lg); border-color: var(--color-danger);">
+                <p style="margin: 0 0 var(--spacing-sm) 0; color: var(--color-danger);">${t('admin_operation_failed')}</p>
+                <p style="margin: 0 0 var(--spacing-sm) 0; color: var(--color-text-secondary); font-size: 0.85em;">
+                    ${escapeHtml(loadErrorCode)}
+                </p>
+                <button class="btn btn-secondary btn-sm" onclick="handleAdminRefresh()">${t('admin_refresh')}</button>
+            </div>
+        ` : ''}
 
         <div class="card" style="margin-bottom: var(--spacing-lg);">
             <h3 style="margin-bottom: var(--spacing-md);">${t('admin_user_management')}</h3>
@@ -314,4 +350,3 @@ async function handleAdminBroadcast() {
 }
 
 window.renderAdminPage = renderAdminPage;
-

@@ -127,6 +127,48 @@ describe('AdminService', () => {
 
         cleanup();
     });
+
+    it('falls back to supabase auth session when AuthManager token is missing', async () => {
+        const authManager = {
+            getSession: vi.fn(async () => ({
+                user: { id: 'test-user-id' }
+            })),
+            setSession: vi.fn()
+        };
+
+        const { window, cleanup } = createBootstrappedWindow({
+            scripts: ['js/services/admin-service.js'],
+            authManager
+        });
+
+        window.supabaseClient.auth.getSession = vi.fn(async () => ({
+            data: {
+                session: {
+                    access_token: 'fallback-token',
+                    user: { id: 'test-user-id' }
+                }
+            },
+            error: null
+        }));
+
+        const fetchMock = vi.fn(async () => ({
+            ok: true,
+            async json() {
+                return { ok: true, data: { users: [], total: 0 } };
+            }
+        }));
+        window.fetch = fetchMock;
+        globalThis.fetch = fetchMock;
+
+        await window.AdminService.listUsers({ page: 1, pageSize: 5 });
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        const [, request] = fetchMock.mock.calls[0];
+        expect(request.headers.Authorization).toBe('Bearer fallback-token');
+        expect(authManager.setSession).toHaveBeenCalled();
+
+        cleanup();
+    });
 });
 
 describe('PushService', () => {
@@ -218,6 +260,54 @@ describe('PushService', () => {
         payload = JSON.parse(fetchMock.mock.calls[1][1].body);
         expect(payload.action).toBe('remove');
         expect(payload.endpoint).toBe('https://push.example/sub-1');
+
+        cleanup();
+    });
+
+    it('uses supabase auth fallback token when AuthManager token is missing', async () => {
+        const authManager = {
+            getSession: vi.fn(async () => ({
+                user: { id: 'test-user-id' }
+            })),
+            setSession: vi.fn()
+        };
+
+        const { window, cleanup } = createBootstrappedWindow({
+            scripts: ['js/services/push-service.js'],
+            authManager
+        });
+
+        window.supabaseClient.auth.getSession = vi.fn(async () => ({
+            data: {
+                session: {
+                    access_token: 'push-fallback-token',
+                    user: { id: 'test-user-id' }
+                }
+            },
+            error: null
+        }));
+
+        const fetchMock = vi.fn(async () => ({
+            ok: true,
+            async json() {
+                return { ok: true, data: { action: 'upserted' } };
+            }
+        }));
+        window.fetch = fetchMock;
+        globalThis.fetch = fetchMock;
+
+        await window.PushService._invoke('upsert', {
+            subscription: {
+                endpoint: 'https://example.test',
+                p256dh: 'a',
+                auth_key: 'b'
+            }
+        });
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        const [, request] = fetchMock.mock.calls[0];
+        expect(request.headers.Authorization).toBe('Bearer push-fallback-token');
+        expect(authManager.setSession).toHaveBeenCalled();
 
         cleanup();
     });

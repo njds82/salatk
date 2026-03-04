@@ -243,16 +243,26 @@ const AuthManager = {
         const snapshot = localStorage.getItem('salatk_auth_snapshot');
         if (snapshot) {
             try {
-                this._session = JSON.parse(snapshot);
-                console.log('AuthManager: Using session snapshot');
+                const parsedSnapshot = JSON.parse(snapshot);
+                const hasUser = Boolean(parsedSnapshot?.user?.id);
+                const hasAccessToken = typeof parsedSnapshot?.access_token === 'string' && parsedSnapshot.access_token.length > 0;
 
-                // 2. Trigger background refresh but don't await it if we have a snapshot
-                // This allows the UI to render immediately
-                this._refreshSessionBackground();
+                if (hasUser && hasAccessToken) {
+                    this._session = parsedSnapshot;
+                    console.log('AuthManager: Using session snapshot');
 
-                return this._session;
+                    // 2. Trigger background refresh but don't await it if we have a snapshot
+                    // This allows the UI to render immediately
+                    this._refreshSessionBackground();
+
+                    return this._session;
+                }
+
+                // Drop outdated snapshots that don't contain a valid access token.
+                localStorage.removeItem('salatk_auth_snapshot');
             } catch (e) {
                 console.warn('AuthManager: Failed to parse session snapshot');
+                localStorage.removeItem('salatk_auth_snapshot');
             }
         }
 

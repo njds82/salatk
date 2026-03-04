@@ -29,9 +29,37 @@ const PushService = {
         return outputArray;
     },
 
+    async _resolveAccessToken() {
+        let session = null;
+
+        if (window.AuthManager?.getSession) {
+            try {
+                session = await window.AuthManager.getSession();
+            } catch (_) {
+                // Fall through to Supabase session lookup.
+            }
+        }
+
+        if (session?.access_token) {
+            return session.access_token;
+        }
+
+        if (window.supabaseClient?.auth?.getSession) {
+            const { data, error } = await window.supabaseClient.auth.getSession();
+            if (!error && data?.session?.access_token) {
+                if (window.AuthManager?.setSession) {
+                    window.AuthManager.setSession(data.session);
+                }
+                return data.session.access_token;
+            }
+        }
+
+        return null;
+    },
+
     async _invoke(action, payload = {}) {
-        const session = await window.AuthManager.getSession();
-        if (!session?.access_token) {
+        const accessToken = await this._resolveAccessToken();
+        if (!accessToken) {
             throw new Error('AUTH_REQUIRED');
         }
 
@@ -39,7 +67,7 @@ const PushService = {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${session.access_token}`,
+                'Authorization': `Bearer ${accessToken}`,
                 'apikey': window.CONFIG?.SUPABASE_ANON_KEY || ''
             },
             body: JSON.stringify({
@@ -209,4 +237,3 @@ const PushService = {
 };
 
 window.PushService = PushService;
-
