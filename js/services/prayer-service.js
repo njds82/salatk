@@ -62,6 +62,10 @@ const PrayerService = {
         if (!session) return { success: false };
 
         const prayerDef = PRAYERS[key];
+        if (!prayerDef) {
+            console.error('PrayerService: Unknown prayer key', { key });
+            return { success: false };
+        }
         const pointId = `${session.user.id}:prayer:${date}:${key}`;
         let pointsAmount = 0;
         let reason = `${t(prayerDef.nameKey)} - ${t(status === 'done' ? 'performed' : 'missed')}`;

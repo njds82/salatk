@@ -225,7 +225,6 @@ const PrayerManager = {
             // Define windows (Start -> End)
             const schedule = [
                 { key: 'fajr', start: times.fajr, end: times.duha },
-                { key: 'duha', start: times.duha, end: times.dhuhr },
                 { key: 'dhuhr', start: times.dhuhr, end: times.asr },
                 { key: 'asr', start: times.asr, end: times.maghrib },
                 { key: 'maghrib', start: times.maghrib, end: times.isha },
@@ -245,6 +244,7 @@ const PrayerManager = {
             }
 
             for (const slot of schedule) {
+                if (!PRAYERS[slot.key]) continue;
                 const endMinutes = timeToMinutes(slot.end);
 
                 // If current time is PAST the end time
