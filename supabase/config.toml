@@ -30,3 +30,12 @@ enable_signup = true
 [auth.email]
 enable_signup = true
 enable_confirmations = false
+
+[functions.admin-users]
+verify_jwt = false
+
+[functions.push-subscriptions]
+verify_jwt = false
+
+[functions.admin-notifications]
+verify_jwt = false
