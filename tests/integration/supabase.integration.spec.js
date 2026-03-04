@@ -174,6 +174,23 @@ describeLocal('Supabase Local Integration', () => {
 
         cleanup();
     });
+
+    it('admin RPC returns false for non-admin integration users', async () => {
+        const { data, error } = await client.rpc('is_current_user_admin');
+        expect(error).toBeNull();
+        expect(data).toBe(false);
+    });
+
+    it('non-admin user cannot read admin audit logs rows', async () => {
+        const { data, error } = await client
+            .from('admin_audit_logs')
+            .select('id,action,created_at')
+            .limit(5);
+
+        expect(error).toBeNull();
+        expect(Array.isArray(data)).toBe(true);
+        expect(data.length).toBe(0);
+    });
 });
 
 if (!hasLocalSupabase) {

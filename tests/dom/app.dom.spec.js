@@ -43,6 +43,7 @@ describe('App controller', () => {
         window.renderSettingsPage = async () => '<div>settings</div>';
         window.renderAthkarPage = async () => '<div>athkar</div>';
         window.renderMorePage = async () => '<div>more</div>';
+        window.renderAdminPage = async () => '<div>admin</div>';
         window.setupAuthFormListeners = () => { };
 
         return { window, cleanup };
@@ -117,6 +118,81 @@ describe('App controller', () => {
         expect(window.location.hash).toBe('#daily-prayers');
         expect(window.currentPage).toBe('daily-prayers');
         expect(window.document.getElementById('pageContent').innerHTML).toContain('daily');
+
+        cleanup();
+    });
+
+    it('prevents non-admin users from opening admin page', async () => {
+        const session = {
+            user: {
+                id: 'test-user-id',
+                email: 'test@salatk.local'
+            }
+        };
+        const { window, cleanup } = setupAppHarness({ url: 'http://localhost/#admin' });
+
+        window.showToast = vi.fn();
+        window.AuthManager = {
+            _session: session,
+            async getSession() {
+                return session;
+            },
+            async getAccountStatus() {
+                return { is_blocked: false };
+            },
+            async isAdmin() {
+                return false;
+            },
+            async signOut() {
+                return { error: null };
+            }
+        };
+
+        window.navigateToHash();
+        await waitForRender();
+        await waitForRender();
+
+        expect(window.location.hash).toBe('#daily-prayers');
+        expect(window.currentPage).toBe('daily-prayers');
+        expect(window.document.getElementById('pageContent').innerHTML).toContain('daily');
+        expect(window.showToast).toHaveBeenCalledWith(window.t('error_admin_only'), 'error');
+
+        cleanup();
+    });
+
+    it('signs out blocked users before rendering protected pages', async () => {
+        const session = {
+            user: {
+                id: 'blocked-user-id',
+                email: 'blocked@salatk.local'
+            }
+        };
+        const { window, cleanup } = setupAppHarness();
+
+        const signOut = vi.fn(async () => ({ error: null }));
+        window.AuthManager = {
+            _session: session,
+            async getSession() {
+                return session;
+            },
+            async getAccountStatus() {
+                return { is_blocked: true, blocked_reason: 'test' };
+            },
+            async isAdmin() {
+                return false;
+            },
+            signOut
+        };
+        window.showToast = vi.fn();
+        window.renderSettingsPage = vi.fn(async () => '<div>settings</div>');
+
+        window.navigateTo('settings');
+        await waitForRender();
+        await waitForRender();
+
+        expect(signOut).toHaveBeenCalled();
+        expect(window.showToast).toHaveBeenCalledWith(window.t('error_account_blocked'), 'error');
+        expect(window.renderSettingsPage).not.toHaveBeenCalled();
 
         cleanup();
     });

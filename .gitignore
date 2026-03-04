@@ -11,5 +11,6 @@ playwright-report/
 test-results/
 .cache/
 .supabase/
+supabase/.temp/
 
 .supabase.env

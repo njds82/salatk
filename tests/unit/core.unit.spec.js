@@ -293,6 +293,53 @@ describe('Auth Manager', () => {
 
         cleanup();
     });
+
+    it('checks admin role using both UUID and username before RPC', async () => {
+        const supabaseClient = createMockSupabaseClient();
+        supabaseClient.rpc = vi.fn(async () => ({ data: true, error: null }));
+
+        const { window, cleanup } = createBootstrappedWindow({
+            supabaseClient,
+            scripts: ['js/auth-manager.js']
+        });
+
+        const adminSession = {
+            user: {
+                id: 'd06e0bfc-c18e-4c02-887f-774415148b11',
+                email: 'khaled@salatk.local',
+                user_metadata: { username: 'khaled' }
+            }
+        };
+
+        window.AuthManager.setSession(adminSession);
+        const allowed = await window.AuthManager.isAdmin({ forceRefresh: true });
+        expect(allowed).toBe(true);
+        expect(supabaseClient.rpc).toHaveBeenCalledWith('is_current_user_admin');
+
+        supabaseClient.rpc.mockClear();
+        window.AuthManager.setSession({
+            user: {
+                id: 'd06e0bfc-c18e-4c02-887f-774415148b11',
+                email: 'other@salatk.local',
+                user_metadata: { username: 'other' }
+            }
+        });
+        const deniedByUsername = await window.AuthManager.isAdmin({ forceRefresh: true });
+        expect(deniedByUsername).toBe(false);
+        expect(supabaseClient.rpc).not.toHaveBeenCalled();
+
+        window.AuthManager.setSession({
+            user: {
+                id: '11111111-1111-4111-8111-111111111111',
+                email: 'khaled@salatk.local',
+                user_metadata: { username: 'khaled' }
+            }
+        });
+        const deniedByUuid = await window.AuthManager.isAdmin({ forceRefresh: true });
+        expect(deniedByUuid).toBe(false);
+
+        cleanup();
+    });
 });
 
 describe('Notification Manager', () => {

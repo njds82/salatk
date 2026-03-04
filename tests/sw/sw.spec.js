@@ -6,6 +6,7 @@ describe('Service Worker', () => {
     function setupSwContext() {
         const listeners = {};
         const cacheStore = new Map();
+        const shownNotifications = [];
 
         const caches = {
             async open(name) {
@@ -50,6 +51,11 @@ describe('Service Worker', () => {
             },
             self: {
                 skipWaiting: () => { },
+                registration: {
+                    async showNotification(title, options) {
+                        shownNotifications.push({ title, options });
+                    }
+                },
                 clients: {
                     async claim() { },
                     async matchAll() { return []; },
@@ -65,7 +71,7 @@ describe('Service Worker', () => {
         const source = fs.readFileSync(repoPath('sw.js'), 'utf8');
         vm.runInContext(source, context, { filename: repoPath('sw.js') });
 
-        return { listeners };
+        return { listeners, shownNotifications };
     }
 
     it('registers all expected lifecycle listeners', () => {
@@ -74,6 +80,7 @@ describe('Service Worker', () => {
         expect(typeof listeners.install).toBe('function');
         expect(typeof listeners.activate).toBe('function');
         expect(typeof listeners.fetch).toBe('function');
+        expect(typeof listeners.push).toBe('function');
         expect(typeof listeners.notificationclick).toBe('function');
     });
 
@@ -87,5 +94,33 @@ describe('Service Worker', () => {
         });
 
         expect(respondWith).toHaveBeenCalled();
+    });
+
+    it('handles push events and shows browser notifications', async () => {
+        const { listeners, shownNotifications } = setupSwContext();
+        const waitUntil = vi.fn(async (promise) => {
+            await promise;
+        });
+
+        await listeners.push({
+            data: {
+                json: () => ({
+                    title: 'Admin Alert',
+                    body: 'User report received',
+                    url: '/admin'
+                })
+            },
+            waitUntil
+        });
+
+        expect(waitUntil).toHaveBeenCalled();
+        expect(shownNotifications).toHaveLength(1);
+        expect(shownNotifications[0]).toEqual(expect.objectContaining({
+            title: 'Admin Alert',
+            options: expect.objectContaining({
+                body: 'User report received',
+                data: { url: '/admin' }
+            })
+        }));
     });
 });

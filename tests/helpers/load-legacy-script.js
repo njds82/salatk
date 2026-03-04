@@ -47,11 +47,14 @@ export const DEFAULT_BOOT_ORDER = [
     'js/notification-manager.js',
     'js/supabaseClient.js',
     'js/auth-manager.js',
+    'js/services/admin-service.js',
+    'js/services/push-service.js',
     'js/pages/auth.js',
     'js/sync-manager.js',
     'js/pages/leaderboard.js',
     'js/pages/store.js',
     'js/pages/more.js',
+    'js/pages/admin.js',
     'js/ui-helpers.js',
     'js/app.js'
 ];

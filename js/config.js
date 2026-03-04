@@ -4,7 +4,8 @@
 
 const __SALATK_DEFAULT_CONFIG__ = {
     SUPABASE_URL: 'https://xdvnweeorbuqmrgbtxuu.supabase.co',
-    SUPABASE_ANON_KEY: 'sb_publishable_eHXON1ifMqmCGCqBIUd01A_WTaVq1Qu'
+    SUPABASE_ANON_KEY: 'sb_publishable_eHXON1ifMqmCGCqBIUd01A_WTaVq1Qu',
+    WEB_PUSH_VAPID_PUBLIC_KEY: 'BJuKv4QTMFQqqFfP_bUHwWT4FrARNa5-VsJzD3Jgq006INamZfdIienH2UEw_Foc54tjSiinc_MOkhR7HvmNnTA'
 };
 
 window.CONFIG = {

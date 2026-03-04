@@ -4,7 +4,8 @@
 
 const __SALATK_DEFAULT_CONFIG__ = {
     SUPABASE_URL: 'https://your-project-ref.supabase.co',
-    SUPABASE_ANON_KEY: 'your-anon-key-here'
+    SUPABASE_ANON_KEY: 'your-anon-key-here',
+    WEB_PUSH_VAPID_PUBLIC_KEY: 'your-vapid-public-key-here'
 };
 
 window.CONFIG = {

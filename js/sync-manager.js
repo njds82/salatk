@@ -117,6 +117,27 @@ const SyncManager = {
                         renderPage('daily-tasks', true);
                     }
                     break;
+                case 'user_notifications':
+                    if (eventType === 'INSERT' && payload.new) {
+                        const title = payload.new.title || t('notifications_title');
+                        const body = payload.new.body || '';
+                        if (window.showToast) {
+                            showToast(`${title}: ${body}`, 'info');
+                        }
+                        if (window.AdminService?.markNotificationRead) {
+                            window.AdminService.markNotificationRead(payload.new.id);
+                        }
+                    }
+                    break;
+                case 'user_access_status':
+                    if (eventType !== 'DELETE' && window.AuthManager?.getAccountStatus) {
+                        const status = await window.AuthManager.getAccountStatus({ forceRefresh: true });
+                        if (status?.is_blocked) {
+                            if (window.showToast) showToast(t('error_account_blocked'), 'error');
+                            await window.AuthManager.signOut();
+                        }
+                    }
+                    break;
             }
         } catch (err) {
             console.error('Error handling realtime event:', err);

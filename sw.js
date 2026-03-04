@@ -1,6 +1,6 @@
 
 // Service Worker for Salatk
-const CACHE_NAME = 'salatk-v6';
+const CACHE_NAME = 'salatk-v7';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
@@ -24,6 +24,8 @@ const ASSETS_TO_CACHE = [
     '/js/services/points-service.js',
     '/js/services/task-service.js',
     '/js/services/page-data-cache.js',
+    '/js/services/admin-service.js',
+    '/js/services/push-service.js',
     '/js/pages/daily-prayers.js',
     '/js/pages/qada-prayers.js',
     '/js/pages/habits.js',
@@ -33,6 +35,7 @@ const ASSETS_TO_CACHE = [
     '/js/pages/settings.js',
     '/js/pages/leaderboard.js',
     '/js/pages/store.js',
+    '/js/pages/admin.js',
     '/js/pages/auth.js',
     '/components/toast.js',
     '/components/modal.js',
@@ -114,9 +117,34 @@ self.addEventListener('fetch', (event) => {
     );
 });
 
+self.addEventListener('push', (event) => {
+    if (!event.data) return;
+
+    let payload = {};
+    try {
+        payload = event.data.json();
+    } catch (e) {
+        payload = { body: event.data.text() };
+    }
+
+    const title = payload.title || 'Salatk';
+    const body = payload.body || '';
+    const url = payload.url || '/';
+
+    event.waitUntil(self.registration.showNotification(title, {
+        body,
+        icon: '/assets/images/logo.png',
+        badge: '/assets/images/logo.png',
+        data: { url },
+        tag: 'admin-notification',
+        renotify: true
+    }));
+});
+
 // Handle notification clicks
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
+    const targetUrl = event.notification?.data?.url || '/';
     event.waitUntil(
         clients.matchAll({
             type: 'window',
@@ -124,11 +152,14 @@ self.addEventListener('notificationclick', (event) => {
         }).then((clientList) => {
             for (const client of clientList) {
                 if (client.url && 'focus' in client) {
+                    if ('navigate' in client && targetUrl) {
+                        client.navigate(targetUrl);
+                    }
                     return client.focus();
                 }
             }
             if (clients.openWindow) {
-                return clients.openWindow('/');
+                return clients.openWindow(targetUrl);
             }
         })
     );

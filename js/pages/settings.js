@@ -3,11 +3,14 @@
 // ========================================
 
 async function renderSettingsPage() {
-    const [settings, loc, user, profile] = await Promise.all([
+    const [settings, loc, user, profile, pushStatus] = await Promise.all([
         SettingsService.getSettings(),
         PrayerManager.getUserLocation(),
         AuthManager.getCurrentUser(),
-        AuthManager.getProfile()
+        AuthManager.getProfile(),
+        window.PushService?.getStatus
+            ? window.PushService.getStatus()
+            : Promise.resolve({ supported: false, permission: 'unsupported', subscribed: false })
     ]);
     const currentTheme = settings.theme || 'light';
     const currentLang = settings.language || 'ar'; // Use settings directly, getCurrentLanguage() might still rely on something else
@@ -163,6 +166,26 @@ async function renderSettingsPage() {
                     ${profile?.is_public === false ? '✅ ' + t('return_to_leaderboard') : '👁️ ' + t('remove_from_leaderboard')}
                 </button>
             </div>
+        </div>
+
+        <!-- Push Notifications -->
+        <div class="card" style="margin-bottom: var(--spacing-lg);">
+            <h3 style="margin-bottom: var(--spacing-md);">📣 ${t('push_notifications_title')}</h3>
+            <p style="margin-bottom: var(--spacing-sm); color: var(--color-text-secondary); font-size: 0.9em;">
+                ${pushStatus.supported ? t('push_notifications_supported') : t('push_notifications_not_supported')}
+            </p>
+            <p style="margin-bottom: var(--spacing-md); color: var(--color-text-tertiary); font-size: 0.85em;">
+                ${t('push_notifications_status')}: ${pushStatus.permission === 'granted'
+            ? (pushStatus.subscribed ? t('push_notifications_enabled') : t('push_notifications_disabled'))
+            : (pushStatus.permission === 'denied' ? t('push_notifications_denied') : t('push_notifications_pending'))}
+            </p>
+            <button
+                class="btn ${pushStatus.subscribed ? 'btn-warning' : 'btn-primary'}"
+                onclick="handleTogglePushNotifications()"
+                ${pushStatus.supported ? '' : 'disabled'}
+            >
+                ${pushStatus.subscribed ? t('push_notifications_unsubscribe') : t('push_notifications_subscribe')}
+            </button>
         </div>
         
         <!-- Theme Settings -->
@@ -653,6 +676,33 @@ function copyReferralCode(code) {
     });
 }
 
+async function handleTogglePushNotifications() {
+    if (!window.PushService) {
+        showToast(t('push_notifications_not_supported'), 'error');
+        return;
+    }
+
+    try {
+        const result = await window.PushService.toggle();
+        if (result.subscribed) {
+            showToast(t('push_notifications_enabled'), 'success');
+        } else {
+            showToast(t('push_notifications_disabled'), 'info');
+        }
+        renderPage('settings', true);
+    } catch (error) {
+        console.error('Error toggling push notifications:', error);
+        const code = error?.message || '';
+        if (code === 'PUSH_PERMISSION_DENIED') {
+            showToast(t('push_notifications_denied'), 'error');
+        } else if (code === 'PUSH_NOT_SUPPORTED') {
+            showToast(t('push_notifications_not_supported'), 'error');
+        } else {
+            showToast(t('error_general'), 'error');
+        }
+    }
+}
+
 function handleShareApp(code) {
     const shareMessage = t('share_message').replace('{code}', code || '------');
 
@@ -681,3 +731,4 @@ window.addEventListener('pageRendered', (e) => {
 // Expose to window
 window.handleThemeChange = handleThemeChange;
 window.toggleLeaderboardPrivacy = toggleLeaderboardPrivacy;
+window.handleTogglePushNotifications = handleTogglePushNotifications;

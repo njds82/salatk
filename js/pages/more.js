@@ -36,6 +36,16 @@ async function renderMorePage() {
         }
     ];
 
+    const isAdmin = window.AuthManager?.isAdmin ? await window.AuthManager.isAdmin() : false;
+    if (isAdmin) {
+        items.unshift({
+            id: 'admin',
+            label: 'nav_admin',
+            icon: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l8 4v6c0 5-3.5 7.5-8 8-4.5-.5-8-3-8-8V7l8-4z"></path><path d="M9 12l2 2 4-4"></path></svg>`,
+            color: 'var(--color-danger)'
+        });
+    }
+
     return `
         <div class="page-header">
             <h1 class="page-title">${t('nav_more')}</h1>

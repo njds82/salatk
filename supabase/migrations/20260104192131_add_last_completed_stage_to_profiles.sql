@@ -1,0 +1,1 @@
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS last_completed_stage INTEGER DEFAULT 0;;

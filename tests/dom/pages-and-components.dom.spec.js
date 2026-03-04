@@ -361,13 +361,33 @@ describe('Pages render and handlers', () => {
         cleanup();
     });
 
-    it('renders more and auth pages', async () => {
+    it('renders more page and shows admin entry only for admins', async () => {
         const { window, cleanup } = createBootstrappedWindow({
-            scripts: ['js/pages/more.js', 'js/pages/auth.js']
+            scripts: ['js/pages/more.js']
         });
 
-        const more = await window.renderMorePage();
-        expect(more).toContain('more-grid');
+        window.AuthManager = {
+            async isAdmin() {
+                return false;
+            }
+        };
+
+        const moreForUser = await window.renderMorePage();
+        expect(moreForUser).toContain('more-grid');
+        expect(moreForUser).not.toContain("navigateTo('admin')");
+
+        window.AuthManager.isAdmin = async () => true;
+        const moreForAdmin = await window.renderMorePage();
+        expect(moreForAdmin).toContain("navigateTo('admin')");
+        expect(moreForAdmin).toContain(window.t('nav_admin'));
+
+        cleanup();
+    });
+
+    it('renders auth page', async () => {
+        const { window, cleanup } = createBootstrappedWindow({
+            scripts: ['js/pages/auth.js']
+        });
 
         const auth = window.renderAuthPage('login');
         expect(auth).toContain('auth-container');

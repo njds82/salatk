@@ -19,9 +19,10 @@ const VALID_PAGES = new Set([
     'settings',
     'athkar',
     'more',
-    'challenge'
+    'challenge',
+    'admin'
 ]);
-const HEAVY_PAGES = new Set(['settings', 'statistics', 'habits', 'store', 'leaderboard']);
+const HEAVY_PAGES = new Set(['settings', 'statistics', 'habits', 'store', 'leaderboard', 'admin']);
 let renderRequestToken = 0;
 
 // Initialize app
@@ -67,6 +68,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     // If we were on login/signup, go to main page
                     if (window.currentPage === 'login' || window.currentPage === 'signup') {
                         navigateTo('daily-prayers');
+                    }
+
+                    if (window.PushService) {
+                        PushService.initAutoSubscribe();
+                        PushService.hydrateFallbackNotifications();
                     }
                 }
             }
@@ -157,6 +163,11 @@ async function checkAuthAndInit() {
 
     // Determine target page
     navigateToHash();
+
+    if (window.PushService) {
+        PushService.initAutoSubscribe();
+        PushService.hydrateFallbackNotifications();
+    }
 
     // Update points display after potential sync
     updatePointsDisplay();
@@ -329,7 +340,7 @@ function navigateTo(page) {
 
     // Update navigation active state
     // Secondary pages should highlight "More"
-    const morePages = ['statistics', 'challenge', 'store', 'athkar', 'settings', 'more'];
+    const morePages = ['statistics', 'challenge', 'store', 'athkar', 'settings', 'more', 'admin'];
 
     document.querySelectorAll('.nav-item').forEach(item => {
         const itemPage = item.getAttribute('data-page');
@@ -475,6 +486,26 @@ async function renderPage(page, noScroll = false, options = { forceFresh: false,
             return;
         }
 
+        if (session && page !== 'login' && page !== 'signup' && window.AuthManager?.getAccountStatus) {
+            const accountStatus = await window.AuthManager.getAccountStatus();
+            if (accountStatus?.is_blocked) {
+                if (window.showToast) {
+                    showToast(t('error_account_blocked'), 'error');
+                }
+                await window.AuthManager.signOut();
+                return;
+            }
+        }
+
+        if (page === 'admin') {
+            const isAdmin = window.AuthManager?.isAdmin ? await window.AuthManager.isAdmin() : false;
+            if (!isAdmin) {
+                if (window.showToast) showToast(t('error_admin_only'), 'error');
+                navigateTo(DEFAULT_PAGE);
+                return;
+            }
+        }
+
         switch (page) {
             case 'login':
                 html = renderAuthPage('login');
@@ -517,6 +548,13 @@ async function renderPage(page, noScroll = false, options = { forceFresh: false,
                     html = await window.renderChallengePage();
                 } else {
                     html = '<div class="error-message">Error loading challenge module</div>';
+                }
+                break;
+            case 'admin':
+                if (window.renderAdminPage) {
+                    html = await window.renderAdminPage();
+                } else {
+                    html = '<div class="error-message">Error loading admin module</div>';
                 }
                 break;
             default:

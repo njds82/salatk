@@ -138,6 +138,7 @@ const AuthManager = {
         if (!error) {
             localStorage.removeItem('salatk_session');
             localStorage.removeItem('salatk_auth_snapshot');
+            this._clearAuthCaches();
             // Clear local database to prevent data bleed between users
             if (window.db) {
                 await window.db.delete();
@@ -206,6 +207,33 @@ const AuthManager = {
 
     _session: null,
     _sessionPromise: null,
+    _adminCache: {
+        userId: null,
+        value: false,
+        fetchedAt: 0
+    },
+    _accountStatusCache: {
+        userId: null,
+        value: { is_blocked: false, blocked_reason: null, blocked_at: null },
+        fetchedAt: 0
+    },
+    _ADMIN_CACHE_TTL_MS: 30000,
+    _ACCOUNT_STATUS_CACHE_TTL_MS: 15000,
+    _ADMIN_UUID: 'd06e0bfc-c18e-4c02-887f-774415148b11',
+    _ADMIN_USERNAME: 'khaled',
+
+    _clearAuthCaches() {
+        this._adminCache = {
+            userId: null,
+            value: false,
+            fetchedAt: 0
+        };
+        this._accountStatusCache = {
+            userId: null,
+            value: { is_blocked: false, blocked_reason: null, blocked_at: null },
+            fetchedAt: 0
+        };
+    },
 
     async getSession() {
         if (this._session) return this._session;
@@ -282,6 +310,108 @@ const AuthManager = {
         return !!session;
     },
 
+    async isAdmin(options = {}) {
+        const forceRefresh = options.forceRefresh === true;
+        const session = await this.getSession();
+        if (!session?.user?.id) return false;
+
+        const userId = session.user.id;
+        const now = Date.now();
+
+        if (!forceRefresh
+            && this._adminCache.userId === userId
+            && (now - this._adminCache.fetchedAt) < this._ADMIN_CACHE_TTL_MS) {
+            return this._adminCache.value;
+        }
+
+        const sessionUsername = (
+            session.user.user_metadata?.username
+            || session.user.email?.split('@')[0]
+            || ''
+        ).toLowerCase().replace(/^@+/, '');
+
+        if (userId !== this._ADMIN_UUID || sessionUsername !== this._ADMIN_USERNAME) {
+            this._adminCache = {
+                userId,
+                value: false,
+                fetchedAt: now
+            };
+            return false;
+        }
+
+        try {
+            const { data, error } = await this._withTimeout(
+                window.supabaseClient.rpc('is_current_user_admin'),
+                5000
+            );
+
+            const value = !error && data === true;
+            this._adminCache = {
+                userId,
+                value,
+                fetchedAt: now
+            };
+            return value;
+        } catch (e) {
+            console.warn('AuthManager: isAdmin check failed', e);
+            this._adminCache = {
+                userId,
+                value: false,
+                fetchedAt: now
+            };
+            return false;
+        }
+    },
+
+    async getAccountStatus(options = {}) {
+        const forceRefresh = options.forceRefresh === true;
+        const session = await this.getSession();
+        if (!session?.user?.id) {
+            return { is_blocked: false, blocked_reason: null, blocked_at: null };
+        }
+
+        const userId = session.user.id;
+        const now = Date.now();
+
+        if (!forceRefresh
+            && this._accountStatusCache.userId === userId
+            && (now - this._accountStatusCache.fetchedAt) < this._ACCOUNT_STATUS_CACHE_TTL_MS) {
+            return this._accountStatusCache.value;
+        }
+
+        try {
+            const { data, error } = await this._withTimeout(window.supabaseClient
+                .from('user_access_status')
+                .select('is_blocked,blocked_reason,blocked_at')
+                .eq('user_id', userId)
+                .maybeSingle(), 5000);
+
+            if (error) throw error;
+
+            const value = {
+                is_blocked: Boolean(data?.is_blocked),
+                blocked_reason: data?.blocked_reason || null,
+                blocked_at: data?.blocked_at || null
+            };
+
+            this._accountStatusCache = {
+                userId,
+                value,
+                fetchedAt: now
+            };
+            return value;
+        } catch (e) {
+            console.warn('AuthManager: getAccountStatus failed', e);
+            const value = { is_blocked: false, blocked_reason: null, blocked_at: null };
+            this._accountStatusCache = {
+                userId,
+                value,
+                fetchedAt: now
+            };
+            return value;
+        }
+    },
+
     setSession(session) {
         const previousUserId = this._session?.user?.id || null;
         console.log('AuthManager: session updated');
@@ -295,6 +425,7 @@ const AuthManager = {
         }
 
         if (previousUserId !== nextUserId) {
+            this._clearAuthCaches();
             window.dispatchEvent(new CustomEvent('authSessionChanged', {
                 detail: {
                     previousUserId,
