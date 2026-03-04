@@ -124,70 +124,13 @@ async function updateHabitCard(habitId) {
 
 // Refresh qada prayers section without full reload
 async function refreshQadaList() {
-    const qadaPrayers = await getQadaPrayers();
-    const totalRakaat = qadaPrayers.reduce((sum, prayer) => sum + prayer.rakaat, 0);
-
-    // Update total rakaat display
-    const totalDisplay = document.querySelector('.card h2');
-    if (totalDisplay && totalDisplay.textContent.match(/^\d+$/)) {
-        totalDisplay.textContent = totalRakaat;
+    if (window.renderPage) {
+        await renderPage('qada-prayers', true);
+        return;
     }
 
-    // Update the qada list
-    const cardGrid = document.querySelector('.card-grid');
-    if (!cardGrid) return;
-
-    if (qadaPrayers.length === 0) {
-        // Show empty state
-        const pageContent = document.getElementById('pageContent');
-        if (pageContent) {
-            navigateTo('qada-prayers'); // Only reload if list becomes empty
-        }
-    } else {
-        // Rebuild the grid
-        let html = '';
-        qadaPrayers.forEach(qadaPrayer => {
-            const prayer = PRAYERS[qadaPrayer.prayer];
-            const displayDate = qadaPrayer.date === 'unknown'
-                ? t('date_unknown')
-                : formatDisplayDate(qadaPrayer.date);
-
-            html += `
-                <div class="card">
-                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: var(--spacing-md);">
-                        <div>
-                            <div style="display: flex; align-items: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-xs);">
-                                <h3 style="font-size: 1.25rem; margin: 0;">${t(prayer.nameKey)}</h3>
-                                <div class="options-menu">
-                                    <button class="options-btn">
-                                        <svg width="20" height="20" viewBox="0 0 20 20">
-                                            <path d="M10 6 C11 6 11 10 10 10 C9 10 9 6 10 6 M10 14 C11 14 11 18 10 18 C9 18 9 14 10 14 M10 -2 C11 -2 11 2 10 2 C9 2 9 -2 10 -2" transform="translate(0, 4)" stroke="currentColor" stroke-width="2" fill="none"/>
-                                        </svg>
-                                    </button>
-                                    <div class="dropdown-menu">
-                                        <button class="dropdown-item danger" onclick="handleRemoveQada('${qadaPrayer.id}')">
-                                            <span>🗑</span> ${t('remove_qada')}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            <p style="color: var(--color-text-secondary); font-size: 0.875rem;">
-                                ${displayDate}
-                            </p>
-                            <p style="color: var(--color-text-secondary); margin-top: var(--spacing-xs);">
-                                ${qadaPrayer.rakaat} ${qadaPrayer.rakaat === 1 ? t('rakaat') : t('rakaat_plural')}
-                            </p>
-                        </div>
-                    </div>
-                    <button class="btn btn-success" onclick="handleMakeUpQada('${qadaPrayer.id}')" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        ${t('made_up')} (+3 ${t('points_plural')})
-                    </button>
-                </div>
-            `;
-        });
-
-        cardGrid.innerHTML = html;
+    if (window.navigateTo) {
+        navigateTo('qada-prayers');
     }
 }
 
@@ -233,4 +176,3 @@ document.addEventListener('click', (e) => {
         });
     }
 });
-

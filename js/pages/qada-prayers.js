@@ -2,9 +2,35 @@
 // Qada Prayers Page
 // ========================================
 
+function groupQadaPrayersByType(qadaPrayers = []) {
+    const groupedMap = new Map();
+
+    qadaPrayers.forEach((qadaPrayer) => {
+        const prayerKey = qadaPrayer.prayer;
+
+        if (!groupedMap.has(prayerKey)) {
+            groupedMap.set(prayerKey, {
+                prayerKey,
+                count: 0,
+                totalRakaat: 0,
+                actionId: qadaPrayer.id,
+                records: []
+            });
+        }
+
+        const group = groupedMap.get(prayerKey);
+        group.count += 1;
+        group.totalRakaat += qadaPrayer.rakaat || 0;
+        group.records.push(qadaPrayer);
+    });
+
+    return Array.from(groupedMap.values());
+}
+
 async function renderQadaPrayersPage() {
     const qadaPrayers = await PrayerService.getQadaPrayers();
     const totalRakaat = qadaPrayers.reduce((sum, prayer) => sum + prayer.rakaat, 0);
+    const groupedQadaPrayers = groupQadaPrayersByType(qadaPrayers);
     const PRAYERS = PrayerService.getDefinitions();
 
     let html = `
@@ -41,18 +67,16 @@ async function renderQadaPrayersPage() {
             <div class="card-grid">
         `;
 
-        for (const qadaPrayer of qadaPrayers) {
-            const prayer = PRAYERS[qadaPrayer.prayer];
-            const displayDate = !qadaPrayer.date
-                ? t('date_unknown')
-                : formatDisplayDate(qadaPrayer.date);
+        for (const qadaGroup of groupedQadaPrayers) {
+            const prayer = PRAYERS[qadaGroup.prayerKey];
+            const actionId = qadaGroup.actionId;
 
             html += `
                 <div class="card">
                     <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: var(--spacing-md);">
                         <div>
                             <div style="display: flex; align-items: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-xs);">
-                                <h3 style="font-size: 1.25rem; margin: 0;">${t(prayer?.nameKey || qadaPrayer.prayer)}</h3>
+                                <h3 style="font-size: 1.25rem; margin: 0;">${t(prayer?.nameKey || qadaGroup.prayerKey)}</h3>
                                 <div class="options-menu">
                                     <button class="options-btn">
                                         <svg width="20" height="20" viewBox="0 0 20 20">
@@ -60,21 +84,21 @@ async function renderQadaPrayersPage() {
                                         </svg>
                                     </button>
                                     <div class="dropdown-menu">
-                                        <button class="dropdown-item danger" onclick="handleRemoveQada('${qadaPrayer.id}')">
+                                        <button class="dropdown-item danger" onclick="handleRemoveQada('${actionId}')">
                                             <span>🗑</span> ${t('remove_qada')}
                                         </button>
                                     </div>
                                 </div>
                             </div>
                             <p style="color: var(--color-text-secondary); font-size: 0.875rem;">
-                                ${displayDate}
+                                ${t('prayer_count')}: <strong>${qadaGroup.count}</strong>
                             </p>
                             <p style="color: var(--color-text-secondary); margin-top: var(--spacing-xs);">
-                                ${qadaPrayer.rakaat} ${qadaPrayer.rakaat === 1 ? t('rakaat') : t('rakaat_plural')}
+                                ${qadaGroup.totalRakaat} ${qadaGroup.totalRakaat === 1 ? t('rakaat') : t('rakaat_plural')}
                             </p>
                         </div>
                     </div>
-                    <button class="btn btn-success" onclick="handleMakeUpQada('${qadaPrayer.id}')" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <button class="btn btn-success" onclick="handleMakeUpQada('${actionId}')" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         ${t('made_up')} (+3 ${t('points_plural')})
                     </button>
@@ -196,14 +220,19 @@ async function handleAddManualQada() {
 
 // Handle make up qada prayer
 async function handleMakeUpQada(qadaId) {
-    confirmDialog(t('confirm'), async () => {
+    try {
         const result = await PrayerService.makeUpQada(qadaId);
         if (result.success) {
             showToast(t('qada_made_up_message'), 'success');
             await updatePointsDisplay();
             renderPage('qada-prayers', true);
+        } else {
+            showToast(t('error_general'), 'error');
         }
-    });
+    } catch (error) {
+        console.error('Error making up Qada:', error);
+        showToast(t('error_general'), 'error');
+    }
 }
 
 // Handle remove qada prayer

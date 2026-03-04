@@ -110,6 +110,79 @@ describe('Pages render and handlers', () => {
         cleanup();
     });
 
+    it('renders grouped qada cards by prayer type with counts', async () => {
+        const { window, cleanup } = createBootstrappedWindow({
+            scripts: ['js/services/prayer-service.js', 'js/pages/qada-prayers.js']
+        });
+
+        window.PrayerService.getQadaPrayers = async () => ([
+            { id: 'f3', prayer: 'fajr', date: null, rakaat: 2, timestamp: Date.now(), manual: false },
+            { id: 'i2', prayer: 'isha', date: null, rakaat: 4, timestamp: Date.now() - 1, manual: false },
+            { id: 'f2', prayer: 'fajr', date: null, rakaat: 2, timestamp: Date.now() - 2, manual: false },
+            { id: 'f1', prayer: 'fajr', date: null, rakaat: 2, timestamp: Date.now() - 3, manual: false },
+            { id: 'i1', prayer: 'isha', date: null, rakaat: 4, timestamp: Date.now() - 4, manual: false }
+        ]);
+
+        const html = await window.renderQadaPrayersPage();
+        const holder = window.document.createElement('div');
+        holder.innerHTML = html;
+
+        const qadaCards = holder.querySelectorAll('.card-grid .card');
+        expect(qadaCards.length).toBe(2);
+        expect(html).toContain(`${window.t('prayer_count')}: <strong>3</strong>`);
+        expect(html).toContain(`${window.t('prayer_count')}: <strong>2</strong>`);
+        expect(html).toContain("handleMakeUpQada('f3')");
+        expect(html).toContain("handleMakeUpQada('i2')");
+        expect(html).toContain("handleRemoveQada('f3')");
+        expect(html).toContain("handleRemoveQada('i2')");
+
+        cleanup();
+    });
+
+    it('makes up qada directly without confirmation dialog', async () => {
+        const { window, cleanup } = createBootstrappedWindow({
+            scripts: ['js/services/prayer-service.js', 'js/pages/qada-prayers.js']
+        });
+
+        window.confirmDialog = vi.fn();
+        window.PrayerService.makeUpQada = vi.fn(async () => ({ success: true }));
+        window.updatePointsDisplay = vi.fn(async () => { });
+        window.renderPage = vi.fn();
+        window.showToast = vi.fn();
+
+        await window.handleMakeUpQada('q-direct');
+
+        expect(window.confirmDialog).not.toHaveBeenCalled();
+        expect(window.PrayerService.makeUpQada).toHaveBeenCalledWith('q-direct');
+        expect(window.updatePointsDisplay).toHaveBeenCalled();
+        expect(window.renderPage).toHaveBeenCalledWith('qada-prayers', true);
+        expect(window.showToast).toHaveBeenCalledWith(window.t('qada_made_up_message'), 'success');
+
+        cleanup();
+    });
+
+    it('keeps qada remove action behind confirmation and deletes one record', async () => {
+        const { window, cleanup } = createBootstrappedWindow({
+            scripts: ['js/services/prayer-service.js', 'js/pages/qada-prayers.js']
+        });
+
+        window.confirmDialog = vi.fn(async (_message, onConfirm) => {
+            await onConfirm();
+        });
+        window.PrayerService.deleteQada = vi.fn(async () => ({ success: true }));
+        window.renderPage = vi.fn();
+        window.showToast = vi.fn();
+
+        await window.handleRemoveQada('q-remove-one');
+        await Promise.resolve();
+
+        expect(window.confirmDialog).toHaveBeenCalledWith(window.t('confirm_delete'), expect.any(Function));
+        expect(window.PrayerService.deleteQada).toHaveBeenCalledWith('q-remove-one');
+        expect(window.renderPage).toHaveBeenCalledWith('qada-prayers', true);
+
+        cleanup();
+    });
+
     it('renders daily prayers page with cards', async () => {
         const { window, cleanup } = createBootstrappedWindow({
             scripts: [

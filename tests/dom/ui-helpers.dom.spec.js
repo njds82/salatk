@@ -45,22 +45,15 @@ describe('UI helpers', () => {
         cleanup();
     });
 
-    it('refreshes qada list and handles empty list path', async () => {
+    it('refreshes qada list via qada page rerender', async () => {
         const { window, cleanup } = createBootstrappedWindow({
             scripts: ['js/services/prayer-service.js', 'js/data-manager.js', 'js/ui-helpers.js']
         });
 
-        window.document.body.innerHTML += `
-            <div class="card"><h2>0</h2></div>
-            <div class="card-grid"></div>
-            <div id="pageContent"></div>
-        `;
-
-        window.getQadaPrayers = async () => [];
-        window.navigateTo = vi.fn();
+        window.renderPage = vi.fn(async () => true);
 
         await window.refreshQadaList();
-        expect(window.navigateTo).toHaveBeenCalledWith('qada-prayers');
+        expect(window.renderPage).toHaveBeenCalledWith('qada-prayers', true);
 
         cleanup();
     });
