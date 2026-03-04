@@ -44,6 +44,26 @@ const AdminService = {
         });
     },
 
+    _isUnauthorized(response, code) {
+        return response?.status === 401
+            || code === 401
+            || code === '401'
+            || code === 'UNAUTHORIZED'
+            || code === 'AUTH_TOKEN_MISSING';
+    },
+
+    async _refreshAuthSession() {
+        if (!window.supabaseClient?.auth?.refreshSession) return null;
+        const { data, error } = await window.supabaseClient.auth.refreshSession();
+        if (error || !data?.session?.access_token) {
+            return null;
+        }
+        if (window.AuthManager?.setSession) {
+            window.AuthManager.setSession(data.session);
+        }
+        return data.session.access_token;
+    },
+
     async _invoke(functionName, payload, didRetry = false) {
         const accessToken = await this._resolveAccessToken();
         if (!accessToken) {
@@ -55,7 +75,8 @@ const AdminService = {
         const result = await response.json().catch(() => ({}));
         if (!response.ok || result?.ok === false) {
             const code = result?.code || 'ADMIN_FUNCTION_ERROR';
-            if (!didRetry && (code === 'UNAUTHORIZED' || code === 'AUTH_TOKEN_MISSING')) {
+            if (!didRetry && this._isUnauthorized(response, code)) {
+                await this._refreshAuthSession();
                 return this._invoke(functionName, payload, true);
             }
             throw new Error(code);
