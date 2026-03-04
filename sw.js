@@ -1,6 +1,6 @@
 
 // Service Worker for Salatk
-const CACHE_NAME = 'salatk-v7';
+const CACHE_NAME = 'salatk-v8';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',

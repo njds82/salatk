@@ -30,20 +30,7 @@ const PushService = {
     },
 
     async _resolveAccessToken() {
-        let session = null;
-
-        if (window.AuthManager?.getSession) {
-            try {
-                session = await window.AuthManager.getSession();
-            } catch (_) {
-                // Fall through to Supabase session lookup.
-            }
-        }
-
-        if (session?.access_token) {
-            return session.access_token;
-        }
-
+        // Prefer Supabase managed session first to get a refreshed token when possible.
         if (window.supabaseClient?.auth?.getSession) {
             const { data, error } = await window.supabaseClient.auth.getSession();
             if (!error && data?.session?.access_token) {
@@ -54,16 +41,21 @@ const PushService = {
             }
         }
 
+        // Fallback to AuthManager cached session if Supabase lookup fails.
+        if (window.AuthManager?.getSession) {
+            try {
+                const session = await window.AuthManager.getSession();
+                if (session?.access_token) return session.access_token;
+            } catch (_) {
+                // Keep null result.
+            }
+        }
+
         return null;
     },
 
-    async _invoke(action, payload = {}) {
-        const accessToken = await this._resolveAccessToken();
-        if (!accessToken) {
-            throw new Error('AUTH_REQUIRED');
-        }
-
-        const response = await fetch(`${window.CONFIG?.SUPABASE_URL}/functions/v1/push-subscriptions`, {
+    async _postWithToken(action, payload, accessToken) {
+        return fetch(`${window.CONFIG?.SUPABASE_URL}/functions/v1/push-subscriptions`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -75,10 +67,23 @@ const PushService = {
                 ...payload
             })
         });
+    },
+
+    async _invoke(action, payload = {}, didRetry = false) {
+        const accessToken = await this._resolveAccessToken();
+        if (!accessToken) {
+            throw new Error('AUTH_REQUIRED');
+        }
+
+        const response = await this._postWithToken(action, payload, accessToken);
 
         const data = await response.json().catch(() => ({}));
         if (!response.ok || data?.ok === false) {
-            throw new Error(data?.code || 'PUSH_SUBSCRIPTION_FAILED');
+            const code = data?.code || 'PUSH_SUBSCRIPTION_FAILED';
+            if (!didRetry && (code === 'UNAUTHORIZED' || code === 'AUTH_TOKEN_MISSING')) {
+                return this._invoke(action, payload, true);
+            }
+            throw new Error(code);
         }
         return data.data || {};
     },

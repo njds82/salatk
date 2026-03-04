@@ -8,20 +8,7 @@ const AdminService = {
     },
 
     async _resolveAccessToken() {
-        let session = null;
-
-        if (window.AuthManager?.getSession) {
-            try {
-                session = await window.AuthManager.getSession();
-            } catch (_) {
-                // Fall through to Supabase session lookup.
-            }
-        }
-
-        if (session?.access_token) {
-            return session.access_token;
-        }
-
+        // Prefer Supabase managed session first to get a refreshed token when possible.
         if (window.supabaseClient?.auth?.getSession) {
             const { data, error } = await window.supabaseClient.auth.getSession();
             if (!error && data?.session?.access_token) {
@@ -32,16 +19,21 @@ const AdminService = {
             }
         }
 
+        // Fallback to AuthManager cached session if Supabase lookup fails.
+        if (window.AuthManager?.getSession) {
+            try {
+                const session = await window.AuthManager.getSession();
+                if (session?.access_token) return session.access_token;
+            } catch (_) {
+                // Keep null result.
+            }
+        }
+
         return null;
     },
 
-    async _invoke(functionName, payload) {
-        const accessToken = await this._resolveAccessToken();
-        if (!accessToken) {
-            throw new Error('AUTH_REQUIRED');
-        }
-
-        const response = await fetch(`${this._baseUrl()}/${functionName}`, {
+    async _postWithToken(functionName, payload, accessToken) {
+        return fetch(`${this._baseUrl()}/${functionName}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -50,10 +42,22 @@ const AdminService = {
             },
             body: JSON.stringify(payload)
         });
+    },
+
+    async _invoke(functionName, payload, didRetry = false) {
+        const accessToken = await this._resolveAccessToken();
+        if (!accessToken) {
+            throw new Error('AUTH_REQUIRED');
+        }
+
+        const response = await this._postWithToken(functionName, payload, accessToken);
 
         const result = await response.json().catch(() => ({}));
         if (!response.ok || result?.ok === false) {
             const code = result?.code || 'ADMIN_FUNCTION_ERROR';
+            if (!didRetry && (code === 'UNAUTHORIZED' || code === 'AUTH_TOKEN_MISSING')) {
+                return this._invoke(functionName, payload, true);
+            }
             throw new Error(code);
         }
 
