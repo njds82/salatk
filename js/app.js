@@ -13,6 +13,7 @@ const VALID_PAGES = new Set([
     'qada-prayers',
     'habits',
     'daily-tasks',
+    'time-management',
     'statistics',
     'leaderboard',
     'store',
@@ -524,6 +525,9 @@ async function renderPage(page, noScroll = false, options = { forceFresh: false,
                 break;
             case 'daily-tasks':
                 html = await renderDailyTasksPage();
+                break;
+            case 'time-management':
+                html = await renderTimeManagementPage();
                 break;
             case 'statistics':
                 html = await renderStatisticsPage();

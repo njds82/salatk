@@ -8,6 +8,7 @@ const PrayerManager = {
     // Cache for calculated times
     cachedTimes: null,
     cachedDate: null,
+    cachedTimesByDate: new Map(),
 
     // Initialize
     async init() {
@@ -113,7 +114,7 @@ const PrayerManager = {
     },
 
     // Calculate prayer times using Adhan.js
-    async calculatePrayerTimes(lat, long) {
+    async calculatePrayerTimes(lat, long, date = new Date()) {
         if (!window.adhan) {
             console.error('Adhan.js library not loaded!');
             return null;
@@ -121,7 +122,6 @@ const PrayerManager = {
 
         try {
             const coordinates = new adhan.Coordinates(lat, long);
-            const date = new Date();
 
             // Get settings
             let methodStr = 'UmmAlQura';
@@ -186,6 +186,7 @@ const PrayerManager = {
     clearCache() {
         this.cachedTimes = null;
         this.cachedDate = null;
+        this.cachedTimesByDate = new Map();
     },
 
     // Get times for today
@@ -200,6 +201,26 @@ const PrayerManager = {
         this.cachedTimes = await this.calculatePrayerTimes(location.lat, location.long);
         this.cachedDate = today;
         return this.cachedTimes;
+    },
+
+    // Get times for a specific date (YYYY-MM-DD)
+    async getPrayerTimesForDate(dateStr) {
+        const today = getCurrentDate();
+        const safeDate = dateStr || today;
+
+        if (safeDate === today) {
+            return this.getPrayerTimesForToday();
+        }
+
+        if (this.cachedTimesByDate.has(safeDate)) {
+            return this.cachedTimesByDate.get(safeDate);
+        }
+
+        const location = await this.getUserLocation();
+        const dateObj = parseDate(safeDate);
+        const times = await this.calculatePrayerTimes(location.lat, location.long, dateObj);
+        this.cachedTimesByDate.set(safeDate, times);
+        return times;
     },
 
     // Check for missed prayers

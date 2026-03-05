@@ -1579,6 +1579,205 @@ body::after {
 }
 
 /* ========================================
+   Time Management Page
+   ======================================== */
+
+.time-plan-tabs {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+    margin-bottom: var(--spacing-lg);
+}
+
+.time-plan-tab {
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-card);
+    color: var(--color-text-secondary);
+    border-radius: var(--radius-full);
+    padding: 8px 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.time-plan-tab:hover {
+    border-color: var(--color-primary-light);
+    color: var(--color-primary);
+}
+
+.time-plan-tab.active {
+    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+    color: var(--color-text-on-primary);
+    border-color: transparent;
+    box-shadow: 0 6px 18px hsla(var(--color-primary-h), var(--color-primary-s), var(--color-primary-l), 0.25);
+}
+
+.time-plan-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
+    margin-bottom: var(--spacing-lg);
+}
+
+.time-plan-prayer-row {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+    padding: var(--spacing-md);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-bg-card);
+    margin-bottom: var(--spacing-lg);
+}
+
+.time-plan-prayer-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 12px;
+    border-radius: var(--radius-md);
+    background: var(--color-bg-input);
+    border: 1px solid var(--color-border);
+    min-width: 92px;
+}
+
+.time-plan-prayer-label {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+}
+
+.time-plan-prayer-time {
+    font-weight: 800;
+    color: var(--color-text-primary);
+}
+
+.time-plan-section {
+    margin-bottom: var(--spacing-xl);
+}
+
+.time-plan-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.time-plan-section-title {
+    font-weight: 800;
+    color: var(--color-text-primary);
+}
+
+.time-plan-section-range {
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+}
+
+.time-plan-card {
+    border: 1px solid var(--color-border);
+}
+
+.time-plan-card + .time-plan-card {
+    margin-top: var(--spacing-md);
+}
+
+.time-plan-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+}
+
+.time-plan-card-time {
+    font-weight: 800;
+    color: var(--color-primary);
+}
+
+.time-plan-card-title {
+    margin: var(--spacing-sm) 0 0;
+    font-size: 1.05rem;
+}
+
+.time-plan-card-notes {
+    margin: var(--spacing-sm) 0 0;
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+    white-space: pre-wrap;
+}
+
+.time-plan-card-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.time-plan-empty {
+    text-align: center;
+    padding: var(--spacing-lg);
+    color: var(--color-text-secondary);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-bg-card);
+}
+
+.time-plan-weekday {
+    margin-bottom: var(--spacing-xl);
+}
+
+.time-plan-weekday-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.time-plan-time-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.time-plan-quick-fill {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-input);
+}
+
+.time-plan-quick-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.time-plan-quick-row {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.time-plan-quick-btn {
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-card);
+    color: var(--color-text-primary);
+    padding: 6px 10px;
+    border-radius: var(--radius-full);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.time-plan-quick-btn:hover {
+    border-color: var(--color-primary-light);
+    color: var(--color-primary);
+}
+
+/* ========================================
    Responsive Design
    ======================================== */
 

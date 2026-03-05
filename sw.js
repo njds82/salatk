@@ -1,6 +1,6 @@
 
 // Service Worker for Salatk
-const CACHE_NAME = 'salatk-v9';
+const CACHE_NAME = 'salatk-v10';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
@@ -23,6 +23,7 @@ const ASSETS_TO_CACHE = [
     '/js/services/habit-service.js',
     '/js/services/points-service.js',
     '/js/services/task-service.js',
+    '/js/services/time-plan-service.js',
     '/js/services/page-data-cache.js',
     '/js/services/admin-service.js',
     '/js/services/push-service.js',
@@ -30,6 +31,7 @@ const ASSETS_TO_CACHE = [
     '/js/pages/qada-prayers.js',
     '/js/pages/habits.js',
     '/js/pages/daily-tasks.js',
+    '/js/pages/time-management.js',
     '/js/pages/statistics.js',
     '/js/pages/challenge.js',
     '/js/pages/settings.js',

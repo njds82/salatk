@@ -215,6 +215,9 @@ test('habits and tasks pages render', async ({ page }) => {
 
     await go(page, 'daily-tasks', 'button[onclick="showAddTaskModal()"]');
     await expect(page.locator('button[onclick="showAddTaskModal()"]')).toBeVisible();
+
+    await go(page, 'time-management', '#time-management-page');
+    await expect(page.locator('#time-management-page')).toBeVisible();
 });
 
 test('statistics leaderboard store settings athkar challenge more render', async ({ page }) => {
