@@ -299,9 +299,6 @@ async function renderSettingsPage() {
             <p style="color: var(--color-text-secondary); margin-bottom: var(--spacing-sm);">
                 ${t('app_name')}
             </p>
-            <p style="color: var(--color-text-tertiary); font-size: 0.875rem;">
-                ${t('version')} 7.2.4
-            </p>
             <p style="color: var(--color-text-tertiary); font-size: 0.875rem; margin-top: var(--spacing-md);">
                 ${t('app_description')}
             </p>

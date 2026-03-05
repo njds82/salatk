@@ -2,8 +2,19 @@
 // Time Management Page
 // ========================================
 
+function getTimePlanToday() {
+    if (typeof getCurrentDate === 'function') {
+        return getCurrentDate();
+    }
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 window.timePlanView = window.timePlanView || localStorage.getItem('salatk_time_plan_view') || 'daily';
-window.timePlanDate = window.timePlanDate || getCurrentDate();
+window.timePlanDate = window.timePlanDate || getTimePlanToday();
 
 const TIME_PLAN_WEEKDAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
@@ -246,9 +257,10 @@ function renderDailySections(plans, sections) {
 }
 
 async function renderDailyTimePlan(prayerTimes) {
-    const selectedDate = window.timePlanDate || getCurrentDate();
+    const selectedDate = window.timePlanDate || getTimePlanToday();
     const dailyPlans = await TimePlanService.getDailyPlans(selectedDate);
     const sections = getPrayerSections(prayerTimes);
+    const displayDate = typeof formatDisplayDate === 'function' ? formatDisplayDate(selectedDate) : selectedDate;
 
     return `
         <div class="date-navigation">
@@ -260,7 +272,7 @@ async function renderDailyTimePlan(prayerTimes) {
                 </div>
                 <div class="date-info" style="flex: 1;">
                     <label class="date-picker-label" for="timePlanDatePicker" style="justify-content: center;">
-                        ${formatDisplayDate(selectedDate)}
+                        ${displayDate}
                         <input type="date" id="timePlanDatePicker" value="${selectedDate}"
                                onchange="handleTimePlanDateChange(this.value)" style="position: absolute; opacity: 0; pointer-events: none;">
                         <svg width="20" height="20" viewBox="0 0 24 24" style="margin-right: 8px;"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10z" fill="currentColor"/></svg>
@@ -330,7 +342,7 @@ async function renderWeeklyTimePlan() {
 
 async function renderTimeManagementPage() {
     const view = window.timePlanView || 'daily';
-    const selectedDate = window.timePlanDate || getCurrentDate();
+    const selectedDate = window.timePlanDate || getTimePlanToday();
     let prayerTimes = null;
 
     if (view === 'daily' && window.PrayerManager) {
@@ -355,13 +367,13 @@ async function renderTimeManagementPage() {
 
 async function showAddTimePlanModal(scope, weekday = null) {
     const safeScope = scope === 'weekly' ? 'weekly' : 'daily';
-    const selectedDate = window.timePlanDate || getCurrentDate();
+    const selectedDate = window.timePlanDate || getTimePlanToday();
     const prayerTimes = window.PrayerManager
-        ? await PrayerManager.getPrayerTimesForDate(safeScope === 'daily' ? selectedDate : getCurrentDate())
+        ? await PrayerManager.getPrayerTimesForDate(safeScope === 'daily' ? selectedDate : getTimePlanToday())
         : null;
 
     const heading = safeScope === 'daily'
-        ? formatDisplayDate(selectedDate)
+        ? (typeof formatDisplayDate === 'function' ? formatDisplayDate(selectedDate) : selectedDate)
         : getWeekdayLabel(weekday);
 
     const content = renderTimePlanModalContent({
@@ -396,11 +408,11 @@ async function showEditTimePlanModal(planId) {
     if (!plan) return;
 
     const prayerTimes = window.PrayerManager
-        ? await PrayerManager.getPrayerTimesForDate(plan.scope === 'daily' ? plan.date : getCurrentDate())
+        ? await PrayerManager.getPrayerTimesForDate(plan.scope === 'daily' ? plan.date : getTimePlanToday())
         : null;
 
     const heading = plan.scope === 'daily'
-        ? formatDisplayDate(plan.date)
+        ? (typeof formatDisplayDate === 'function' ? formatDisplayDate(plan.date) : plan.date)
         : getWeekdayLabel(plan.weekday);
 
     const content = renderTimePlanModalContent({
@@ -491,6 +503,20 @@ function fillTimePlanInput(inputId, value) {
     if (input) input.value = value;
 }
 
+function getTimePlanErrorMessage(error) {
+    const message = String(error?.message || '');
+    const code = error?.code;
+
+    if (message === 'AUTH_REQUIRED') return t('error_login_required');
+    if (message === 'SUPABASE_NOT_READY') return t('error_general');
+    if (message === 'TITLE_REQUIRED') return t('time_management_title_required');
+    if (message === 'TIME_RANGE_INVALID') return t('time_management_time_order_invalid');
+    if (code === '42P01' || message.includes('time_plans')) return t('time_management_db_missing');
+    if (code === '42501' || message.toLowerCase().includes('permission')) return t('error_login_required');
+
+    return t('error_general');
+}
+
 async function handleCreateTimePlan(scope, weekday = null) {
     const title = document.getElementById('timePlanTitleInput')?.value?.trim() || '';
     const notes = document.getElementById('timePlanNotesInput')?.value?.trim() || '';
@@ -533,7 +559,7 @@ async function handleCreateTimePlan(scope, weekday = null) {
         renderPage('time-management', true);
     } catch (error) {
         console.error('Time plan create failed', error);
-        showToast(t('error_general'), 'error');
+        showToast(getTimePlanErrorMessage(error), 'error');
     }
 }
 
@@ -576,7 +602,7 @@ async function handleUpdateTimePlan(planId) {
         renderPage('time-management', true);
     } catch (error) {
         console.error('Time plan update failed', error);
-        showToast(t('error_general'), 'error');
+        showToast(getTimePlanErrorMessage(error), 'error');
     }
 }
 
@@ -595,12 +621,12 @@ async function handleDeleteTimePlan(planId) {
 async function handleCopyWeeklyToDay() {
     confirmDialog(t('time_management_copy_confirm'), async () => {
         try {
-            await TimePlanService.replaceDailyWithWeekly(window.timePlanDate || getCurrentDate());
+            await TimePlanService.replaceDailyWithWeekly(window.timePlanDate || getTimePlanToday());
             showToast(t('time_management_copy_success'), 'success');
             renderPage('time-management', true);
         } catch (error) {
             console.error('Copy weekly to day failed', error);
-            showToast(t('error_general'), 'error');
+            showToast(getTimePlanErrorMessage(error), 'error');
         }
     });
 }

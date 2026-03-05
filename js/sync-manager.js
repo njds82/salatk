@@ -1,5 +1,5 @@
 // ========================================
-// Sync Manager (Cloud-Only Version)
+// Sync Manager (Cloud-Only)
 // ========================================
 // Optimized for direct cloud access. Pull/Push logic removed as per user request.
 

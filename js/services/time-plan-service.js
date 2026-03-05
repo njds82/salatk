@@ -179,9 +179,13 @@ const TimePlanService = {
     },
 
     async createPlan({ scope, date, weekday, title, notes, startTime, endTime }) {
-        if (!window.supabaseClient) return null;
+        if (!window.supabaseClient) {
+            throw new Error('SUPABASE_NOT_READY');
+        }
         const session = await this._getSession();
-        if (!session) return null;
+        if (!session) {
+            throw new Error('AUTH_REQUIRED');
+        }
 
         const safeScope = this._validateScope(scope);
         const safeTitle = this._validateTitle(title);
@@ -222,16 +226,23 @@ const TimePlanService = {
 
         if (error) {
             console.error('TimePlanService: Failed to create plan', error);
-            throw new Error('PLAN_CREATE_FAILED');
+            const err = new Error(error.message || 'PLAN_CREATE_FAILED');
+            err.code = error.code;
+            err.details = error;
+            throw err;
         }
 
         return this._mapRow(data);
     },
 
     async updatePlan(planId, { title, notes, startTime, endTime }) {
-        if (!window.supabaseClient || !planId) return null;
+        if (!window.supabaseClient || !planId) {
+            throw new Error('SUPABASE_NOT_READY');
+        }
         const session = await this._getSession();
-        if (!session) return null;
+        if (!session) {
+            throw new Error('AUTH_REQUIRED');
+        }
 
         const current = await this.getPlanById(planId);
         if (!current) throw new Error('PLAN_NOT_FOUND');
@@ -263,7 +274,10 @@ const TimePlanService = {
 
         if (error) {
             console.error('TimePlanService: Failed to update plan', error);
-            throw new Error('PLAN_UPDATE_FAILED');
+            const err = new Error(error.message || 'PLAN_UPDATE_FAILED');
+            err.code = error.code;
+            err.details = error;
+            throw err;
         }
 
         return this._mapRow(data);
@@ -298,9 +312,13 @@ const TimePlanService = {
     },
 
     async replaceDailyWithWeekly(dateStr) {
-        if (!window.supabaseClient) return [];
+        if (!window.supabaseClient) {
+            throw new Error('SUPABASE_NOT_READY');
+        }
         const session = await this._getSession();
-        if (!session) return [];
+        if (!session) {
+            throw new Error('AUTH_REQUIRED');
+        }
 
         const safeDate = this._validateDate(dateStr);
         const weekday = this._getWeekdayIndex(safeDate);
@@ -319,7 +337,10 @@ const TimePlanService = {
 
         if (deleteError && deleteError !== 'timeout') {
             console.error('TimePlanService: Failed to clear daily plans', deleteError);
-            return [];
+            const err = new Error(deleteError.message || 'PLAN_DELETE_FAILED');
+            err.code = deleteError.code;
+            err.details = deleteError;
+            throw err;
         }
 
         const weeklyPlans = await this.getWeeklyPlans();
@@ -349,7 +370,10 @@ const TimePlanService = {
 
         if (error && error !== 'timeout') {
             console.error('TimePlanService: Failed to insert copied plans', error);
-            return [];
+            const err = new Error(error.message || 'PLAN_COPY_FAILED');
+            err.code = error.code;
+            err.details = error;
+            throw err;
         }
 
         return (data || []).map(row => this._mapRow(row));

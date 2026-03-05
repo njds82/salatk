@@ -6,7 +6,7 @@ const translations = {
     ar: {
         // App
         app_name: 'صلاتك',
-        app_description: 'تطبيق لمساعدتك على الالتزام بالصلوات وبناء عادات عبادية',
+        app_description: 'أسلوب لحياة المسلم',
 
         // Navigation
         nav_daily_prayers: 'صلوات اليوم',
@@ -182,6 +182,7 @@ const translations = {
         time_management_update_success: 'تم تحديث العنصر بنجاح',
         time_management_delete_success: 'تم حذف العنصر',
         time_management_delete_confirm: 'هل تريد حذف هذا العنصر؟',
+        time_management_db_missing: 'ميزة تنظيم الوقت غير مفعلة في قاعدة البيانات بعد. يرجى تشغيل ترحيل قاعدة البيانات.',
         time_management_prayer_times: 'أوقات الصلاة',
         time_management_fill_start: 'تعبئة البداية',
         time_management_fill_end: 'تعبئة النهاية',
@@ -259,7 +260,6 @@ const translations = {
         push_notifications_pending: 'بانتظار منح الإذن',
         push_notifications_subscribe: 'تفعيل الإشعارات',
         push_notifications_unsubscribe: 'إيقاف الإشعارات',
-        version: 'الإصدار',
         download_app: 'لتنزيل التطبيق الخاص بالهاتف',
         error_invalid_input: 'البيانات المدخلة غير صحيحة',
         error_importing: 'حدث خطأ أثناء استيراد البيانات',
@@ -543,7 +543,7 @@ const translations = {
     en: {
         // App
         app_name: 'Salatk',
-        app_description: 'An app to help you stay committed to prayers and build worship habits',
+        app_description: 'A Muslim lifestyle',
 
         // Navigation
         nav_daily_prayers: "Daily Prayers",
@@ -719,6 +719,7 @@ const translations = {
         time_management_update_success: 'Item updated successfully',
         time_management_delete_success: 'Item deleted',
         time_management_delete_confirm: 'Delete this item?',
+        time_management_db_missing: 'Time planner database table is missing. Please run the database migration.',
         time_management_prayer_times: 'Prayer Times',
         time_management_fill_start: 'Fill Start',
         time_management_fill_end: 'Fill End',
@@ -796,7 +797,6 @@ const translations = {
         push_notifications_pending: 'Permission is not granted yet',
         push_notifications_subscribe: 'Enable notifications',
         push_notifications_unsubscribe: 'Disable notifications',
-        version: 'Version',
         download_app: 'To download the mobile app',
         error_invalid_input: 'Invalid input data',
         error_importing: 'Error occurred while importing data',
