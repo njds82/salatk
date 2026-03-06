@@ -1,17 +1,20 @@
 # Salatk (صلاتك) 🕌
 
-**Salatk** هو أسلوب لحياة المسلم، وهو تطبيق ويب تقدمي (PWA) يوفر أدوات مثل:
-- متابعة الصلوات اليومية.
-- إدارة صلوات القضاء.
-- تتبع العادات.
-- إدارة المهام اليومية.
-- التحفيز عبر نظام نقاط ولوحة صدارة.
+**Salatk** هو أسلوب لحياة المسلم، وهو تطبيق ويب تقدمي (PWA) يوفر أدوات متكاملة مثل:
 
-يعتمد التطبيق على **Supabase** مع مزامنة لحظية، وبنية Frontend تعتمد على JavaScript modules بنمط `window` globals.
+- متابعة الصلوات اليومية وقضاء الفائت منها.
+- إدارة الوقت عبر خطط يومية وأسبوعية متزامنة مع مواقيت الصلاة.
+- تتبع العادات والمهام اليومية.
+- لوحة تحكم إدارية (Admin Dashboard) لإدارة المستخدمين والتنبيهات.
+- نظام إشعارات Push وتنبيهات برمجية.
+- التحفيز عبر نظام نقاط متطور ولوحة صدارة عالمية.
+
+يعتمد التطبيق على **Supabase** مع مزامنة لحظية، وبنية Frontend تعتمد على JavaScript modules بنمط `window` globals لتسهيل التواصل بين الوحدات.
 
 ---
 
 ## 📑 الفهرس
+
 1. [خارطة الملفات (File Map)](#-خارطة-الملفات-file-map)
 2. [شرح الوحدات (Modules)](#-شرح-الوحدات-modules)
 3. [قاعدة البيانات (Database Schema)](#-قاعدة-البيانات-database-schema)
@@ -19,6 +22,7 @@
 5. [الثوابت الأساسية (Core Constants)](#-الثوابت-الأساسية-core-constants)
 6. [العمليات الرئيسية (Core Flows)](#-العمليات-الرئيسية-core-flows)
 7. [مراجعة الكود (Code Review Snapshot)](#-مراجعة-الكود-code-review-snapshot)
+8. [الاختبارات (Testing & QA)](#-testing--qa)
 
 ---
 
@@ -27,216 +31,116 @@
 ```text
 /home/loid/code/salatk/
 ├── index.html                  # نقطة الدخول وترتيب تحميل السكربتات
-├── styles.css                  # التنسيقات العامة والثيمات
-├── sw.js                       # Service Worker
-├── supabase_tasks.sql          # SQL لإنشاء جدول المهام وسياساته
-├── verify_hijri.js             # سكربت تحقق مستقل للتاريخ الهجري
+├── styles.css                  # التنسيقات العامة والسمات (Themes)
+├── sw.js                       # Service Worker لإدارة الـ Offline والـ Push
+├── sitemap.xml / robots.txt    # ملفات تحسين محركات البحث (SEO)
 ├── components/                 # مكونات واجهة قابلة لإعادة الاستخدام
-│   ├── toast.js
-│   ├── modal.js
-│   ├── prayer-card.js
-│   ├── habit-card.js
-│   ├── charts.js
-│   └── points-display.js
-├── assets/images/logo.png
+│   ├── toast.js                # نظام التنبيهات المنبثقة
+│   ├── modal.js                # إدارة النوافذ المنبثقة
+│   ├── prayer-card.js / habit-card.js
+│   └── points-display.js       # عرض النقاط في الهيدر
 └── js/
-    ├── app.js                  # الـ Router + bootstrap للتطبيق
-    ├── auth-manager.js
-    ├── prayer-manager.js
-    ├── notification-manager.js
-    ├── sync-manager.js
-    ├── data-manager.js         # واجهة توافق قديمة (legacy facade)
-    ├── points-manager.js
-    ├── date-utils.js
-    ├── i18n.js
-    ├── db.js
-    ├── config.js
-    ├── config.example.js
-    ├── supabaseClient.js
-    ├── ui-helpers.js
-    ├── data/questions.js
+    ├── app.js                  # الـ Router + إدارة التنقل (Navigation)
+    ├── auth-manager.js         # إدارة الجلسة والتحقق من الهوية
+    ├── prayer-manager.js       # حساب المواقيت (Adhan.js) والتحقق من الفوات
+    ├── notification-manager.js # إدارة التنبيهات المحلية والـ Schedule
+    ├── sync-manager.js         # المزامنة اللحظية (Realtime)
+    ├── ui-helpers.js           # دوال مساعدة لتحديث الـ DOM وتعقيم النصوص
     ├── services/
-    │   ├── prayer-service.js
-    │   ├── habit-service.js
-    │   ├── points-service.js
-    │   ├── settings-service.js
-    │   ├── task-service.js
-    │   └── migration-service.js   # موجود لكن غير مفعّل افتراضياً
+    │   ├── admin-service.js    # عمليات الإدارة (حظر، إشعارات، سجلات)
+    │   ├── push-service.js     # إدارة اشتراكات Web Push
+    │   ├── time-plan-service.js # إدارة الخطط الزمنية
+    │   ├── page-data-cache.js  # نظام الذاكرة المخبئية للصفحات الثقيلة
+    │   └── task-service.js / point-service.js ...
     └── pages/
-        ├── auth.js
-        ├── daily-prayers.js
-        ├── qada-prayers.js
-        ├── habits.js
-        ├── daily-tasks.js
-        ├── statistics.js
-        ├── leaderboard.js
-        ├── store.js
-        ├── athkar.js
-        ├── challenge.js
-        ├── settings.js
-        └── more.js
+        ├── admin.js            # لوحة تحكم المدير
+        ├── time-management.js # إدارة الوقت (يومي/أسبوعي)
+        ├── daily-prayers.js / qada-prayers.js
+        ├── habits.js / daily-tasks.js
+        ├── leaderboard.js / statistics.js
+        └── settings.js         # الإعدادات الشاملة (لغة، سمة، حساب شرعي)
 ```
 
 ---
 
 ## 📘 شرح الوحدات (Modules)
 
-### 1) Managers
-- **`AuthManager` (`js/auth-manager.js`)**  
-  مسؤول عن تسجيل الدخول/الخروج وإدارة الـ session والملف الشخصي.
+### 1) الإدارة والأمان (Admin & Security)
 
-- **`PrayerManager` (`js/prayer-manager.js`)**  
-  يحسب المواقيت (Adhan.js)، ويدير الفحص الدوري للصلاة الفائتة (`checkAndMarkMissedPrayers`).
+- **`AdminService`**: يوفر واجهة لإدارة المستخدمين، حظر الحسابات، إرسال إشعارات جماعية، والاطلاع على سجلات التدقيق (Audit Logs).
+- **`PushService`**: يدير تسجيل الـ Service Worker Subscription وتخزينها في Supabase لإرسال تنبيهات Push حقيقية.
 
-- **`NotificationManager` (`js/notification-manager.js`)**  
-  يدير أذونات الإشعارات وجدولة التنبيه للصلاة القادمة.
+### 2) إدارة الوقت والأداء (Performance & Time)
 
-- **`SyncManager` (`js/sync-manager.js`)**  
-  يدير الاشتراك في تغييرات Supabase (Realtime) وتحديث الواجهة عند التغييرات.
+- **`TimePlanService`**: يتيح للمستخدم تنظيم يومه بناءً على مواقيت الصلاة، مع إمكانية تحويل الخطط الأسبوعية إلى يومية بضغطة زر.
+- **`PageDataCache`**: يقلل من زمن التحميل عبر تخزين نسخة من HTML الصفحات الثقيلة (مثل الإحصائيات) وتحديثها فقط عند تغيير البيانات الحساسة (مثل النقاط).
 
-### 2) Services
-- **`PrayerService`**: CRUD للصلوات + قضاء + احتساب/إرجاع نقاط الصلاة.
-- **`HabitService`**: إدارة العادات وسجلّها اليومي.
-- **`PointsService`**: مجموع النقاط + سجل النقاط + الإضافة عبر `upsert`.
-- **`SettingsService`**: إعدادات اللغة/الثيم/الحساب الشرعي/الموقع.
-- **`TaskService`**: إدارة المهام اليومية (إنشاء/تعديل/إكمال/ترحيل/تنظيف).
+### 3) تجربة المستخدم (UX Customization)
 
-### 3) UI/Pages
-- ملفات `js/pages/*` تولّد HTML للصفحات وتربط أحداثها.
-- `js/ui-helpers.js` يوفر تحديثات جزئية للواجهة (مثل تحديث بطاقة صلاة/عادة دون إعادة تحميل الصفحة بالكامل).
+- **إدارة التنقل**: يمكن للمستخدم تخصيص ترتيب أيقونات التنقل السفلية وإخفاء/إظهار الصفحات حسب رغبته.
 
 ---
 
 ## 🗄 قاعدة البيانات (Database Schema)
 
-التطبيق يعتمد على **Supabase (PostgreSQL)**. الجداول/العناصر الأساسية:
+### 1) جداول الأمان والإدارة
 
-### 1) `profiles`
-- `id` (UUID، مرتبط بـ `auth.users`)
-- `username`, `full_name`
-- `referral_code`, `referred_by`
-- `is_public` (للظهور في لوحة الصدارة)
+- **`admin_users`**: قائمة المعرفات التي تملك صلاحية الوصول للوحة الإدارة.
+- **`user_access_status`**: تتبع حالة الحظر (is_blocked) وأسبابها.
+- **`admin_audit_logs`**: سجل بكل العمليات الحساسة التي قام بها المديرون.
 
-### 2) `prayer_records`
-- `user_id`, `date`, `prayer_key`, `status`, `recorded_at`
-- فهرس/قيد فريد على (user_id, date, prayer_key)
+### 2) جداول الميزات الجديدة
 
-### 3) `qada_prayers`
-- `id`, `user_id`, `original_date`, `prayer_key`, `rakaat`, `is_manual`, `recorded_at`
-
-### 4) `points_history`
-- `id`, `user_id`, `amount`, `reason`, `recorded_at`
-
-### 5) `user_settings`
-- `user_id`, `theme`, `language`, `calculation_method`, `madhab`, إعدادات إضافية مرتبطة بالموقع
-
-### 6) `tasks`
-- `id`, `user_id`, `title`, `priority`, `due_date`, `status`
-- `completed_at`, `rollover_count`, `created_at`, `updated_at`
-- تفاصيل الإنشاء والسياسات في `supabase_tasks.sql`
-
-### 7) `leaderboard` (View)
-- View تُستخدم لجلب `total_points` وترتيب المستخدمين.
-
----
-
-## 🔗 الاتصالات والعلاقات (Connections & Relationships)
-
-1. **Client → Supabase**  
-   عبر `js/supabaseClient.js` (REST للعمليات + Realtime عبر channels).
-
-2. **العلاقات**  
-   أغلب الجداول مرتبطة بالمستخدم عبر `user_id`/`id`.
-
-3. **RLS**  
-   سياسات Row Level Security تقيّد وصول كل مستخدم إلى بياناته.
+- **`time_plans`**: تخزن الخطط اليومية (مرتبطة بتاريخ) والأسبوعية (مرتبطة بيوم أسبوع).
+- **`user_push_subscriptions`**: مفاتيح التشفير لاتصالات الـ Push.
+- **`user_notifications`**: سجل الإشعارات الواردة للمستخدم لعرضها في مركز التنبيهات.
 
 ---
 
 ## 🔢 الثوابت الأساسية (Core Constants)
 
-- **`PRAYERS`** في `js/services/prayer-service.js`  
-  تعريف الصلوات (الاسم، الركعات، النقاط).
-
-- **`RANKS`** في `js/points-manager.js`  
-  تعريف مستويات النقاط.
-
-- **الثيمات** في `styles.css`  
-  تُفعل عبر `data-theme` على `<html>` (مثل: `light`, `dark`, `emerald`, `midnight`, ...).
+- **`VALID_PAGES`** في `js/app.js`: تحدد المسارات المسموح بها في الـ Router.
+- **`PAGE_CACHE_TTLS_MS`** في `js/services/page-data-cache.js`: مدد صلاحية الذاكرة المخبئية لكل صفحة.
+- **`NAV_PREFS_KEY`**: مفتاح تخزين تفضيلات ترتيب القائمة في LocalStorage.
 
 ---
 
 ## ⚙️ العمليات الرئيسية (Core Flows)
 
-### 1) دورة الصلاة
-1. `PrayerManager` يحسب المواقيت بناءً على الإعدادات والموقع.
-2. المستخدم يحدد حالة الصلاة (`done` أو `missed`) من الواجهة.
-3. `PrayerService.markPrayer`:
-   - يحدّث `prayer_records`.
-   - يضيف/يخصم النقاط عبر `PointsService`.
-   - يضيف/يحذف سجل القضاء حسب الحالة.
+### 1) دورة الإدارة والرقابة
 
-### 2) دورة المهام اليومية
-1. إنشاء/تعديل/حذف/إكمال المهمة عبر `TaskService`.
-2. عند الإكمال تُضاف نقطة (بنمط idempotent id: `task:<taskId>`).
-3. توجد عمليات صيانة تلقائية (ترحيل المهام المتأخرة، تنظيف المكتملة القديمة).
+1. يتم التحقق من صلاحية `isAdmin` عند محاولة دخول صفحة `/admin`.
+2. يتم منع المستخدمين المحظورين (`user_access_status`) من دخول التطبيق فوراً عبر `AuthManager`.
 
-### 3) النقاط ولوحة الصدارة
-- إجمالي النقاط يُقرأ من `leaderboard` مع fallback إلى جمع `points_history`.
-- تحديث الواجهة يتم عبر event `pointsUpdated` واشتراكات Realtime.
+### 2) دورة الخطط الزمنية
+
+1. يتم جلب مواقيت الصلاة لليوم المختار كمرجع.
+2. يتم عرض المهام/الخطط بين فترات الصلاة (مثلاً: بين الفجر والضحى).
 
 ---
 
 ## 🔍 مراجعة الكود (Code Review Snapshot)
 
-هذه خلاصة مراجعة شاملة على كود الواجهة والمنطق التشغيلي (Managers/Services/Pages):
+### ✅ تحسينات تمت معالجتها
 
-### نقاط القوة الحالية
-- فصل منطقي جيد بين `Managers` و`Services` و`Pages`.
-- تدفق واضح للعمليات الأساسية (الصلاة/العادات/المهام).
-- وجود Realtime integration عبر `SyncManager`.
-- وجود دوال حماية نصية في صفحة المهام (`escapeTaskText`) يمنع حقن HTML هناك.
+- **تعقيم النصوص (XSS Protection)**: تمت إضافة دوال `escapeHtml` و `escapeTaskText` في معظم الصفحات التي تعرض مدخلات المستخدم.
+- **تقليل طلبات الشبكة**: استخدام `PageDataCache` قلل من تكرار استدعاءات API في الصفحات الإحصائية.
+- **تحسين SEO**: إضافة Sitemap و Meta Tags ديناميكية في `index.html`.
 
-### مخاطر/ديون تقنية معروفة (تحتاج معالجة)
-1. **XSS محتمل في أجزاء متعددة**  
-   بعض القيم القادمة من المستخدم/قاعدة البيانات تُحقن مباشرة داخل `innerHTML` أو template literals بدون تعقيم كافٍ.
-2. **عدم توحيد مفتاح اللغة في LocalStorage**  
-   يوجد استخدام مختلط بين `salatk_lang` و`salatk_language` مما قد يسبب سلوك حفظ/استرجاع غير متسق.
-3. **إعادة تهيئة PrayerManager قد تنشئ أكثر من interval**  
-   `PrayerManager.init()` يستدعي `startMissedPrayersCheck()` دون حراسة واضحة لمنع تكرار المؤقت.
-4. **قائمة كاش Service Worker غير متزامنة بالكامل مع ملفات runtime**  
-   بعض السكربتات المحملة في `index.html` غير موجودة في `ASSETS_TO_CACHE`.
-5. **ملف الإعدادات الحساس (`js/config.js`) موجود داخل المستودع**  
-   مع أن المفتاح `anon/publishable`، الأفضل تشغيلياً أن يُحقن عبر بيئة نشر وليس commit مباشر.
+### ⚠️ نقاط تحتاج انتباه
 
-### سياسة المراجعة المستمرة
-- أي ميزة جديدة تعتمد نصوصًا مُدخلة من المستخدم يجب أن تستخدم تعقيمًا مركزيًا قبل العرض.
-- أي تغيير في `index.html` (script list) يجب أن ينعكس مباشرة في `sw.js`.
-- توحيد مصدر الحقيقة للّغة/الثيم داخل طبقة `SettingsService`.
-
----
-*تم التحديث بتاريخ: 2026-02-23*
+- **اتساق الذاكرة المخبئية**: التأكد من أن `invalidatePage` تُستدعى في كل مكان يتم فيه تحديث البيانات المرتبطة بتلك الصفحة.
+- **Service Worker Versioning**: الحاجة لتحديث الـ cache version عند كل تعديل في ملفات الـ `js`.
 
 ---
 
 ## 🧪 Testing & QA
 
-المشروع يحتوي الآن على منظومة اختبارات متعددة الطبقات:
+- `npm run test:unit`: اختبارات المنطق البرمجي للخدمات.
+- `npm run test:dom`: اختبارات تفاعل الصفحة مع مكونات الـ DOM.
+- `npm run test:e2e`: اختبارات سيناريوهات المستخدم الكاملة (Playwright).
+- `npm run coverage`: قياس تغطية الاختبارات لملفات الخدمات.
 
-- `npm run test:unit` لاختبارات الوحدة
-- `npm run test:dom` لاختبارات DOM/الصفحات/المكونات
-- `npm run test:sw` لاختبارات Service Worker
-- `npm run test:integration` لاختبارات التكامل (Supabase محلي)
-- `npm run test:integration:local` لتشغيل Supabase محليًا + reset + تشغيل التكامل تلقائيًا
-- `npm run test:e2e` لاختبارات المتصفح (Playwright)
-- `npm run coverage` لتقرير تغطية طبقة الخدمات (`js/services/**/*.js`)
+---
 
-أوامر Supabase المحلية:
-
-- `npm run supabase:start`
-- `npm run supabase:reset`
-- `npm run supabase:stop`
-
-> ملاحظة: أمر `test:integration` يحتاج متغيرين بيئيين:
-> `SUPABASE_URL` و `SUPABASE_ANON_KEY`.
-> أمر `test:integration:local` يضبطهما تلقائيًا.
+_آخر تحديث: 2026-03-06_
