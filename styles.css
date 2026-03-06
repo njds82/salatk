@@ -858,6 +858,71 @@ body::after {
     gap: var(--spacing-lg);
 }
 
+.more-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+}
+
+.more-card {
+    width: 100%;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--spacing-xl);
+    gap: var(--spacing-md);
+    font: inherit;
+    color: inherit;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.more-card:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.more-card-icon {
+    width: 62px;
+    height: 62px;
+    border-radius: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-bg-input);
+    border: 1px solid var(--color-border);
+}
+
+.more-card-icon svg {
+    width: 28px;
+    height: 28px;
+}
+
+.more-card-label {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--color-text-primary);
+    line-height: 1.25;
+}
+
+.more-card-arrow {
+    display: none;
+    color: var(--color-text-tertiary);
+    font-size: 1.1rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+[dir="ltr"] .more-card-arrow {
+    transform: rotate(180deg);
+}
+
+.more-empty-state {
+    text-align: center;
+    color: var(--color-text-secondary);
+}
+
 .theme-card {
     transition: all var(--transition-normal);
     cursor: default;
@@ -3281,8 +3346,8 @@ body::after {
    ======================================== */
 @media (max-width: 768px) {
     :root {
-        --mobile-header-height: 68px;
-        --mobile-nav-height: 20px;
+        --mobile-header-height: 72px;
+        --mobile-nav-height: 0px;
     }
 
     body {
@@ -3362,9 +3427,9 @@ body::after {
         max-width: none;
         padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 10px;
         display: grid;
-        grid-template-columns: auto 1fr;
+        grid-template-columns: auto minmax(0, 1fr);
         align-items: center;
-        gap: 10px 12px;
+        gap: 8px 10px;
     }
 
     .logo {
@@ -3379,23 +3444,30 @@ body::after {
 
     .logo-text {
         display: inline-block;
-        font-size: 1.2rem;
+        font-size: 1.05rem;
     }
 
     .header-actions {
-        display: flex;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
         align-items: center;
-        justify-content: flex-end;
+        justify-content: stretch;
         gap: 8px;
         min-width: 0;
     }
 
+    #langToggle {
+        display: none;
+    }
+
     .points-badge {
         min-width: 0;
-        max-width: 44vw;
-        padding: 8px 12px;
-        font-size: 0.86rem;
-        border-radius: 14px;
+        max-width: none;
+        width: 100%;
+        justify-content: center;
+        padding: 7px 10px;
+        font-size: 0.82rem;
+        border-radius: 12px;
         gap: 6px;
     }
 
@@ -3415,6 +3487,12 @@ body::after {
         width: 38px;
         height: 38px;
         border-radius: 12px;
+    }
+
+    #notifToggle,
+    .menu-toggle-btn {
+        width: 42px;
+        height: 42px;
     }
 
     .container {
@@ -3627,6 +3705,88 @@ body::after {
         filter: none;
     }
 
+    .more-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .more-card {
+        min-height: 0;
+        flex-direction: row;
+        justify-content: flex-start;
+        text-align: right;
+        gap: 12px;
+        padding: 12px 14px;
+        border-radius: 14px;
+    }
+
+    [dir="ltr"] .more-card {
+        text-align: left;
+    }
+
+    .more-card-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        flex-shrink: 0;
+    }
+
+    .more-card-icon svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    .more-card-label {
+        flex: 1;
+        font-size: 0.95rem;
+        text-align: inherit;
+    }
+
+    .more-card-arrow {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .nav-customize-row {
+        grid-template-columns: 1fr;
+        align-items: stretch;
+        gap: 8px;
+        padding: 12px;
+    }
+
+    .nav-customize-index {
+        display: none;
+    }
+
+    .nav-customize-actions {
+        justify-content: stretch;
+        gap: 8px;
+    }
+
+    .nav-customize-order {
+        flex: 1;
+    }
+
+    .nav-customize-order-btn {
+        flex: 1;
+        min-width: 38px;
+        height: 34px;
+    }
+
+    .nav-customize-toggle {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .nav-customize-footer {
+        justify-content: stretch;
+    }
+
+    .nav-customize-reset {
+        width: 100%;
+    }
+
     .card,
     .prayer-card,
     .task-card,
@@ -3740,8 +3900,8 @@ body::after {
 
 @media (max-width: 480px) {
     :root {
-        --mobile-header-height: 64px;
-        --mobile-nav-height: 16px;
+        --mobile-header-height: 68px;
+        --mobile-nav-height: 0px;
     }
 
     .header-content {
@@ -3758,20 +3918,20 @@ body::after {
     }
 
     .points-badge {
-        max-width: 40vw;
-        padding: 7px 10px;
+        max-width: none;
+        padding: 6px 9px;
         font-size: 0.8rem;
     }
 
     .icon-btn {
-        width: 34px;
-        height: 34px;
+        width: 38px;
+        height: 38px;
         border-radius: 10px;
     }
 
     .menu-toggle-btn {
-        width: 40px;
-        height: 40px;
+        width: 42px;
+        height: 42px;
         border-radius: 12px;
     }
 

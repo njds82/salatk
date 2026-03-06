@@ -54,19 +54,20 @@ async function renderMorePage() {
     const filteredItems = items.filter(item => !extractablePages.has(item.id) || !visibleMainNavPages.has(item.id));
     const body = filteredItems.length
         ? `
-            <div class="card-grid more-grid" style="grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: var(--spacing-lg);">
+            <div class="card-grid more-grid">
                 ${filteredItems.map(item => `
-                    <div class="card more-card" onclick="navigateTo('${item.id}')" style="cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: var(--spacing-xl); gap: var(--spacing-lg); transition: transform 0.2s;">
-                        <div style="color: ${item.color}; transform: scale(1.5); margin-bottom: 8px;">
+                    <button type="button" class="card more-card" onclick="navigateTo('${item.id}')">
+                        <span class="more-card-icon" style="color: ${item.color};">
                             ${item.icon}
-                        </div>
-                        <span style="font-weight: 700; font-size: 1.1em; color: var(--color-text-primary);">${t(item.label)}</span>
-                    </div>
+                        </span>
+                        <span class="more-card-label">${t(item.label)}</span>
+                        <span class="more-card-arrow" aria-hidden="true">‹</span>
+                    </button>
                 `).join('')}
             </div>
         `
         : `
-            <div class="card" style="text-align:center; color: var(--color-text-secondary);">
+            <div class="card more-empty-state">
                 ${t('more_empty_customized')}
             </div>
         `;
