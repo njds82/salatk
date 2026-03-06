@@ -643,6 +643,8 @@ function getPageSkeleton(page) {
 async function renderPage(page, noScroll = false, options = { forceFresh: false, preferCache: true }) {
     const content = document.getElementById('pageContent');
     if (!content) return;
+    const isAuthPage = page === 'login' || page === 'signup';
+    document.body.classList.toggle('auth-view-active', isAuthPage);
     const requestToken = ++renderRequestToken;
     const renderOptions = {
         forceFresh: Boolean(noScroll || options?.forceFresh),
