@@ -14,6 +14,9 @@ async function renderSettingsPage() {
     ]);
     const currentTheme = settings.theme || 'light';
     const currentLang = settings.language || 'ar'; // Use settings directly, getCurrentLanguage() might still rely on something else
+    const navCustomizationState = window.getNavCustomizationState
+        ? window.getNavCustomizationState()
+        : { items: [] };
 
     // Keep latest location for location controls in render
     PrayerManager.lastLoc = loc; // Store temporarily for render
@@ -217,6 +220,50 @@ async function renderSettingsPage() {
                 </button>
             </div>
         </div>
+
+        <!-- Navigation Customization -->
+        <div class="card" style="margin-bottom: var(--spacing-lg);">
+            <h3 style="margin-bottom: 6px;">🧭 ${t('nav_customize_title')}</h3>
+            <p style="color: var(--color-text-secondary); font-size: 0.9em; margin-bottom: var(--spacing-md);">
+                ${t('nav_customize_subtitle')}
+            </p>
+            <div class="nav-customize-list">
+                ${navCustomizationState.items.map(item => `
+                    <div class="nav-customize-row">
+                        <div class="nav-customize-meta">
+                            <span class="nav-customize-name">${t(item.labelKey)}</span>
+                            ${item.locked ? `<span class="nav-customize-badge">${t('nav_customize_required')}</span>` : ''}
+                        </div>
+                        <div class="nav-customize-actions">
+                            <button
+                                class="btn btn-secondary btn-sm nav-customize-btn"
+                                onclick="handleMoveNavPage('${item.id}', -1)"
+                                ${item.canMoveUp ? '' : 'disabled'}
+                                title="${t('nav_customize_move_up')}"
+                                aria-label="${t('nav_customize_move_up')}"
+                            >↑</button>
+                            <button
+                                class="btn btn-secondary btn-sm nav-customize-btn"
+                                onclick="handleMoveNavPage('${item.id}', 1)"
+                                ${item.canMoveDown ? '' : 'disabled'}
+                                title="${t('nav_customize_move_down')}"
+                                aria-label="${t('nav_customize_move_down')}"
+                            >↓</button>
+                            <button
+                                class="btn btn-sm nav-customize-visibility ${item.visible ? 'btn-secondary' : 'btn-success'}"
+                                onclick="handleToggleNavPageVisibility('${item.id}')"
+                                ${item.locked ? 'disabled' : ''}
+                            >
+                                ${item.visible ? t('nav_customize_hide') : t('nav_customize_show')}
+                            </button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            <button class="btn btn-secondary btn-sm" style="margin-top: var(--spacing-md);" onclick="handleResetNavCustomization()">
+                ${t('nav_customize_reset')}
+            </button>
+        </div>
         
         <!-- Calculation Settings -->
         <div class="card" style="margin-bottom: var(--spacing-lg);">
@@ -369,6 +416,31 @@ async function handleLanguageChange(lang) {
     await SettingsService.set('language', lang);
     if (window.setLanguage) setLanguage(lang);
     renderPage('settings', true);
+}
+
+function handleMoveNavPage(page, direction) {
+    if (!window.moveNavPage) return;
+    const moved = window.moveNavPage(page, direction);
+    if (moved && window.currentPage === 'settings') {
+        renderPage('settings', true);
+    }
+}
+
+function handleToggleNavPageVisibility(page) {
+    if (!window.toggleNavPageVisibility) return;
+    const updated = window.toggleNavPageVisibility(page);
+    if (updated && window.currentPage === 'settings') {
+        renderPage('settings', true);
+    }
+}
+
+function handleResetNavCustomization() {
+    if (!window.resetNavCustomization) return;
+    window.resetNavCustomization();
+    showToast(t('nav_customize_saved'), 'success');
+    if (window.currentPage === 'settings') {
+        renderPage('settings', true);
+    }
 }
 
 // Handle calculation settings change
@@ -729,3 +801,6 @@ window.addEventListener('pageRendered', (e) => {
 window.handleThemeChange = handleThemeChange;
 window.toggleLeaderboardPrivacy = toggleLeaderboardPrivacy;
 window.handleTogglePushNotifications = handleTogglePushNotifications;
+window.handleMoveNavPage = handleMoveNavPage;
+window.handleToggleNavPageVisibility = handleToggleNavPageVisibility;
+window.handleResetNavCustomization = handleResetNavCustomization;

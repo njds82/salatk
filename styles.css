@@ -715,6 +715,12 @@ body::after {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    background: var(--glass-bg);
+    backdrop-filter: blur(calc(var(--glass-blur) - 6px));
+    -webkit-backdrop-filter: blur(calc(var(--glass-blur) - 6px));
 }
 
 .nav-item {
@@ -727,17 +733,18 @@ body::after {
     border-radius: var(--radius-md);
     transition: all var(--transition-normal);
     font-weight: 600;
-    border: 1px solid transparent;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-elevated);
 }
 
 .nav-item:hover {
     background: var(--color-bg-input);
     color: var(--color-primary);
-    transform: translateX(-4px);
+    transform: none;
 }
 
 [dir="ltr"] .nav-item:hover {
-    transform: translateX(4px);
+    transform: none;
 }
 
 .nav-item.active {
@@ -752,6 +759,10 @@ body::after {
 
 .nav-item svg {
     flex-shrink: 0;
+}
+
+.nav-item.nav-item-hidden {
+    display: none !important;
 }
 
 /* ========================================
@@ -999,6 +1010,68 @@ body::after {
     opacity: 0.5;
     cursor: not-allowed;
     transform: none !important;
+}
+
+.nav-customize-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.nav-customize-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    background: var(--color-bg-input);
+}
+
+.nav-customize-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.nav-customize-name {
+    color: var(--color-text-primary);
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.nav-customize-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-elevated);
+    color: var(--color-text-secondary);
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    white-space: nowrap;
+}
+
+.nav-customize-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.nav-customize-btn {
+    min-width: 34px;
+    padding: 6px 10px;
+}
+
+.nav-customize-visibility {
+    min-width: 78px;
+    flex: 0 0 auto;
 }
 
 /* ========================================
@@ -1898,6 +1971,19 @@ body::after {
     .icon-btn {
         width: 36px;
         height: 36px;
+    }
+
+    .nav-customize-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .nav-customize-actions {
+        justify-content: flex-start;
+    }
+
+    .nav-customize-visibility {
+        flex: 1;
     }
 
     /* Date Navigation Mobile */

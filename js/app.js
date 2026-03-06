@@ -24,7 +24,167 @@ const VALID_PAGES = new Set([
     'admin'
 ]);
 const HEAVY_PAGES = new Set(['settings', 'statistics', 'habits', 'store', 'leaderboard', 'admin']);
+const MAIN_NAV_PAGES = Object.freeze([
+    'daily-prayers',
+    'qada-prayers',
+    'habits',
+    'leaderboard',
+    'daily-tasks',
+    'time-management',
+    'more'
+]);
+const MAIN_NAV_LOCKED_PAGES = new Set(['daily-prayers', 'more']);
+const MAIN_NAV_MORE_PAGES = new Set(['statistics', 'challenge', 'store', 'athkar', 'settings', 'more', 'admin']);
+const NAV_PREFS_KEY = 'salatk_nav_preferences_v1';
+const NAV_LABEL_KEYS = Object.freeze({
+    'daily-prayers': 'nav_daily_prayers',
+    'qada-prayers': 'nav_qada_prayers',
+    habits: 'nav_habits',
+    leaderboard: 'nav_leaderboard',
+    'daily-tasks': 'nav_daily_tasks',
+    'time-management': 'nav_time_management',
+    more: 'nav_more'
+});
 let renderRequestToken = 0;
+
+function normalizeNavPreferences(rawPrefs) {
+    const rawOrder = Array.isArray(rawPrefs?.order) ? rawPrefs.order : [];
+    const rawHidden = Array.isArray(rawPrefs?.hidden) ? rawPrefs.hidden : [];
+
+    const seen = new Set();
+    const order = [];
+    rawOrder.forEach((page) => {
+        if (!MAIN_NAV_PAGES.includes(page) || seen.has(page)) return;
+        seen.add(page);
+        order.push(page);
+    });
+    MAIN_NAV_PAGES.forEach((page) => {
+        if (!seen.has(page)) order.push(page);
+    });
+
+    const hiddenSet = new Set();
+    rawHidden.forEach((page) => {
+        if (!MAIN_NAV_PAGES.includes(page)) return;
+        if (MAIN_NAV_LOCKED_PAGES.has(page)) return;
+        hiddenSet.add(page);
+    });
+
+    return {
+        order,
+        hidden: [...hiddenSet]
+    };
+}
+
+function getNavPreferences() {
+    try {
+        const parsed = JSON.parse(localStorage.getItem(NAV_PREFS_KEY) || '{}');
+        return normalizeNavPreferences(parsed);
+    } catch (error) {
+        return normalizeNavPreferences({});
+    }
+}
+
+function saveNavPreferences(nextPrefs) {
+    const normalized = normalizeNavPreferences(nextPrefs);
+    localStorage.setItem(NAV_PREFS_KEY, JSON.stringify(normalized));
+    return normalized;
+}
+
+function updateNavigationActiveState(page) {
+    document.querySelectorAll('.nav-item').forEach(item => {
+        const itemPage = item.getAttribute('data-page');
+        if (itemPage === page || (itemPage === 'more' && MAIN_NAV_MORE_PAGES.has(page))) {
+            item.classList.add('active');
+        } else {
+            item.classList.remove('active');
+        }
+    });
+}
+
+function applyNavigationPreferences() {
+    const mainNav = document.getElementById('mainNav');
+    if (!mainNav) return;
+
+    const prefs = getNavPreferences();
+    const hiddenSet = new Set(prefs.hidden);
+    const itemsByPage = new Map();
+    mainNav.querySelectorAll('.nav-item[data-page]').forEach(item => {
+        const page = item.getAttribute('data-page');
+        if (page) itemsByPage.set(page, item);
+    });
+
+    prefs.order.forEach((page) => {
+        const item = itemsByPage.get(page);
+        if (item) {
+            mainNav.appendChild(item);
+        }
+    });
+
+    itemsByPage.forEach((item, page) => {
+        const isHidden = hiddenSet.has(page);
+        item.classList.toggle('nav-item-hidden', isHidden);
+        if (isHidden) {
+            item.setAttribute('aria-hidden', 'true');
+            item.setAttribute('tabindex', '-1');
+        } else {
+            item.removeAttribute('aria-hidden');
+            item.removeAttribute('tabindex');
+        }
+    });
+
+    updateNavigationActiveState(window.currentPage);
+}
+
+function getNavCustomizationState() {
+    const prefs = getNavPreferences();
+    const hiddenSet = new Set(prefs.hidden);
+    return {
+        items: prefs.order.map((page, index) => ({
+            id: page,
+            labelKey: NAV_LABEL_KEYS[page] || page,
+            visible: !hiddenSet.has(page),
+            locked: MAIN_NAV_LOCKED_PAGES.has(page),
+            canMoveUp: index > 0,
+            canMoveDown: index < prefs.order.length - 1
+        }))
+    };
+}
+
+function moveNavPage(page, direction) {
+    if (!MAIN_NAV_PAGES.includes(page)) return false;
+    const prefs = getNavPreferences();
+    const fromIndex = prefs.order.indexOf(page);
+    const toIndex = fromIndex + Number(direction || 0);
+
+    if (fromIndex < 0 || toIndex < 0 || toIndex >= prefs.order.length) return false;
+
+    [prefs.order[fromIndex], prefs.order[toIndex]] = [prefs.order[toIndex], prefs.order[fromIndex]];
+    saveNavPreferences(prefs);
+    applyNavigationPreferences();
+    return true;
+}
+
+function toggleNavPageVisibility(page) {
+    if (!MAIN_NAV_PAGES.includes(page) || MAIN_NAV_LOCKED_PAGES.has(page)) return false;
+    const prefs = getNavPreferences();
+    const hiddenSet = new Set(prefs.hidden);
+
+    if (hiddenSet.has(page)) {
+        hiddenSet.delete(page);
+    } else {
+        hiddenSet.add(page);
+    }
+
+    prefs.hidden = [...hiddenSet];
+    saveNavPreferences(prefs);
+    applyNavigationPreferences();
+    return true;
+}
+
+function resetNavCustomization() {
+    saveNavPreferences({ order: MAIN_NAV_PAGES, hidden: [] });
+    applyNavigationPreferences();
+}
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
@@ -38,6 +198,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Fallback if service not yet loaded
         document.documentElement.setAttribute('data-theme', savedTheme);
     }
+
+    // Apply navigation order/visibility customizations from previous sessions
+    applyNavigationPreferences();
 
     // Set up event listeners
     setupEventListeners();
@@ -340,17 +503,7 @@ function navigateTo(page) {
     window.location.hash = page;
 
     // Update navigation active state
-    // Secondary pages should highlight "More"
-    const morePages = ['statistics', 'challenge', 'store', 'athkar', 'settings', 'more', 'admin'];
-
-    document.querySelectorAll('.nav-item').forEach(item => {
-        const itemPage = item.getAttribute('data-page');
-        if (itemPage === page || (itemPage === 'more' && morePages.includes(page))) {
-            item.classList.add('active');
-        } else {
-            item.classList.remove('active');
-        }
-    });
+    updateNavigationActiveState(page);
 
     // Render page
     renderPage(page);
@@ -374,6 +527,12 @@ function navigateToHash() {
         navigateTo(targetPage);
     }
 }
+
+window.applyNavigationPreferences = applyNavigationPreferences;
+window.getNavCustomizationState = getNavCustomizationState;
+window.moveNavPage = moveNavPage;
+window.toggleNavPageVisibility = toggleNavPageVisibility;
+window.resetNavCustomization = resetNavCustomization;
 
 // Helper to wrap a promise with a timeout
 async function withTimeout(promise, timeoutMs, timeoutValue = null) {
