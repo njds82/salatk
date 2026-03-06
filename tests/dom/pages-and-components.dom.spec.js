@@ -376,6 +376,12 @@ describe('Pages render and handlers', () => {
         expect(moreForUser).toContain('more-grid');
         expect(moreForUser).not.toContain("navigateTo('admin')");
 
+        window.getVisibleMainNavPages = () => ['statistics', 'store'];
+        const moreCustomized = await window.renderMorePage();
+        expect(moreCustomized).not.toContain("navigateTo('statistics')");
+        expect(moreCustomized).not.toContain("navigateTo('store')");
+        expect(moreCustomized).toContain("navigateTo('athkar')");
+
         window.AuthManager.isAdmin = async () => true;
         const moreForAdmin = await window.renderMorePage();
         expect(moreForAdmin).toContain("navigateTo('admin')");

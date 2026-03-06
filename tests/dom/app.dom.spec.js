@@ -244,18 +244,18 @@ describe('App controller', () => {
 
         window.applyNavigationPreferences();
 
-        const pages = [...window.document.querySelectorAll('#mainNav .nav-item')]
+        const pages = [...window.document.querySelectorAll('#mainNav .nav-item:not(.nav-item-hidden)')]
             .map((item) => item.getAttribute('data-page'));
         expect(pages).toEqual([
             'more',
             'daily-prayers',
             'qada-prayers',
-            'habits',
             'leaderboard',
             'daily-tasks',
             'time-management'
         ]);
         expect(window.document.querySelector('.nav-item[data-page="habits"]').classList.contains('nav-item-hidden')).toBe(true);
+        expect(window.document.querySelector('.nav-item[data-page="statistics"]').classList.contains('nav-item-hidden')).toBe(true);
         expect(window.document.querySelector('.nav-item[data-page="daily-prayers"]').classList.contains('nav-item-hidden')).toBe(false);
 
         cleanup();
@@ -267,9 +267,11 @@ describe('App controller', () => {
         expect(window.toggleNavPageVisibility('daily-prayers')).toBe(false);
         expect(window.toggleNavPageVisibility('more')).toBe(false);
         expect(window.toggleNavPageVisibility('qada-prayers')).toBe(true);
+        expect(window.toggleNavPageVisibility('statistics')).toBe(true);
 
         let state = window.getNavCustomizationState();
         expect(state.items.find(item => item.id === 'qada-prayers').visible).toBe(false);
+        expect(state.items.find(item => item.id === 'statistics').visible).toBe(true);
 
         expect(window.moveNavPage('more', -1)).toBe(true);
         state = window.getNavCustomizationState();
@@ -284,9 +286,22 @@ describe('App controller', () => {
             'leaderboard',
             'daily-tasks',
             'time-management',
+            'more',
+            'statistics',
+            'challenge',
+            'store',
+            'athkar',
+            'settings'
+        ]);
+        expect(state.items.filter(item => item.visible).map(item => item.id)).toEqual([
+            'daily-prayers',
+            'qada-prayers',
+            'habits',
+            'leaderboard',
+            'daily-tasks',
+            'time-management',
             'more'
         ]);
-        expect(state.items.every(item => item.visible)).toBe(true);
 
         cleanup();
     });

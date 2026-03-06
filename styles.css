@@ -59,6 +59,8 @@
     --spacing-lg: 28px;
     --spacing-xl: 40px;
     --spacing-2xl: 60px;
+    --desktop-header-height: calc(40px + (var(--spacing-md) * 2));
+    --desktop-nav-top: calc(var(--desktop-header-height) + var(--spacing-lg));
 
     /* Transitions */
     --transition-fast: 200ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -703,6 +705,7 @@ body::after {
     padding: var(--spacing-lg);
     display: flex;
     gap: var(--spacing-xl);
+    align-items: flex-start;
 }
 
 /* ========================================
@@ -710,8 +713,14 @@ body::after {
    ======================================== */
 
 .main-nav {
+    position: sticky;
+    top: var(--desktop-nav-top);
     flex-shrink: 0;
     width: 236px;
+    max-height: calc(100vh - var(--desktop-nav-top) - var(--spacing-lg));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -720,6 +729,15 @@ body::after {
     border-radius: 18px;
     background: linear-gradient(180deg, var(--color-bg-card), var(--color-bg-elevated));
     box-shadow: var(--shadow-sm);
+}
+
+.main-nav::-webkit-scrollbar {
+    width: 7px;
+}
+
+.main-nav::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 999px;
 }
 
 .nav-item {

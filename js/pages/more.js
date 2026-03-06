@@ -35,6 +35,12 @@ async function renderMorePage() {
             color: 'var(--color-text-secondary)' // Using secondary here as settings is utility
         }
     ];
+    const extractablePages = new Set(['statistics', 'challenge', 'store', 'athkar', 'settings']);
+    const visibleMainNavPages = new Set(
+        typeof window.getVisibleMainNavPages === 'function'
+            ? window.getVisibleMainNavPages()
+            : []
+    );
 
     const isAdmin = window.AuthManager?.isAdmin ? await window.AuthManager.isAdmin() : false;
     if (isAdmin) {
@@ -45,22 +51,32 @@ async function renderMorePage() {
             color: 'var(--color-danger)'
         });
     }
+    const filteredItems = items.filter(item => !extractablePages.has(item.id) || !visibleMainNavPages.has(item.id));
+    const body = filteredItems.length
+        ? `
+            <div class="card-grid more-grid" style="grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: var(--spacing-lg);">
+                ${filteredItems.map(item => `
+                    <div class="card more-card" onclick="navigateTo('${item.id}')" style="cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: var(--spacing-xl); gap: var(--spacing-lg); transition: transform 0.2s;">
+                        <div style="color: ${item.color}; transform: scale(1.5); margin-bottom: 8px;">
+                            ${item.icon}
+                        </div>
+                        <span style="font-weight: 700; font-size: 1.1em; color: var(--color-text-primary);">${t(item.label)}</span>
+                    </div>
+                `).join('')}
+            </div>
+        `
+        : `
+            <div class="card" style="text-align:center; color: var(--color-text-secondary);">
+                ${t('more_empty_customized')}
+            </div>
+        `;
 
     return `
         <div class="page-header">
             <h1 class="page-title">${t('nav_more')}</h1>
         </div>
 
-        <div class="card-grid more-grid" style="grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: var(--spacing-lg);">
-            ${items.map(item => `
-                <div class="card more-card" onclick="navigateTo('${item.id}')" style="cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: var(--spacing-xl); gap: var(--spacing-lg); transition: transform 0.2s;">
-                    <div style="color: ${item.color}; transform: scale(1.5); margin-bottom: 8px;">
-                        ${item.icon}
-                    </div>
-                    <span style="font-weight: 700; font-size: 1.1em; color: var(--color-text-primary);">${t(item.label)}</span>
-                </div>
-            `).join('')}
-        </div>
+        ${body}
     `;
 }
 

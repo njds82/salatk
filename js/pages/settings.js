@@ -235,6 +235,7 @@ async function renderSettingsPage() {
                             <span class="nav-customize-name">${t(item.labelKey)}</span>
                             <div class="nav-customize-subline">
                                 <span class="nav-customize-state">${item.visible ? t('nav_customize_visible') : t('nav_customize_hidden')}</span>
+                                ${item.fromMore ? `<span class="nav-customize-badge">${t('nav_customize_from_more')}</span>` : ''}
                                 ${item.locked ? `<span class="nav-customize-badge">${t('nav_customize_required')}</span>` : ''}
                             </div>
                         </div>

@@ -24,7 +24,7 @@ const VALID_PAGES = new Set([
     'admin'
 ]);
 const HEAVY_PAGES = new Set(['settings', 'statistics', 'habits', 'store', 'leaderboard', 'admin']);
-const MAIN_NAV_PAGES = Object.freeze([
+const MAIN_NAV_PRIMARY_PAGES = Object.freeze([
     'daily-prayers',
     'qada-prayers',
     'habits',
@@ -33,7 +33,19 @@ const MAIN_NAV_PAGES = Object.freeze([
     'time-management',
     'more'
 ]);
+const MAIN_NAV_EXTRACTABLE_PAGES = Object.freeze([
+    'statistics',
+    'challenge',
+    'store',
+    'athkar',
+    'settings'
+]);
+const MAIN_NAV_PAGES = Object.freeze([
+    ...MAIN_NAV_PRIMARY_PAGES,
+    ...MAIN_NAV_EXTRACTABLE_PAGES
+]);
 const MAIN_NAV_LOCKED_PAGES = new Set(['daily-prayers', 'more']);
+const MAIN_NAV_DEFAULT_HIDDEN_PAGES = new Set(MAIN_NAV_EXTRACTABLE_PAGES);
 const MAIN_NAV_MORE_PAGES = new Set(['statistics', 'challenge', 'store', 'athkar', 'settings', 'more', 'admin']);
 const NAV_PREFS_KEY = 'salatk_nav_preferences_v1';
 const NAV_LABEL_KEYS = Object.freeze({
@@ -43,13 +55,33 @@ const NAV_LABEL_KEYS = Object.freeze({
     leaderboard: 'nav_leaderboard',
     'daily-tasks': 'nav_daily_tasks',
     'time-management': 'nav_time_management',
-    more: 'nav_more'
+    more: 'nav_more',
+    statistics: 'nav_statistics',
+    challenge: 'nav_challenge',
+    store: 'nav_store',
+    athkar: 'nav_athkar',
+    settings: 'nav_settings'
+});
+const NAV_ITEM_ICONS = Object.freeze({
+    'daily-prayers': '<svg width="24" height="24" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="12" rx="2" stroke="currentColor" stroke-width="2" fill="none" /><path d="M8 6 L12 10 L16 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" /></svg>',
+    'qada-prayers': '<svg width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" fill="none" /><path d="M12 6 L12 12 L16 14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" /></svg>',
+    habits: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M12 2 L14 9 L21 9 L15.5 13.5 L17.5 21 L12 16.5 L6.5 21 L8.5 13.5 L3 9 L10 9 Z" stroke="currentColor" stroke-width="2" fill="none" /></svg>',
+    leaderboard: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M12 2 L15 8 L22 9 L17 14 L18.5 21 L12 17.5 L5.5 21 L7 14 L2 9 L9 8 Z" stroke="currentColor" stroke-width="2" fill="none" /></svg>',
+    'daily-tasks': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M8 11h8"></path><path d="M8 7h8"></path><path d="m9 15 2 2 4-4"></path></svg>',
+    'time-management': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 3"></path><path d="M4 4h4"></path><path d="M16 4h4"></path></svg>',
+    more: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>',
+    statistics: '<svg width="24" height="24" viewBox="0 0 24 24"><rect x="4" y="14" width="4" height="7" stroke="currentColor" stroke-width="2" fill="none" /><rect x="10" y="9" width="4" height="12" stroke="currentColor" stroke-width="2" fill="none" /><rect x="16" y="3" width="4" height="18" stroke="currentColor" stroke-width="2" fill="none" /></svg>',
+    challenge: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="currentColor" stroke-width="2" fill="none" /></svg>',
+    store: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg>',
+    athkar: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>',
+    settings: '<svg width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" fill="none" /><path d="M12 3 L12 5 M12 19 L12 21 M3 12 L5 12 M19 12 L21 12 M5.5 5.5 L7 7 M17 17 L18.5 18.5 M18.5 5.5 L17 7 M7 17 L5.5 18.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>'
 });
 let renderRequestToken = 0;
 
 function normalizeNavPreferences(rawPrefs) {
     const rawOrder = Array.isArray(rawPrefs?.order) ? rawPrefs.order : [];
     const rawHidden = Array.isArray(rawPrefs?.hidden) ? rawPrefs.hidden : [];
+    const hasExtractableConfig = MAIN_NAV_EXTRACTABLE_PAGES.some((page) => rawOrder.includes(page) || rawHidden.includes(page));
 
     const seen = new Set();
     const order = [];
@@ -62,7 +94,7 @@ function normalizeNavPreferences(rawPrefs) {
         if (!seen.has(page)) order.push(page);
     });
 
-    const hiddenSet = new Set();
+    const hiddenSet = hasExtractableConfig ? new Set() : new Set(MAIN_NAV_DEFAULT_HIDDEN_PAGES);
     rawHidden.forEach((page) => {
         if (!MAIN_NAV_PAGES.includes(page)) return;
         if (MAIN_NAV_LOCKED_PAGES.has(page)) return;
@@ -90,10 +122,39 @@ function saveNavPreferences(nextPrefs) {
     return normalized;
 }
 
+function createNavItemElement(page) {
+    const labelKey = NAV_LABEL_KEYS[page];
+    const icon = NAV_ITEM_ICONS[page];
+    if (!labelKey || !icon) return null;
+
+    const item = document.createElement('a');
+    item.href = `#${page}`;
+    item.className = 'nav-item';
+    item.setAttribute('data-page', page);
+    const label = typeof window.t === 'function' ? t(labelKey) : labelKey;
+    item.innerHTML = `${icon}<span data-i18n="${labelKey}">${label}</span>`;
+    return item;
+}
+
+function ensureNavigationItems(mainNav) {
+    MAIN_NAV_PAGES.forEach((page) => {
+        const existing = mainNav.querySelector(`.nav-item[data-page="${page}"]`);
+        if (existing) return;
+        const created = createNavItemElement(page);
+        if (created) mainNav.appendChild(created);
+    });
+}
+
 function updateNavigationActiveState(page) {
+    const pageItem = page
+        ? document.querySelector(`.nav-item[data-page="${page}"]:not(.nav-item-hidden)`)
+        : null;
+    const shouldHighlightMore = MAIN_NAV_MORE_PAGES.has(page) && !pageItem;
+
     document.querySelectorAll('.nav-item').forEach(item => {
         const itemPage = item.getAttribute('data-page');
-        if (itemPage === page || (itemPage === 'more' && MAIN_NAV_MORE_PAGES.has(page))) {
+        const isHidden = item.classList.contains('nav-item-hidden');
+        if (!isHidden && (itemPage === page || (itemPage === 'more' && shouldHighlightMore))) {
             item.classList.add('active');
         } else {
             item.classList.remove('active');
@@ -104,6 +165,7 @@ function updateNavigationActiveState(page) {
 function applyNavigationPreferences() {
     const mainNav = document.getElementById('mainNav');
     if (!mainNav) return;
+    ensureNavigationItems(mainNav);
 
     const prefs = getNavPreferences();
     const hiddenSet = new Set(prefs.hidden);
@@ -144,10 +206,17 @@ function getNavCustomizationState() {
             labelKey: NAV_LABEL_KEYS[page] || page,
             visible: !hiddenSet.has(page),
             locked: MAIN_NAV_LOCKED_PAGES.has(page),
+            fromMore: MAIN_NAV_EXTRACTABLE_PAGES.includes(page),
             canMoveUp: index > 0,
             canMoveDown: index < prefs.order.length - 1
         }))
     };
+}
+
+function getVisibleMainNavPages() {
+    const prefs = getNavPreferences();
+    const hiddenSet = new Set(prefs.hidden);
+    return prefs.order.filter((page) => !hiddenSet.has(page));
 }
 
 function moveNavPage(page, direction) {
@@ -182,7 +251,7 @@ function toggleNavPageVisibility(page) {
 }
 
 function resetNavCustomization() {
-    saveNavPreferences({ order: MAIN_NAV_PAGES, hidden: [] });
+    saveNavPreferences({ order: MAIN_NAV_PAGES, hidden: [...MAIN_NAV_DEFAULT_HIDDEN_PAGES] });
     applyNavigationPreferences();
 }
 
@@ -401,15 +470,16 @@ function setupEventListeners() {
 
     // Navigation
     setupMobileNavDrawer();
-
-    document.querySelectorAll('.nav-item').forEach(item => {
-        item.addEventListener('click', (e) => {
+    const mainNav = document.getElementById('mainNav');
+    if (mainNav) {
+        mainNav.addEventListener('click', (e) => {
+            const item = e.target.closest('.nav-item[data-page]');
+            if (!item || !mainNav.contains(item) || item.classList.contains('nav-item-hidden')) return;
             e.preventDefault();
             const page = item.getAttribute('data-page');
-            closeMobileNavDrawer();
             navigateTo(page);
         });
-    });
+    }
 
     // Notification Center
     const notifToggle = document.getElementById('notifToggle');
@@ -530,6 +600,7 @@ function navigateToHash() {
 
 window.applyNavigationPreferences = applyNavigationPreferences;
 window.getNavCustomizationState = getNavCustomizationState;
+window.getVisibleMainNavPages = getVisibleMainNavPages;
 window.moveNavPage = moveNavPage;
 window.toggleNavPageVisibility = toggleNavPageVisibility;
 window.resetNavCustomization = resetNavCustomization;

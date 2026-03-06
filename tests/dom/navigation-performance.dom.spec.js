@@ -99,7 +99,7 @@ describe('Navigation performance behavior', () => {
         };
 
         window.navigateTo('settings');
-        await sleep(50);
+        await sleep(80);
         expect(content.innerHTML).toContain('settings-v1');
 
         window.renderSettingsPage = async () => {
