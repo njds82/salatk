@@ -228,29 +228,35 @@ async function renderSettingsPage() {
                 ${t('nav_customize_subtitle')}
             </p>
             <div class="nav-customize-list">
-                ${navCustomizationState.items.map(item => `
-                    <div class="nav-customize-row">
+                ${navCustomizationState.items.map((item, index) => `
+                    <div class="nav-customize-row ${item.visible ? '' : 'is-hidden'}">
+                        <div class="nav-customize-index">${index + 1}</div>
                         <div class="nav-customize-meta">
                             <span class="nav-customize-name">${t(item.labelKey)}</span>
-                            ${item.locked ? `<span class="nav-customize-badge">${t('nav_customize_required')}</span>` : ''}
+                            <div class="nav-customize-subline">
+                                <span class="nav-customize-state">${item.visible ? t('nav_customize_visible') : t('nav_customize_hidden')}</span>
+                                ${item.locked ? `<span class="nav-customize-badge">${t('nav_customize_required')}</span>` : ''}
+                            </div>
                         </div>
                         <div class="nav-customize-actions">
+                            <div class="nav-customize-order">
+                                <button
+                                    class="nav-customize-order-btn"
+                                    onclick="handleMoveNavPage('${item.id}', -1)"
+                                    ${item.canMoveUp ? '' : 'disabled'}
+                                    title="${t('nav_customize_move_up')}"
+                                    aria-label="${t('nav_customize_move_up')}"
+                                >↑</button>
+                                <button
+                                    class="nav-customize-order-btn"
+                                    onclick="handleMoveNavPage('${item.id}', 1)"
+                                    ${item.canMoveDown ? '' : 'disabled'}
+                                    title="${t('nav_customize_move_down')}"
+                                    aria-label="${t('nav_customize_move_down')}"
+                                >↓</button>
+                            </div>
                             <button
-                                class="btn btn-secondary btn-sm nav-customize-btn"
-                                onclick="handleMoveNavPage('${item.id}', -1)"
-                                ${item.canMoveUp ? '' : 'disabled'}
-                                title="${t('nav_customize_move_up')}"
-                                aria-label="${t('nav_customize_move_up')}"
-                            >↑</button>
-                            <button
-                                class="btn btn-secondary btn-sm nav-customize-btn"
-                                onclick="handleMoveNavPage('${item.id}', 1)"
-                                ${item.canMoveDown ? '' : 'disabled'}
-                                title="${t('nav_customize_move_down')}"
-                                aria-label="${t('nav_customize_move_down')}"
-                            >↓</button>
-                            <button
-                                class="btn btn-sm nav-customize-visibility ${item.visible ? 'btn-secondary' : 'btn-success'}"
+                                class="btn btn-sm nav-customize-toggle ${item.visible ? 'btn-secondary' : 'btn-primary'}"
                                 onclick="handleToggleNavPageVisibility('${item.id}')"
                                 ${item.locked ? 'disabled' : ''}
                             >
@@ -260,9 +266,11 @@ async function renderSettingsPage() {
                     </div>
                 `).join('')}
             </div>
-            <button class="btn btn-secondary btn-sm" style="margin-top: var(--spacing-md);" onclick="handleResetNavCustomization()">
-                ${t('nav_customize_reset')}
-            </button>
+            <div class="nav-customize-footer">
+                <button class="btn btn-secondary btn-sm nav-customize-reset" onclick="handleResetNavCustomization()">
+                    ${t('nav_customize_reset')}
+                </button>
+            </div>
         </div>
         
         <!-- Calculation Settings -->
