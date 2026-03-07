@@ -154,6 +154,11 @@ async function handlePrayerPerformed(prayerKey) {
             await updatePointsDisplay();
             // Ensure card data and points stay synced.
             await updatePrayerCard(prayerKey);
+            // Activate variable connections
+            if (window.VariableService && window.VariableManager) {
+                const link = VariableService.getForElement('prayer', prayerKey);
+                if (link && link.trigger === 'done') VariableManager.activate(link.variable, 'prayer', prayerKey, 'done');
+            }
         } else {
             throw new Error(t('error_general'));
         }
@@ -182,6 +187,11 @@ async function handlePrayerMissed(prayerKey) {
             showToast(t('prayer_missed_message'), 'warning');
             await updatePointsDisplay();
             await updatePrayerCard(prayerKey);
+            // Activate variable connections
+            if (window.VariableService && window.VariableManager) {
+                const link = VariableService.getForElement('prayer', prayerKey);
+                if (link && link.trigger === 'missed') VariableManager.activate(link.variable, 'prayer', prayerKey, 'missed');
+            }
         } else {
             throw new Error(t('error_general'));
         }
@@ -192,3 +202,25 @@ async function handlePrayerMissed(prayerKey) {
         await updatePrayerCard(prayerKey);
     }
 }
+
+// ── Variable Connection: listen for activations targeting a prayer ──
+window.addEventListener('variableActivated', async (e) => {
+    if (!e.detail || window.currentPage !== 'daily-prayers') return;
+    const { targets, eventValue } = e.detail;
+    for (const target of targets) {
+        if (target.elementType !== 'prayer') continue;
+        const prayerKey = target.elementId;
+        if (!canEditDate(window.selectedDate)) continue;
+        if (eventValue === 'done') {
+            await PrayerService.markPrayer(prayerKey, window.selectedDate, 'done');
+            await updatePrayerCard(prayerKey);
+            await updatePointsDisplay();
+        } else if (eventValue === 'missed') {
+            await PrayerService.markPrayer(prayerKey, window.selectedDate, 'missed');
+            await updatePrayerCard(prayerKey);
+            await updatePointsDisplay();
+        }
+    }
+});
+
+window.showPrayerVariableModal = showPrayerVariableModal;

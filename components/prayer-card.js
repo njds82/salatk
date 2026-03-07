@@ -2,6 +2,13 @@
 // Prayer Card Component
 // ========================================
 
+function getPrayerVariableBadge(prayerKey) {
+    if (!window.VariableService) return '';
+    const link = VariableService.getForElement('prayer', prayerKey);
+    if (!link) return '';
+    return `<span class="variable-badge" onclick="showPrayerVariableModal('${prayerKey}')" title="${t('enter_variable')}">🔗 ${link.variable}</span>`;
+}
+
 function createPrayerCard(prayerKey, status = null, prayerTime = null, isTimeValid = true, disabledMessage = null) {
     const prayer = PRAYERS[prayerKey];
     const prayerName = t(prayer.nameKey);
@@ -19,12 +26,15 @@ function createPrayerCard(prayerKey, status = null, prayerTime = null, isTimeVal
     const isDisabled = !isTimeValid;
     const clickHandler = isDisabled ? `showToast('${disabledMessage || t('prayer_time_not_reached')}', 'warning')` : '';
 
+    const variableBadge = getPrayerVariableBadge(prayerKey);
+
     return `
         <div class="prayer-card ${statusClass}">
             <div class="prayer-header">
                 <div class="prayer-info">
-                    <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+                    <div style="display: flex; align-items: center; gap: var(--spacing-sm); flex-wrap: wrap;">
                         <h3>${prayerName}</h3>
+                        ${variableBadge}
                         <div class="options-menu">
                             <button class="options-btn">
                                 <svg width="20" height="20" viewBox="0 0 20 20">
@@ -40,6 +50,9 @@ function createPrayerCard(prayerKey, status = null, prayerTime = null, isTimeVal
                                 </button>
                                 <button class="dropdown-item danger" onclick="handleResetPrayer('${prayerKey}')">
                                     <span>↺</span> ${t('reset_decision')}
+                                </button>
+                                <button class="dropdown-item" onclick="showPrayerVariableModal('${prayerKey}')" style="border-top: 1px solid var(--color-border); margin-top: 4px; padding-top: 8px;">
+                                    <span>🔗</span> ${t('enter_variable')}
                                 </button>
                             </div>
                         </div>
@@ -80,6 +93,17 @@ function createPrayerCard(prayerKey, status = null, prayerTime = null, isTimeVal
             </div>
         </div>
     `;
+}
+
+function showPrayerVariableModal(prayerKey) {
+    if (!window.VariableManager) return;
+    const triggers = [
+        { value: 'done', label: t('performed') },
+        { value: 'missed', label: t('missed') }
+    ];
+    VariableManager.showAssignModal('prayer', prayerKey, triggers, () => {
+        updatePrayerCard(prayerKey);
+    });
 }
 
 async function handleResetPrayer(prayerKey) {

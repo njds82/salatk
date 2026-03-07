@@ -151,11 +151,34 @@ async function handleMarkHabit(habitId, action) {
         showToast(t('habit_marked_message'), 'success');
         await updatePointsDisplay();
         await updateHabitCard(habitId);
+        // Activate variable connections
+        if (window.VariableService && window.VariableManager) {
+            const link = VariableService.getForElement('habit', habitId);
+            if (link && link.trigger === action) VariableManager.activate(link.variable, 'habit', habitId, action);
+        }
     } catch (error) {
         console.error('Error in handleMarkHabit:', error);
         showToast(t('error_general'), 'error');
     }
 }
+
+// ── Variable Connection: listen for activations targeting a habit ──
+window.addEventListener('variableActivated', async (e) => {
+    if (!e.detail || window.currentPage !== 'habits') return;
+    const { targets, eventValue } = e.detail;
+    for (const target of targets) {
+        if (target.elementType !== 'habit') continue;
+        const habitId = target.elementId;
+        if (!canEditDate(window.selectedDate)) continue;
+        // Only supported actions for habits
+        if (['done', 'committed', 'avoided'].includes(eventValue)) {
+            await HabitService.logAction(habitId, window.selectedDate, eventValue);
+            await updateHabitCard(habitId);
+            await updatePointsDisplay();
+        }
+    }
+});
+
 
 function renderHabitStatsSection(titleKey, stats) {
     const statItems = stats.items || [];

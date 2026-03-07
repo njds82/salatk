@@ -17,6 +17,10 @@ async function createHabitCard(habit, cardMeta = null) {
     }
 
     const isWorshipHabit = habit.type === 'worship';
+    const variableLink = window.VariableService ? VariableService.getForElement('habit', habit.id) : null;
+    const variableBadge = variableLink
+        ? `<span class="variable-badge" onclick="showHabitVariableModal('${habit.id}', '${habit.type}')" title="${typeof t === 'function' ? t('enter_variable') : 'المتغير'}">🔗 ${variableLink.variable}</span>`
+        : '';
 
     return `
         <div class="card">
@@ -24,6 +28,7 @@ async function createHabitCard(habit, cardMeta = null) {
                 <div class="habit-header-main">
                     <div class="habit-header-row">
                         <h3 class="habit-name">${habit.name}</h3>
+                        ${variableBadge}
                         <button class="btn btn-secondary habit-details-btn" onclick="showHabitDetailsModal('${habit.id}')">
                             ${t('details')}
                         </button>
@@ -51,6 +56,9 @@ async function createHabitCard(habit, cardMeta = null) {
                                 </button>
                                 <button class="dropdown-item danger" onclick="handleDeleteHabit('${habit.id}')" style="border-top: 1px solid var(--color-border); margin-top: 4px; padding-top: 8px;">
                                     <span>🗑</span> ${t('delete')}
+                                </button>
+                                <button class="dropdown-item" onclick="showHabitVariableModal('${habit.id}', '${habit.type}')" style="border-top: 1px solid var(--color-border); margin-top: 4px; padding-top: 8px;">
+                                    <span>🔗</span> ${t('enter_variable')}
                                 </button>
                             </div>
                         </div>
@@ -117,3 +125,19 @@ async function handleResetHabit(habitId) {
         showToast(t('error_general'), 'error');
     }
 }
+
+function showHabitVariableModal(habitId, habitType) {
+    if (!window.VariableManager) return;
+    const isWorship = habitType === 'worship';
+    const triggers = isWorship
+        ? [{ value: 'done', label: t('mark_done') }]
+        : [
+            { value: 'committed', label: t('mark_committed') },
+            { value: 'avoided', label: t('mark_avoided') }
+          ];
+    VariableManager.showAssignModal('habit', habitId, triggers, () => {
+        updateHabitCard(habitId);
+    });
+}
+
+window.showHabitVariableModal = showHabitVariableModal;

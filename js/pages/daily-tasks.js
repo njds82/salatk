@@ -27,6 +27,10 @@ function getTaskPriorityLabel(priority) {
 
 function renderTaskCard(task) {
     const isCompleted = task.status === 'completed';
+    const variableLink = window.VariableService ? VariableService.getForElement('task', task.id) : null;
+    const variableBadge = variableLink
+        ? `<span class="variable-badge" onclick="showTaskVariableModal('${task.id}')" title="${typeof t === 'function' ? t('enter_variable') : 'المتغير'}">🔗 ${variableLink.variable}</span>`
+        : '';
 
     return `
         <div class="card task-card ${isCompleted ? 'task-card-completed' : 'task-card-pending'}" data-task-id="${task.id}">
@@ -38,6 +42,7 @@ function renderTaskCard(task) {
                             ${getTaskPriorityLabel(task.priority)}
                         </span>
                         <span class="task-due-date">${formatDisplayDate(task.dueDate)}</span>
+                        ${variableBadge}
                     </div>
                 </div>
                 <div class="options-menu">
@@ -57,6 +62,9 @@ function renderTaskCard(task) {
                                 <span>🗑</span> ${t('task_delete')}
                             </button>
                         ` : ''}
+                        <button class="dropdown-item" onclick="showTaskVariableModal('${task.id}')" style="border-top: 1px solid var(--color-border); margin-top: 4px; padding-top: 8px;">
+                            <span>🔗</span> ${t('enter_variable')}
+                        </button>
                     </div>
                 </div>
             </div>
@@ -313,6 +321,11 @@ async function handleToggleTask(taskId, nextStatus) {
         await TaskService.toggleTaskStatus(taskId, nextStatus);
         await updatePointsDisplay();
         showToast(nextStatus === 'completed' ? t('task_completed_success') : t('task_reopened_success'), 'success');
+        // Activate variable connections on completion
+        if (nextStatus === 'completed' && window.VariableService && window.VariableManager) {
+            const link = VariableService.getForElement('task', taskId);
+            if (link && link.trigger === 'completed') VariableManager.activate(link.variable, 'task', taskId, 'completed');
+        }
         await renderPage('daily-tasks', true);
     } catch (error) {
         console.error('DailyTasks: Failed to toggle task status', error);
@@ -345,3 +358,35 @@ window.handleUpdateTask = handleUpdateTask;
 window.handleToggleTask = handleToggleTask;
 window.handleDeleteTask = handleDeleteTask;
 window.setTaskFilter = setTaskFilter;
+
+function showTaskVariableModal(taskId) {
+    if (!window.VariableManager) return;
+    const triggers = [
+        { value: 'completed', label: t('task_mark_complete') }
+    ];
+    VariableManager.showAssignModal('task', taskId, triggers, () => {
+        renderPage('daily-tasks', true);
+    });
+}
+
+window.showTaskVariableModal = showTaskVariableModal;
+
+// ── Variable Connection: listen for activations targeting a task ──
+window.addEventListener('variableActivated', async (e) => {
+    if (!e.detail || window.currentPage !== 'daily-tasks') return;
+    const { targets, eventValue } = e.detail;
+    for (const target of targets) {
+        if (target.elementType !== 'task') continue;
+        if (eventValue === 'completed') {
+            try {
+                await TaskService.toggleTaskStatus(target.elementId, 'completed');
+                await updatePointsDisplay();
+            } catch (err) {
+                console.warn('Variable auto-complete task failed', err);
+            }
+        }
+    }
+    if (targets.some(t => t.elementType === 'task')) {
+        await renderPage('daily-tasks', true);
+    }
+});

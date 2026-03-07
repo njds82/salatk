@@ -209,13 +209,28 @@ function renderPrayerTimesRow(prayerTimes) {
 }
 
 function renderTimePlanCard(plan) {
+    const variableLink = window.VariableService ? VariableService.getForElement('timeplan', plan.id) : null;
+    const variableBadge = variableLink
+        ? `<span class="variable-badge" onclick="showTimePlanVariableModal('${plan.id}')" title="${typeof t === 'function' ? t('enter_variable') : 'المتغير'}">🔗 ${variableLink.variable}</span>`
+        : '';
+    const isDone = plan.markedDone === true;
+
     return `
-        <div class="card time-plan-card" data-plan-id="${plan.id}">
+        <div class="card time-plan-card ${isDone ? 'time-plan-card-done' : ''}" data-plan-id="${plan.id}">
             <div class="time-plan-card-header">
                 <div class="time-plan-card-time">${normalizePlanTime(plan.startTime)} - ${normalizePlanTime(plan.endTime)}</div>
                 <div class="time-plan-card-actions">
+                    ${variableBadge}
                     <button class="btn btn-secondary btn-sm" onclick="showEditTimePlanModal('${plan.id}')">${t('edit')}</button>
                     <button class="btn btn-danger btn-sm" onclick="handleDeleteTimePlan('${plan.id}')">${t('delete')}</button>
+                    <button class="btn btn-sm ${isDone ? 'btn-secondary' : 'btn-success'}" onclick="handleMarkTimePlanDone('${plan.id}', ${!isDone})" title="${typeof t === 'function' ? t('enter_variable') : ''}"
+                        style="display: flex; align-items: center; gap: 4px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        ${isDone ? t('task_mark_pending') : t('mark_done')}
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="showTimePlanVariableModal('${plan.id}')" title="${typeof t === 'function' ? t('enter_variable') : ''}" style="padding: 4px 8px;">
+                        🔗
+                    </button>
                 </div>
             </div>
             <h3 class="time-plan-card-title">${escapeTimePlanText(plan.title)}</h3>
@@ -258,7 +273,10 @@ function renderDailySections(plans, sections) {
 
 async function renderDailyTimePlan(prayerTimes) {
     const selectedDate = window.timePlanDate || getTimePlanToday();
-    const dailyPlans = await TimePlanService.getDailyPlans(selectedDate);
+    const rawPlans = await TimePlanService.getDailyPlans(selectedDate);
+    // Inject markedDone state from localStorage
+    const doneMap = typeof getTimePlanDoneMap === 'function' ? getTimePlanDoneMap() : {};
+    const dailyPlans = (rawPlans || []).map(p => ({ ...p, markedDone: !!doneMap[p.id] }));
     const sections = getPrayerSections(prayerTimes);
     const displayDate = typeof formatDisplayDate === 'function' ? formatDisplayDate(selectedDate) : selectedDate;
 
@@ -641,3 +659,59 @@ window.showEditTimePlanModal = showEditTimePlanModal;
 window.handleDeleteTimePlan = handleDeleteTimePlan;
 window.handleCopyWeeklyToDay = handleCopyWeeklyToDay;
 window.fillTimePlanInput = fillTimePlanInput;
+
+// ── Time Plan: variable system ──
+
+// localStorage key for "done" marks on time plan cards (keyed by plan id + date)
+const TIME_PLAN_DONE_KEY = 'salatk_timeplan_done';
+
+function getTimePlanDoneMap() {
+    try { return JSON.parse(localStorage.getItem(TIME_PLAN_DONE_KEY) || '{}'); } catch { return {}; }
+}
+
+function setTimePlanDone(planId, isDone) {
+    const map = getTimePlanDoneMap();
+    if (isDone) { map[planId] = true; } else { delete map[planId]; }
+    localStorage.setItem(TIME_PLAN_DONE_KEY, JSON.stringify(map));
+}
+
+
+
+
+async function handleMarkTimePlanDone(planId, isDone) {
+    setTimePlanDone(planId, isDone);
+    // Activate variable connections on Done
+    if (isDone && window.VariableService && window.VariableManager) {
+        const link = VariableService.getForElement('timeplan', planId);
+        if (link && link.trigger === 'done') VariableManager.activate(link.variable, 'timeplan', planId, 'done');
+    }
+    renderPage('time-management', true);
+}
+
+function showTimePlanVariableModal(planId) {
+    if (!window.VariableManager) return;
+    const triggers = [
+        { value: 'done', label: typeof t === 'function' ? t('mark_done') : 'تم' }
+    ];
+    VariableManager.showAssignModal('timeplan', planId, triggers, () => {
+        renderPage('time-management', true);
+    });
+}
+
+window.handleMarkTimePlanDone = handleMarkTimePlanDone;
+window.showTimePlanVariableModal = showTimePlanVariableModal;
+
+// ── Variable Connection: listen for activations targeting a time plan ──
+window.addEventListener('variableActivated', async (e) => {
+    if (!e.detail || window.currentPage !== 'time-management') return;
+    const { targets, eventValue } = e.detail;
+    for (const target of targets) {
+        if (target.elementType !== 'timeplan') continue;
+        if (eventValue === 'done') {
+            setTimePlanDone(target.elementId, true);
+        }
+    }
+    if (targets.some(t => t.elementType === 'timeplan')) {
+        renderPage('time-management', true);
+    }
+});

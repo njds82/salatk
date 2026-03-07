@@ -551,6 +551,18 @@ const translations = {
         admin_notification_sent: 'تم إرسال الإشعار',
         admin_broadcast_sent: 'تم إرسال الإشعار الجماعي',
         admin_operation_failed: 'فشلت العملية الإدارية',
+
+        // Variable Connection System
+        enter_variable: 'أدخل متغير',
+        variable_label: 'المتغير',
+        variable_placeholder: '1-5 أحرف',
+        variable_hint: 'كلمة من 1 إلى 5 أحرف — العناصر التي تشترك في نفس المتغير تتفعل معاً',
+        variable_trigger: 'حدث التفعيل',
+        variable_saved: 'تم حفظ المتغير',
+        variable_removed: 'تم حذف المتغير',
+        variable_remove: 'إزالة المتغير',
+        variable_invalid: 'يجب أن يكون المتغير من 1 إلى 5 أحرف',
+        variable_activated: 'تم تفعيل المتغير:',
     },
 
     en: {
@@ -1101,6 +1113,18 @@ const translations = {
         admin_notification_sent: 'Notification sent successfully',
         admin_broadcast_sent: 'Broadcast notification sent',
         admin_operation_failed: 'Admin operation failed',
+
+        // Variable Connection System
+        enter_variable: 'Enter Variable',
+        variable_label: 'Variable',
+        variable_placeholder: '1–5 characters',
+        variable_hint: 'A word from 1 to 5 characters — elements sharing the same variable activate together',
+        variable_trigger: 'Trigger Event',
+        variable_saved: 'Variable saved',
+        variable_removed: 'Variable removed',
+        variable_remove: 'Remove Variable',
+        variable_invalid: 'Variable must be 1–5 characters',
+        variable_activated: 'Variable activated:',
     }
 };
 
