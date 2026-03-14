@@ -82,8 +82,7 @@ function setupAuthFormListeners(type) {
                 showToast(result.error.message, 'error');
             } else {
                 showToast(t(type === 'login' ? 'login_success' : 'signup_success'), 'success');
-                // Navigate to home instead of reloading
-                navigateTo('daily-prayers');
+                // Redirection is handled by the auth state change listener in app.js
             }
         } catch (err) {
             showToast(err.message, 'error');

@@ -290,7 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
                 // If it's a new login or we were previously unauthenticated, refresh UI
-                if (!oldSession && session) {
+                if (session) {
                     await updatePointsDisplay();
                     if (window.PrayerManager) {
                         const times = await PrayerManager.init();

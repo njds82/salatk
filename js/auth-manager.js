@@ -66,7 +66,7 @@ const AuthManager = {
             const { email, username: cleanUsername } = this._resolveAuthEmail(username);
 
             const options = {
-                emailRedirectTo: 'https://salatk.pages.dev/',
+                emailRedirectTo: window.location.origin,
                 data: {
                     full_name: fullName,
                     username: cleanUsername
@@ -84,12 +84,10 @@ const AuthManager = {
             }
 
             if (data?.user) {
-                // Ensure profile is updated, but don't block too long if it fails
-                try {
-                    await this.updateProfile({ username: cleanUsername });
-                } catch (e) {
-                    console.warn('AuthManager: Post-signup profile update failed or timed out', e);
-                }
+                // Update profile in background without blocking return
+                this.updateProfile({ username: cleanUsername }).catch(e => {
+                    console.warn('AuthManager: Post-signup profile update failed', e);
+                });
             }
 
             return { data, error };
