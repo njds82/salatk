@@ -3,6 +3,8 @@
 
 -- Keep schema deterministic if developers re-run seed manually.
 truncate table public.tasks restart identity cascade;
+truncate table public.time_plans restart identity cascade;
+truncate table public.variable_links restart identity cascade;
 truncate table public.owned_themes restart identity cascade;
 truncate table public.locations restart identity cascade;
 truncate table public.user_settings restart identity cascade;

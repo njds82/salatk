@@ -117,6 +117,32 @@ const SyncManager = {
                         renderPage('daily-tasks', true);
                     }
                     break;
+                case 'variable_links':
+                    if (window.VariableService?.init) {
+                        await VariableService.init({ force: true });
+                    }
+                    if (window.currentPage && ['daily-prayers', 'habits', 'daily-tasks', 'time-management'].includes(window.currentPage) && window.renderPage) {
+                        renderPage(window.currentPage, true);
+                    }
+                    break;
+                case 'time_plans':
+                    if (payload.new && window.TimePlanService?.syncDoneStateFromCloud && typeof payload.new.is_done === 'boolean') {
+                        TimePlanService.syncDoneStateFromCloud(
+                            payload.new.id,
+                            payload.new.is_done,
+                            payload.new.updated_at || payload.new.updatedAt || null,
+                            payload.new.user_id || null
+                        );
+                    }
+
+                    if (eventType === 'DELETE' && payload.old && window.TimePlanService?.clearDoneEntry) {
+                        TimePlanService.clearDoneEntry(payload.old.id, payload.old.user_id || null);
+                    }
+
+                    if (window.currentPage === 'time-management' && window.renderPage) {
+                        renderPage('time-management', true);
+                    }
+                    break;
                 case 'user_notifications':
                     if (eventType === 'INSERT' && payload.new) {
                         const title = payload.new.title || t('notifications_title');

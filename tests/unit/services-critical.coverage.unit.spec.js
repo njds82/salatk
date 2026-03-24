@@ -556,18 +556,28 @@ describe('Prayer Service Critical Coverage', () => {
 
 describe('Habit Service Critical Coverage', () => {
     it('covers helper methods and public CRUD/stat flows', async () => {
+        const today = new Date().toISOString().slice(0, 10);
+        const shiftDate = (dateStr, offsetDays) => {
+            const date = new Date(`${dateStr}T00:00:00.000Z`);
+            date.setUTCDate(date.getUTCDate() + offsetDays);
+            return date.toISOString().slice(0, 10);
+        };
+        const yesterday = shiftDate(today, -1);
+        const twoDaysAgo = shiftDate(today, -2);
+        const threeDaysAgo = shiftDate(today, -3);
+
         const { window, cleanup } = setupServiceWindow({
             scripts: ['js/services/points-service.js', 'js/services/habit-service.js'],
             tables: {
                 habits: [
-                    { id: 'h-w', user_id: 'test-user-id', name: 'Quran', type: 'worship', created_at: '2026-02-20T00:00:00.000Z' },
-                    { id: 'h-s', user_id: 'test-user-id', name: 'No gossip', type: 'sin', created_at: '2026-02-20T00:00:00.000Z' }
+                    { id: 'h-w', user_id: 'test-user-id', name: 'Quran', type: 'worship', created_at: `${twoDaysAgo}T00:00:00.000Z` },
+                    { id: 'h-s', user_id: 'test-user-id', name: 'No gossip', type: 'sin', created_at: `${twoDaysAgo}T00:00:00.000Z` }
                 ],
                 habit_history: [
-                    { user_id: 'test-user-id', habit_id: 'h-w', date: '2026-02-20', action: 'done', recorded_at: '2026-02-20T00:00:00.000Z' },
-                    { user_id: 'test-user-id', habit_id: 'h-w', date: '2026-02-21', action: 'done', recorded_at: '2026-02-21T00:00:00.000Z' },
-                    { user_id: 'test-user-id', habit_id: 'h-s', date: '2026-02-20', action: 'avoided', recorded_at: '2026-02-20T00:00:00.000Z' },
-                    { user_id: 'test-user-id', habit_id: 'h-s', date: '2026-02-21', action: 'committed', recorded_at: '2026-02-21T00:00:00.000Z' }
+                    { user_id: 'test-user-id', habit_id: 'h-w', date: twoDaysAgo, action: 'done', recorded_at: `${twoDaysAgo}T00:00:00.000Z` },
+                    { user_id: 'test-user-id', habit_id: 'h-w', date: yesterday, action: 'done', recorded_at: `${yesterday}T00:00:00.000Z` },
+                    { user_id: 'test-user-id', habit_id: 'h-s', date: twoDaysAgo, action: 'avoided', recorded_at: `${twoDaysAgo}T00:00:00.000Z` },
+                    { user_id: 'test-user-id', habit_id: 'h-s', date: yesterday, action: 'committed', recorded_at: `${yesterday}T00:00:00.000Z` }
                 ],
                 leaderboard: [{ user_id: 'test-user-id', total_points: 0 }],
                 points_history: []
@@ -581,27 +591,27 @@ describe('Habit Service Critical Coverage', () => {
         expect(window.HabitService._getWindowStart(-1)).toBeNull();
         expect(window.HabitService._getWindowStart(7)).toMatch(/^\d{4}-\d{2}-\d{2}$/);
 
-        const streak = window.HabitService._calculateCurrentStreak({ '2026-02-23': 'done', '2026-02-22': 'done' }, 'worship');
+        const streak = window.HabitService._calculateCurrentStreak({ [today]: 'done', [yesterday]: 'done' }, 'worship');
         expect(streak).toBeGreaterThanOrEqual(0);
-        const brokenStreak = window.HabitService._calculateCurrentStreak({ '2026-02-23': 'committed' }, 'worship');
+        const brokenStreak = window.HabitService._calculateCurrentStreak({ [today]: 'committed' }, 'worship');
         expect(brokenStreak).toBe(0);
 
         const longest = window.HabitService._calculateLongestStreak([
-            { date: '2026-02-20', action: 'done' },
-            { date: '2026-02-21', action: 'done' },
-            { date: '2026-02-23', action: 'done' }
+            { date: threeDaysAgo, action: 'done' },
+            { date: twoDaysAgo, action: 'done' },
+            { date: today, action: 'done' }
         ], 'worship');
         expect(longest).toBe(2);
 
         const worshipMetrics = window.HabitService._buildMetrics([
-            { date: '2026-02-20', action: 'done' },
-            { date: '2026-02-21', action: 'done' }
+            { date: twoDaysAgo, action: 'done' },
+            { date: yesterday, action: 'done' }
         ], 'worship', 30);
         expect(worshipMetrics.daysDone).toBe(2);
 
         const sinMetrics = window.HabitService._buildMetrics([
-            { date: '2026-02-20', action: 'avoided' },
-            { date: '2026-02-21', action: 'committed' }
+            { date: twoDaysAgo, action: 'avoided' },
+            { date: yesterday, action: 'committed' }
         ], 'sin', 30);
         expect(sinMetrics.daysCommitted).toBe(1);
 
@@ -617,9 +627,9 @@ describe('Habit Service Critical Coverage', () => {
         expect(window.supabaseClient.__tables.habits.find((h) => h.id === 'h-w')).toBeUndefined();
 
         const historyMap = await window.HabitService.getHistory('h-s');
-        expect(historyMap['2026-02-21']).toBe('committed');
+        expect(historyMap[yesterday]).toBe('committed');
 
-        const dailyActions = await window.HabitService.getDailyActions('2026-02-21');
+        const dailyActions = await window.HabitService.getDailyActions(yesterday);
         expect(dailyActions.length).toBeGreaterThan(0);
 
         // details + trend branch + null branch
@@ -639,9 +649,9 @@ describe('Habit Service Critical Coverage', () => {
 
         // getHabitsCardMeta branches
         window.supabaseClient.__tables.habit_history = [
-            { user_id: 'test-user-id', habit_id: 'h-s', date: '2026-02-21', action: 'committed', recorded_at: new Date().toISOString() }
+            { user_id: 'test-user-id', habit_id: 'h-s', date: yesterday, action: 'committed', recorded_at: new Date().toISOString() }
         ];
-        let cardMeta = await window.HabitService.getHabitsCardMeta('2026-02-21');
+        let cardMeta = await window.HabitService.getHabitsCardMeta(yesterday);
         expect(cardMeta.statusByHabitId).toEqual(expect.objectContaining({ 'h-s': 'committed' }));
         expect(cardMeta.streakByHabitId).toHaveProperty('h-s');
 

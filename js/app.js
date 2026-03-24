@@ -291,6 +291,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
                 // If it's a new login or we were previously unauthenticated, refresh UI
                 if (session) {
+                    if (window.VariableService) {
+                        await VariableService.init({ force: true });
+                    }
                     await updatePointsDisplay();
                     if (window.PrayerManager) {
                         const times = await PrayerManager.init();
@@ -376,6 +379,10 @@ async function checkAuthAndInit() {
     if (window.PrayerManager) {
         prayerTimesPromise = PrayerManager.init();
         initTasks.push(prayerTimesPromise);
+    }
+
+    if (window.VariableService) {
+        initTasks.push(VariableService.init());
     }
 
     // Wait for essential services

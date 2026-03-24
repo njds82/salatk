@@ -84,6 +84,8 @@ const TimePlanService = {
             notes: row.notes,
             startTime: this._normalizeTime(row.start_time),
             endTime: this._normalizeTime(row.end_time),
+            isDone: typeof row.is_done === 'boolean' ? row.is_done : undefined,
+            doneAt: row.done_at || null,
             createdAt: row.created_at,
             updatedAt: row.updated_at
         };
@@ -94,12 +96,216 @@ const TimePlanService = {
         return await window.AuthManager.getSession();
     },
 
+    _resolveUserIdSync() {
+        const memorySession = window.AuthManager?._session;
+        if (memorySession?.user?.id) return memorySession.user.id;
+
+        const snapshot = localStorage.getItem('salatk_auth_snapshot');
+        if (!snapshot) return null;
+
+        try {
+            const parsed = JSON.parse(snapshot);
+            return parsed?.user?.id || null;
+        } catch {
+            return null;
+        }
+    },
+
     async _withTimeout(promise, timeoutMs, timeoutValue = null) {
         let timeoutId;
         const timeoutPromise = new Promise((resolve) => {
             timeoutId = setTimeout(() => resolve(timeoutValue), timeoutMs);
         });
         return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timeoutId));
+    },
+
+    _getDoneStateKey(userId = this._resolveUserIdSync()) {
+        return `salatk_timeplan_done:${userId || 'anon'}`;
+    },
+
+    _parseDoneEntries(raw) {
+        if (!raw) return {};
+        try {
+            const parsed = JSON.parse(raw);
+            if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+                return {};
+            }
+
+            return Object.fromEntries(
+                Object.entries(parsed)
+                    .map(([planId, value]) => [planId, this._normalizeDoneEntry(value)])
+                    .filter(([, entry]) => Boolean(entry))
+            );
+        } catch {
+            return {};
+        }
+    },
+
+    _normalizeDoneEntry(entry) {
+        if (typeof entry === 'boolean') {
+            return {
+                value: entry,
+                updatedAt: null
+            };
+        }
+
+        if (!entry || typeof entry !== 'object') {
+            return null;
+        }
+
+        return {
+            value: Boolean(entry.value),
+            updatedAt: typeof entry.updatedAt === 'string' && entry.updatedAt.trim()
+                ? entry.updatedAt.trim()
+                : null
+        };
+    },
+
+    _readDoneEntries(userId = this._resolveUserIdSync()) {
+        const key = this._getDoneStateKey(userId);
+        const raw = localStorage.getItem(key);
+
+        if (raw) return this._parseDoneEntries(raw);
+
+        if (userId) {
+            const legacy = localStorage.getItem('salatk_timeplan_done');
+            if (legacy) return this._parseDoneEntries(legacy);
+        }
+
+        return {};
+    },
+
+    getDoneEntries() {
+        return this._readDoneEntries();
+    },
+
+    getDoneMap() {
+        const entries = this.getDoneEntries();
+        return Object.fromEntries(
+            Object.entries(entries).map(([planId, entry]) => [planId, Boolean(entry?.value)])
+        );
+    },
+
+    getDoneEntry(planId) {
+        if (!planId) return null;
+        const entries = this.getDoneEntries();
+        return entries[planId] ? { ...entries[planId] } : null;
+    },
+
+    _saveDoneEntries(userId, entries) {
+        const safeUserId = userId || null;
+        const key = this._getDoneStateKey(safeUserId);
+        localStorage.setItem(key, JSON.stringify(entries || {}));
+
+        if (safeUserId && localStorage.getItem('salatk_timeplan_done') !== null) {
+            localStorage.removeItem('salatk_timeplan_done');
+        }
+    },
+
+    _setDoneEntry(planId, value, updatedAt = new Date().toISOString(), userId = this._resolveUserIdSync()) {
+        const entries = this._readDoneEntries(userId);
+        entries[planId] = {
+            value: Boolean(value),
+            updatedAt: typeof updatedAt === 'string' && updatedAt.trim() ? updatedAt.trim() : new Date().toISOString()
+        };
+        this._saveDoneEntries(userId, entries);
+        return { ...entries[planId] };
+    },
+
+    syncDoneStateFromCloud(planId, isDone, updatedAt = null, userId = this._resolveUserIdSync()) {
+        if (!planId) return null;
+        const entries = this._readDoneEntries(userId);
+        entries[planId] = {
+            value: Boolean(isDone),
+            updatedAt: typeof updatedAt === 'string' && updatedAt.trim() ? updatedAt.trim() : new Date().toISOString()
+        };
+        this._saveDoneEntries(userId, entries);
+        return { ...entries[planId] };
+    },
+
+    clearDoneEntry(planId, userId = this._resolveUserIdSync()) {
+        if (!planId) return false;
+        const entries = this._readDoneEntries(userId);
+        if (!Object.prototype.hasOwnProperty.call(entries, planId)) return false;
+        delete entries[planId];
+        this._saveDoneEntries(userId, entries);
+        return true;
+    },
+
+    getPlanDoneState(planId) {
+        if (!planId) return false;
+        const map = this.getDoneMap();
+        return !!map[planId];
+    },
+
+    async setPlanDone(planId, isDone) {
+        if (!planId) {
+            return { success: false, synced: false, error: 'PLAN_ID_REQUIRED' };
+        }
+
+        const userId = this._resolveUserIdSync();
+        const localStamp = new Date().toISOString();
+        this._setDoneEntry(planId, isDone, localStamp, userId);
+
+        if (!window.supabaseClient) {
+            return { success: true, synced: false };
+        }
+
+        const session = await this._getSession();
+        if (!session?.user?.id) {
+            return { success: true, synced: false };
+        }
+
+        try {
+            const { data, error } = await this._withTimeout(
+                window.supabaseClient
+                    .from('time_plans')
+                    .update({
+                        is_done: Boolean(isDone)
+                    })
+                    .eq('user_id', session.user.id)
+                    .eq('id', planId)
+                    .select('*')
+                    .maybeSingle(),
+                8000,
+                { data: null, error: 'timeout' }
+            );
+
+            if (error === 'timeout') {
+                return {
+                    success: true,
+                    synced: false
+                };
+            }
+
+            if (error) {
+                throw error;
+            }
+
+            if (!data) {
+                return {
+                    success: true,
+                    synced: false
+                };
+            }
+
+            if (session.user.id) {
+                this.syncDoneStateFromCloud(planId, isDone, data?.updatedAt || data?.updated_at || localStamp, session.user.id);
+            }
+
+            return {
+                success: true,
+                synced: true,
+                plan: this._mapRow(data)
+            };
+        } catch (error) {
+            console.error('TimePlanService: Failed to sync plan done state', error);
+            return {
+                success: true,
+                synced: false,
+                error
+            };
+        }
     },
 
     async getDailyPlans(dateStr) {

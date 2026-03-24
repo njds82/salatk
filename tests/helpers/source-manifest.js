@@ -39,8 +39,10 @@ export const CLASSIC_SOURCE_FILES = [
     'js/services/settings-service.js',
     'js/services/task-service.js',
     'js/services/time-plan-service.js',
+    'js/services/variable-service.js',
     'js/supabaseClient.js',
     'js/sync-manager.js',
+    'js/variable-manager.js',
     'js/ui-helpers.js',
     'verify_hijri.js'
 ];

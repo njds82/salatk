@@ -154,7 +154,12 @@ async function handleMarkHabit(habitId, action) {
         // Activate variable connections
         if (window.VariableService && window.VariableManager) {
             const link = VariableService.getForElement('habit', habitId);
-            if (link && link.trigger === action) VariableManager.activate(link.variable, 'habit', habitId, action);
+            if (link && link.trigger === action) {
+                await VariableManager.activate(link.variable, 'habit', habitId, action, {
+                    date: window.selectedDate,
+                    page: window.currentPage
+                });
+            }
         }
     } catch (error) {
         console.error('Error in handleMarkHabit:', error);
@@ -165,18 +170,10 @@ async function handleMarkHabit(habitId, action) {
 // ── Variable Connection: listen for activations targeting a habit ──
 window.addEventListener('variableActivated', async (e) => {
     if (!e.detail || window.currentPage !== 'habits') return;
-    const { targets, eventValue } = e.detail;
-    for (const target of targets) {
-        if (target.elementType !== 'habit') continue;
-        const habitId = target.elementId;
-        if (!canEditDate(window.selectedDate)) continue;
-        // Only supported actions for habits
-        if (['done', 'committed', 'avoided'].includes(eventValue)) {
-            await HabitService.logAction(habitId, window.selectedDate, eventValue);
-            await updateHabitCard(habitId);
-            await updatePointsDisplay();
-        }
-    }
+    const relevantTargets = (e.detail.appliedTargets?.length ? e.detail.appliedTargets : e.detail.targets || [])
+        .filter((target) => target.elementType === 'habit');
+    if (relevantTargets.length === 0) return;
+    await renderPage('habits', true);
 });
 
 

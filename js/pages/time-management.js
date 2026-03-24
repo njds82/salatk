@@ -46,11 +46,43 @@ function getWeekdayLabel(index) {
     return t(key);
 }
 
-function setTimePlanView(view) {
+function resolveTimePlanDoneState(plan, doneEntries = {}) {
+    if (!plan) return false;
+
+    const localEntry = plan.id && doneEntries && Object.prototype.hasOwnProperty.call(doneEntries, plan.id)
+        ? doneEntries[plan.id]
+        : null;
+
+    if (localEntry && typeof localEntry === 'object') {
+        const localValue = Boolean(localEntry.value);
+        const localUpdatedAt = localEntry.updatedAt ? Date.parse(localEntry.updatedAt) : 0;
+        const cloudUpdatedAt = plan.updatedAt ? Date.parse(plan.updatedAt) : 0;
+
+        if (!Number.isNaN(localUpdatedAt) && (!cloudUpdatedAt || localUpdatedAt >= cloudUpdatedAt)) {
+            return localValue;
+        }
+    }
+
+    if (typeof plan.isDone === 'boolean') {
+        return plan.isDone;
+    }
+
+    if (localEntry && typeof localEntry === 'object') {
+        return Boolean(localEntry.value);
+    }
+
+    if (window.TimePlanService?.getPlanDoneState && plan.id) {
+        return TimePlanService.getPlanDoneState(plan.id);
+    }
+
+    return false;
+}
+
+async function setTimePlanView(view) {
     const safeView = view === 'weekly' ? 'weekly' : 'daily';
     window.timePlanView = safeView;
     localStorage.setItem('salatk_time_plan_view', safeView);
-    renderPage('time-management', true);
+    await renderPage('time-management', true);
 }
 
 function setTimePlanDate(dateStr) {
@@ -208,12 +240,12 @@ function renderPrayerTimesRow(prayerTimes) {
     `;
 }
 
-function renderTimePlanCard(plan) {
+function renderTimePlanCard(plan, doneEntries = {}) {
     const variableLink = window.VariableService ? VariableService.getForElement('timeplan', plan.id) : null;
     const variableBadge = variableLink
         ? `<span class="variable-badge" onclick="showTimePlanVariableModal('${plan.id}')" title="${typeof t === 'function' ? t('enter_variable') : 'المتغير'}">🔗 ${variableLink.variable}</span>`
         : '';
-    const isDone = plan.markedDone === true;
+    const isDone = resolveTimePlanDoneState(plan, doneEntries);
 
     return `
         <div class="card time-plan-card ${isDone ? 'time-plan-card-done' : ''}" data-plan-id="${plan.id}">
@@ -223,7 +255,7 @@ function renderTimePlanCard(plan) {
                     ${variableBadge}
                     <button class="btn btn-secondary btn-sm" onclick="showEditTimePlanModal('${plan.id}')">${t('edit')}</button>
                     <button class="btn btn-danger btn-sm" onclick="handleDeleteTimePlan('${plan.id}')">${t('delete')}</button>
-                    <button class="btn btn-sm ${isDone ? 'btn-secondary' : 'btn-success'}" onclick="handleMarkTimePlanDone('${plan.id}', ${!isDone})" title="${typeof t === 'function' ? t('enter_variable') : ''}"
+                    <button class="btn btn-sm ${isDone ? 'btn-secondary' : 'btn-success'}" onclick="handleMarkTimePlanDone('${plan.id}', ${!isDone})" title="${typeof t === 'function' ? (isDone ? t('task_mark_pending') : t('mark_done')) : ''}"
                         style="display: flex; align-items: center; gap: 4px;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         ${isDone ? t('task_mark_pending') : t('mark_done')}
@@ -239,7 +271,7 @@ function renderTimePlanCard(plan) {
     `;
 }
 
-function renderDailySections(plans, sections) {
+function renderDailySections(plans, sections, doneEntries = {}) {
     if (!plans || plans.length === 0) {
         return `<div class="time-plan-empty">${t('time_management_empty_daily')}</div>`;
     }
@@ -265,7 +297,7 @@ function renderDailySections(plans, sections) {
                         <div class="time-plan-section-title">${section.label}</div>
                         ${rangeText ? `<div class="time-plan-section-range">${rangeText}</div>` : ''}
                     </div>
-                    ${items.map(plan => renderTimePlanCard(plan)).join('')}
+                    ${items.map(plan => renderTimePlanCard(plan, doneEntries)).join('')}
                 </div>
             `;
         }).join('');
@@ -274,9 +306,8 @@ function renderDailySections(plans, sections) {
 async function renderDailyTimePlan(prayerTimes) {
     const selectedDate = window.timePlanDate || getTimePlanToday();
     const rawPlans = await TimePlanService.getDailyPlans(selectedDate);
-    // Inject markedDone state from localStorage
-    const doneMap = typeof getTimePlanDoneMap === 'function' ? getTimePlanDoneMap() : {};
-    const dailyPlans = (rawPlans || []).map(p => ({ ...p, markedDone: !!doneMap[p.id] }));
+    const doneEntries = typeof getTimePlanDoneEntries === 'function' ? getTimePlanDoneEntries() : {};
+    const dailyPlans = rawPlans || [];
     const sections = getPrayerSections(prayerTimes);
     const displayDate = typeof formatDisplayDate === 'function' ? formatDisplayDate(selectedDate) : selectedDate;
 
@@ -323,12 +354,13 @@ async function renderDailyTimePlan(prayerTimes) {
             ${renderPrayerTimesRow(prayerTimes)}
         </div>
 
-        ${renderDailySections(dailyPlans, sections)}
+        ${renderDailySections(dailyPlans, sections, doneEntries)}
     `;
 }
 
 async function renderWeeklyTimePlan() {
     const weeklyPlans = await TimePlanService.getWeeklyPlans();
+    const doneEntries = typeof getTimePlanDoneEntries === 'function' ? getTimePlanDoneEntries() : {};
     const grouped = {};
 
     weeklyPlans.forEach(plan => {
@@ -351,7 +383,7 @@ async function renderWeeklyTimePlan() {
                 </div>
                 ${sorted.length === 0
                     ? `<div class="time-plan-empty">${t('time_management_empty_weekly')}</div>`
-                    : sorted.map(plan => renderTimePlanCard(plan)).join('')
+                    : sorted.map(plan => renderTimePlanCard(plan, doneEntries)).join('')
                 }
             </div>
         `;
@@ -662,30 +694,58 @@ window.fillTimePlanInput = fillTimePlanInput;
 
 // ── Time Plan: variable system ──
 
-// localStorage key for "done" marks on time plan cards (keyed by plan id + date)
-const TIME_PLAN_DONE_KEY = 'salatk_timeplan_done';
-
 function getTimePlanDoneMap() {
-    try { return JSON.parse(localStorage.getItem(TIME_PLAN_DONE_KEY) || '{}'); } catch { return {}; }
+    if (window.TimePlanService?.getDoneMap) {
+        return TimePlanService.getDoneMap();
+    }
+
+    try { return JSON.parse(localStorage.getItem('salatk_timeplan_done') || '{}'); } catch { return {}; }
 }
 
-function setTimePlanDone(planId, isDone) {
+function getTimePlanDoneEntries() {
+    if (window.TimePlanService?.getDoneEntries) {
+        return TimePlanService.getDoneEntries();
+    }
+
+    const raw = getTimePlanDoneMap();
+    return Object.fromEntries(
+        Object.entries(raw).map(([planId, value]) => [planId, { value: Boolean(value), updatedAt: null }])
+    );
+}
+
+async function setTimePlanDone(planId, isDone) {
+    if (window.TimePlanService?.setPlanDone) {
+        const result = await TimePlanService.setPlanDone(planId, isDone);
+        return result?.success !== false;
+    }
+
     const map = getTimePlanDoneMap();
     if (isDone) { map[planId] = true; } else { delete map[planId]; }
-    localStorage.setItem(TIME_PLAN_DONE_KEY, JSON.stringify(map));
+    localStorage.setItem('salatk_timeplan_done', JSON.stringify(map));
+    return true;
 }
 
 
 
 
 async function handleMarkTimePlanDone(planId, isDone) {
-    setTimePlanDone(planId, isDone);
+    const plan = isDone && window.TimePlanService?.getPlanById
+        ? await window.TimePlanService.getPlanById(planId)
+        : null;
+
+    await setTimePlanDone(planId, isDone);
     // Activate variable connections on Done
     if (isDone && window.VariableService && window.VariableManager) {
         const link = VariableService.getForElement('timeplan', planId);
-        if (link && link.trigger === 'done') VariableManager.activate(link.variable, 'timeplan', planId, 'done');
+        if (link && link.trigger === 'done') {
+            await VariableManager.activate(link.variable, 'timeplan', planId, 'done', {
+                date: plan && plan.scope === 'daily' && plan.date ? plan.date : getCurrentDate(),
+                scope: plan?.scope || window.timePlanView || 'daily',
+                page: window.currentPage
+            });
+        }
     }
-    renderPage('time-management', true);
+    await renderPage('time-management', true);
 }
 
 function showTimePlanVariableModal(planId) {
@@ -704,14 +764,8 @@ window.showTimePlanVariableModal = showTimePlanVariableModal;
 // ── Variable Connection: listen for activations targeting a time plan ──
 window.addEventListener('variableActivated', async (e) => {
     if (!e.detail || window.currentPage !== 'time-management') return;
-    const { targets, eventValue } = e.detail;
-    for (const target of targets) {
-        if (target.elementType !== 'timeplan') continue;
-        if (eventValue === 'done') {
-            setTimePlanDone(target.elementId, true);
-        }
-    }
-    if (targets.some(t => t.elementType === 'timeplan')) {
-        renderPage('time-management', true);
-    }
+    const relevantTargets = (e.detail.appliedTargets?.length ? e.detail.appliedTargets : e.detail.targets || [])
+        .filter((target) => target.elementType === 'timeplan');
+    if (relevantTargets.length === 0) return;
+    await renderPage('time-management', true);
 });

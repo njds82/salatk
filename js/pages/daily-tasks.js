@@ -318,13 +318,18 @@ async function handleUpdateTask(taskId) {
 
 async function handleToggleTask(taskId, nextStatus) {
     try {
-        await TaskService.toggleTaskStatus(taskId, nextStatus);
+        const updatedTask = await TaskService.toggleTaskStatus(taskId, nextStatus);
         await updatePointsDisplay();
         showToast(nextStatus === 'completed' ? t('task_completed_success') : t('task_reopened_success'), 'success');
         // Activate variable connections on completion
         if (nextStatus === 'completed' && window.VariableService && window.VariableManager) {
             const link = VariableService.getForElement('task', taskId);
-            if (link && link.trigger === 'completed') VariableManager.activate(link.variable, 'task', taskId, 'completed');
+            if (link && link.trigger === 'completed') {
+                await VariableManager.activate(link.variable, 'task', taskId, 'completed', {
+                    date: updatedTask?.dueDate || getCurrentDate(),
+                    page: window.currentPage
+                });
+            }
         }
         await renderPage('daily-tasks', true);
     } catch (error) {
@@ -374,19 +379,8 @@ window.showTaskVariableModal = showTaskVariableModal;
 // ── Variable Connection: listen for activations targeting a task ──
 window.addEventListener('variableActivated', async (e) => {
     if (!e.detail || window.currentPage !== 'daily-tasks') return;
-    const { targets, eventValue } = e.detail;
-    for (const target of targets) {
-        if (target.elementType !== 'task') continue;
-        if (eventValue === 'completed') {
-            try {
-                await TaskService.toggleTaskStatus(target.elementId, 'completed');
-                await updatePointsDisplay();
-            } catch (err) {
-                console.warn('Variable auto-complete task failed', err);
-            }
-        }
-    }
-    if (targets.some(t => t.elementType === 'task')) {
-        await renderPage('daily-tasks', true);
-    }
+    const relevantTargets = (e.detail.appliedTargets?.length ? e.detail.appliedTargets : e.detail.targets || [])
+        .filter((target) => target.elementType === 'task');
+    if (relevantTargets.length === 0) return;
+    await renderPage('daily-tasks', true);
 });
