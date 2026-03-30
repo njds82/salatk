@@ -76,11 +76,15 @@ const PointsService = {
 
                 // Fallback to manual sum if view fails or user not in view yet
                 // Increase limit to 10,000 to handle users with many activities
-                const { data: fallbackData, error: fallbackError } = await window.supabaseClient
-                    .from('points_history')
-                    .select('amount')
-                    .eq('user_id', userId)
-                    .limit(10000);
+                const { data: fallbackData, error: fallbackError } = await withTimeout(
+                    window.supabaseClient
+                        .from('points_history')
+                        .select('amount')
+                        .eq('user_id', userId)
+                        .limit(10000),
+                    5000,
+                    { data: [], error: 'timeout' }
+                );
 
                 if (fallbackError) {
                     console.error('PointsService: Fallback fetch failed', fallbackError);
@@ -105,11 +109,15 @@ const PointsService = {
         if (!session) return [];
 
         try {
-            const { data, error } = await window.supabaseClient
-                .from('points_history')
-                .select('*')
-                .eq('user_id', session.user.id)
-                .order('recorded_at', { ascending: false });
+            const { data, error } = await withTimeout(
+                window.supabaseClient
+                    .from('points_history')
+                    .select('*')
+                    .eq('user_id', session.user.id)
+                    .order('recorded_at', { ascending: false }),
+                8000,
+                { data: [], error: 'timeout' }
+            );
 
             if (error) throw error;
 

@@ -367,22 +367,40 @@ async function checkAuthAndInit() {
 
     const splashScreen = document.getElementById('splashScreen');
 
+    const safeInitTask = (label, taskPromise, timeoutMs = 8000) => {
+        try {
+            return Promise.race([
+                Promise.resolve(taskPromise),
+                new Promise((resolve) => setTimeout(() => {
+                    console.warn(`[Init] ${label} timed out after ${timeoutMs}ms`);
+                    resolve(null);
+                }, timeoutMs))
+            ]).catch((error) => {
+                console.error(`[Init] ${label} failed`, error);
+                return null;
+            });
+        } catch (error) {
+            console.error(`[Init] ${label} threw`, error);
+            return Promise.resolve(null);
+        }
+    };
+
     // Start initializations in parallel
     const initTasks = [];
     if (window.SettingsService) {
-        initTasks.push(SettingsService.init());
+        initTasks.push(safeInitTask('SettingsService.init', SettingsService.init(), 8000));
     }
 
     // CRITICAL: We MUST wait for prayer times before main render to avoid stale data
     // This solves the race condition where UI loads with empty data then snaps
     let prayerTimesPromise = null;
     if (window.PrayerManager) {
-        prayerTimesPromise = PrayerManager.init();
+        prayerTimesPromise = safeInitTask('PrayerManager.init', PrayerManager.init(), 8000);
         initTasks.push(prayerTimesPromise);
     }
 
     if (window.VariableService) {
-        initTasks.push(VariableService.init());
+        initTasks.push(safeInitTask('VariableService.init', VariableService.init(), 8000));
     }
 
     // Wait for essential services
@@ -395,30 +413,38 @@ async function checkAuthAndInit() {
         // Schedule next prayer notification if we have times
         if (prayerTimesPromise && window.NotificationManager) {
             const times = await prayerTimesPromise;
-            NotificationManager.scheduleNextPrayer(times);
+            if (times) {
+                NotificationManager.scheduleNextPrayer(times);
+            }
         }
     } catch (e) {
         console.error("Initialization error:", e);
     }
 
-    // Determine target page
-    navigateToHash();
+    try {
+        // Determine target page
+        navigateToHash();
 
-    if (window.PushService) {
-        PushService.initAutoSubscribe();
-        PushService.hydrateFallbackNotifications();
-    }
+        if (window.PushService) {
+            PushService.initAutoSubscribe();
+            PushService.hydrateFallbackNotifications();
+        }
 
-    // Update points display after potential sync
-    updatePointsDisplay();
-
-    // Hide Splash Screen
-    if (splashScreen) {
-        splashScreen.classList.add('hidden');
-        // Remove from DOM after transition
-        setTimeout(() => {
-            splashScreen.style.display = 'none';
-        }, 500);
+        // Update points display after potential sync (non-blocking, but guard against runtime errors)
+        if (typeof updatePointsDisplay === 'function') {
+            updatePointsDisplay().catch((error) => {
+                console.warn('updatePointsDisplay failed during init:', error);
+            });
+        }
+    } finally {
+        // Always hide Splash Screen to prevent a "forever spinner" on unexpected runtime errors.
+        if (splashScreen) {
+            splashScreen.classList.add('hidden');
+            // Remove from DOM after transition
+            setTimeout(() => {
+                splashScreen.style.display = 'none';
+            }, 500);
+        }
     }
 
     // BACKGROUND TASKS: Non-critical cleanup and sync
@@ -746,63 +772,50 @@ async function renderPage(page, noScroll = false, options = { forceFresh: false,
             }
         }
 
-        switch (page) {
-            case 'login':
-                html = renderAuthPage('login');
-                break;
-            case 'signup':
-                html = renderAuthPage('signup');
-                break;
-            case 'daily-prayers':
-                html = await renderDailyPrayersPage();
-                break;
-            case 'qada-prayers':
-                html = await renderQadaPrayersPage();
-                break;
-            case 'habits':
-                html = await renderHabitsPage();
-                break;
-            case 'daily-tasks':
-                html = await renderDailyTasksPage();
-                break;
-            case 'time-management':
-                html = await renderTimeManagementPage();
-                break;
-            case 'statistics':
-                html = await renderStatisticsPage();
-                break;
-            case 'leaderboard':
-                html = await renderLeaderboardPage({ forceRefresh: renderOptions.forceFresh });
-                break;
-            case 'store':
-                html = await renderStorePage();
-                break;
-            case 'settings':
-                html = await renderSettingsPage();
-                break;
-            case 'athkar':
-                html = await renderAthkarPage();
-                break;
-            case 'more':
-                html = await renderMorePage();
-                break;
-            case 'challenge':
-                if (window.renderChallengePage) {
-                    html = await window.renderChallengePage();
-                } else {
-                    html = '<div class="error-message">Error loading challenge module</div>';
-                }
-                break;
-            case 'admin':
-                if (window.renderAdminPage) {
-                    html = await window.renderAdminPage();
-                } else {
-                    html = '<div class="error-message">Error loading admin module</div>';
-                }
-                break;
-            default:
-                html = await renderDailyPrayersPage();
+        const pageHtml = await withTimeout((async () => {
+            switch (page) {
+                case 'login':
+                    return renderAuthPage('login');
+                case 'signup':
+                    return renderAuthPage('signup');
+                case 'daily-prayers':
+                    return await renderDailyPrayersPage();
+                case 'qada-prayers':
+                    return await renderQadaPrayersPage();
+                case 'habits':
+                    return await renderHabitsPage();
+                case 'daily-tasks':
+                    return await renderDailyTasksPage();
+                case 'time-management':
+                    return await renderTimeManagementPage();
+                case 'statistics':
+                    return await renderStatisticsPage();
+                case 'leaderboard':
+                    return await renderLeaderboardPage({ forceRefresh: renderOptions.forceFresh });
+                case 'store':
+                    return await renderStorePage();
+                case 'settings':
+                    return await renderSettingsPage();
+                case 'athkar':
+                    return await renderAthkarPage();
+                case 'more':
+                    return await renderMorePage();
+                case 'challenge':
+                    if (window.renderChallengePage) return await window.renderChallengePage();
+                    return '<div class="error-message">Error loading challenge module</div>';
+                case 'admin':
+                    if (window.renderAdminPage) return await window.renderAdminPage();
+                    return '<div class="error-message">Error loading admin module</div>';
+                default:
+                    return await renderDailyPrayersPage();
+            }
+        })(), 20000, null);
+
+        if (pageHtml === null) {
+            throw new Error(`Page render timeout: ${page}`);
         }
+
+        html = pageHtml;
 
         if (requestToken !== renderRequestToken) return;
 
