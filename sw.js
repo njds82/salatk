@@ -1,6 +1,6 @@
 
 // Service Worker for Salatk
-const CACHE_NAME = 'salatk-cache-v2';
+const CACHE_NAME = 'salatk-cache-v3';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
@@ -81,11 +81,9 @@ self.addEventListener('fetch', (event) => {
     const isSupabaseApi = event.request.url.includes('supabase.co');
 
     if (isSupabaseApi) {
-        // Supabase traffic is always network-only to avoid stale sensitive data
-        // and to reduce cache write overhead on frequent API reads.
-        event.respondWith(
-            fetch(event.request).catch(() => Response.error())
-        );
+        // Bypass Service Worker completely for Supabase API calls.
+        // This prevents CORS issues, opaque response failures, and ensures
+        // the native browser network stack handles Auth/REST requests correctly.
         return;
     }
 
