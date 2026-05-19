@@ -319,14 +319,34 @@ const AuthManager = {
                 // refresh_token exchange with Supabase has enough time to complete.
                 const tokenFresh = this._session ? this._isSnapshotTokenFresh(this._session) : false;
                 const timeoutMs = tokenFresh ? 3000 : 10000;
-                const { data: { session } } = await withTimeout(window.supabaseClient.auth.getSession(), timeoutMs);
-                this.setSession(session);
-                return session;
+                
+                let sessionPromise;
+                if (!tokenFresh) {
+                    console.log('AuthManager: Forcing explicit session refresh...');
+                    sessionPromise = window.supabaseClient.auth.refreshSession();
+                } else {
+                    sessionPromise = window.supabaseClient.auth.getSession();
+                }
+
+                const response = await withTimeout(sessionPromise, timeoutMs);
+                
+                if (response && response.error) {
+                    console.warn('AuthManager: Refresh returned error', response.error);
+                }
+                
+                const session = response && response.data ? response.data.session : null;
+                
+                if (session) {
+                    this.setSession(session);
+                    return session;
+                }
+                
+                return this._session;
             } catch (err) {
                 if (err.message === 'timeout') {
-                    console.warn('AuthManager: getSession timed out');
+                    console.warn('AuthManager: getSession/refreshSession timed out');
                 } else {
-                    console.error('AuthManager: getSession error', err);
+                    console.error('AuthManager: getSession/refreshSession error', err);
                 }
                 return this._session;
             } finally {
