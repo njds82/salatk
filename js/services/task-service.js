@@ -102,6 +102,8 @@ const TaskService = {
         if (!session) return [];
 
         const safeFilter = filter || 'today';
+        const cacheKey = `${session.user.id}:${safeFilter}:${todayDate}`;
+
         let query = window.supabaseClient
             .from('tasks')
             .select('*')
@@ -124,16 +126,35 @@ const TaskService = {
         const { data, error } = await this._withTimeout(
             query,
             8000,
-            { data: [], error: 'timeout' }
+            { data: null, error: 'timeout' }
         );
 
-        if (error && error !== 'timeout') {
-            console.error('TaskService: Failed to fetch tasks', error);
-            return [];
+        if (data !== null) {
+            const mapped = (data || []).map((row) => this._mapTaskRow(row));
+            const sorted = this._sortTasks(mapped, safeFilter);
+
+            // Persist to offline cache
+            if (window.OfflineStore) {
+                OfflineStore.set('tasks', cacheKey, sorted);
+            }
+
+            return sorted;
         }
 
-        const mapped = (data || []).map((row) => this._mapTaskRow(row));
-        return this._sortTasks(mapped, safeFilter);
+        // Network failed — try offline cache
+        if (error && error !== 'timeout') {
+            console.error('TaskService: Failed to fetch tasks', error);
+        } else if (error === 'timeout' || data === null) {
+            if (window.OfflineStore) {
+                const cached = await OfflineStore.get('tasks', cacheKey);
+                if (cached) {
+                    console.log('TaskService: Using offline cache for', safeFilter);
+                    return cached;
+                }
+            }
+        }
+
+        return [];
     },
 
     async getTaskById(taskId) {

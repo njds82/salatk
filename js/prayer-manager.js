@@ -25,10 +25,24 @@ const PrayerManager = {
 
     // Get user location (Manual or Default only)
     async getUserLocation() {
-        if (!window.supabaseClient) return this.getDefaultLocation();
+        if (!window.supabaseClient) {
+            // Try localStorage first
+            const cached = localStorage.getItem(PRAYER_CACHE_KEY);
+            if (cached) {
+                try { return JSON.parse(cached); } catch (e) { /* ignore */ }
+            }
+            return this.getDefaultLocation();
+        }
 
         const session = await window.AuthManager.getSession();
-        if (!session) return this.getDefaultLocation();
+        if (!session) {
+            // Try localStorage even without session
+            const cached = localStorage.getItem(PRAYER_CACHE_KEY);
+            if (cached) {
+                try { return JSON.parse(cached); } catch (e) { /* ignore */ }
+            }
+            return this.getDefaultLocation();
+        }
 
         try {
             const { data, error } = await withTimeout(
@@ -42,13 +56,16 @@ const PrayerManager = {
             );
 
             if (data) {
-                return {
+                const loc = {
                     lat: data.latitude,
                     long: data.longitude,
                     name: data.name || '',
                     manualMode: data.is_manual_mode,
                     lastUpdate: new Date(data.last_update).getTime()
                 };
+                // Always mirror to localStorage so it's available offline
+                localStorage.setItem(PRAYER_CACHE_KEY, JSON.stringify(loc));
+                return loc;
             }
 
             // Migration check: If no cloud data, check legacy localStorage
@@ -61,6 +78,15 @@ const PrayerManager = {
             }
         } catch (e) {
             console.error('PrayerManager: Failed to fetch cloud location', e);
+
+            // Offline fallback: use last known location from localStorage
+            const cached = localStorage.getItem(PRAYER_CACHE_KEY);
+            if (cached) {
+                try {
+                    console.log('PrayerManager: Using cached location (offline)');
+                    return JSON.parse(cached);
+                } catch (parseErr) { /* ignore */ }
+            }
         }
 
         return this.getDefaultLocation();

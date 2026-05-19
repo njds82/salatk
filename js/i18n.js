@@ -563,6 +563,9 @@ const translations = {
         variable_remove: 'إزالة المتغير',
         variable_invalid: 'يجب أن يكون المتغير من 1 إلى 5 أحرف',
         variable_activated: 'تم تفعيل المتغير:',
+
+        // Offline
+        offline_banner: 'لا يوجد اتصال — يتم عرض البيانات المحفوظة',
     },
 
     en: {
@@ -1125,6 +1128,9 @@ const translations = {
         variable_remove: 'Remove Variable',
         variable_invalid: 'Variable must be 1–5 characters',
         variable_activated: 'Variable activated:',
+
+        // Offline
+        offline_banner: 'No internet connection — displaying offline data',
     }
 };
 

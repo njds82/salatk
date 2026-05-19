@@ -141,6 +141,10 @@ const AuthManager = {
             if (window.db) {
                 await window.db.delete();
             }
+            // Clear offline IndexedDB cache
+            if (window.OfflineStore) {
+                await OfflineStore.clearAll();
+            }
             window.location.reload();
         }
         return { error };

@@ -268,6 +268,11 @@ document.addEventListener('DOMContentLoaded', () => {
         document.documentElement.setAttribute('data-theme', savedTheme);
     }
 
+    // Initialize offline UI listener early
+    if (window.OfflineUI) {
+        OfflineUI.init();
+    }
+
     // Apply navigation order/visibility customizations from previous sessions
     applyNavigationPreferences();
 

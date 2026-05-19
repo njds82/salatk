@@ -219,18 +219,40 @@ const HabitService = {
         const session = await window.AuthManager.getSession();
         if (!session) return { habits: [], meta: emptyMeta };
 
+        const habitsKey = `${session.user.id}:habits`;
+        const historyKey = `${session.user.id}:habit_history`;
+
         const { data: habitRows } = await withTimeout(
             window.supabaseClient
                 .from('habits')
                 .select('id,name,type,created_at')
                 .eq('user_id', session.user.id),
             8000,
-            { data: [] }
+            { data: null }
         );
 
-        const habits = (habitRows || [])
-            .map((row) => this._mapHabitRow(row))
-            .filter(Boolean);
+        let habits;
+        if (habitRows !== null) {
+            habits = (habitRows || [])
+                .map((row) => this._mapHabitRow(row))
+                .filter(Boolean);
+
+            // Persist to offline cache
+            if (window.OfflineStore) {
+                OfflineStore.set('habits', habitsKey, habitRows || []);
+            }
+        } else {
+            // Network failed — try offline cache
+            if (window.OfflineStore) {
+                const cachedRows = await OfflineStore.get('habits', habitsKey);
+                habits = (cachedRows || [])
+                    .map((row) => this._mapHabitRow(row))
+                    .filter(Boolean);
+                console.log('HabitService: Using offline cache for habits');
+            } else {
+                habits = [];
+            }
+        }
 
         if (habits.length === 0) {
             return { habits, meta: emptyMeta };
@@ -244,12 +266,30 @@ const HabitService = {
                 .eq('user_id', session.user.id)
                 .in('habit_id', habitIds),
             8000,
-            { data: [] }
+            { data: null }
         );
+
+        let resolvedHistory;
+        if (history !== null) {
+            resolvedHistory = history || [];
+
+            // Persist to offline cache
+            if (window.OfflineStore) {
+                OfflineStore.set('habit_history', historyKey, resolvedHistory);
+            }
+        } else {
+            // Network failed — try offline cache
+            if (window.OfflineStore) {
+                resolvedHistory = (await OfflineStore.get('habit_history', historyKey)) || [];
+                console.log('HabitService: Using offline cache for habit_history');
+            } else {
+                resolvedHistory = [];
+            }
+        }
 
         return {
             habits,
-            meta: this._buildCardMeta(habits, history, selectedDate)
+            meta: this._buildCardMeta(habits, resolvedHistory, selectedDate)
         };
     },
 

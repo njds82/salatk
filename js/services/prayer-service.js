@@ -22,6 +22,8 @@ const PrayerService = {
         const session = await window.AuthManager.getSession();
         if (!session) return {};
 
+        const cacheKey = `${session.user.id}:${date}`;
+
         try {
             const { data, error } = await withTimeout(
                 window.supabaseClient
@@ -44,9 +46,24 @@ const PrayerService = {
                 };
             });
 
+            // Persist to offline cache
+            if (window.OfflineStore) {
+                OfflineStore.set('prayers', cacheKey, prayerMap);
+            }
+
             return prayerMap;
         } catch (e) {
             console.error('PrayerService: Failed to fetch daily prayers', e);
+
+            // Offline fallback
+            if (window.OfflineStore) {
+                const cached = await OfflineStore.get('prayers', cacheKey);
+                if (cached) {
+                    console.log('PrayerService: Using offline cache for', date);
+                    return cached;
+                }
+            }
+
             return {};
         }
     },
@@ -69,6 +86,14 @@ const PrayerService = {
         const pointId = `${session.user.id}:prayer:${date}:${key}`;
         let pointsAmount = 0;
         let reason = `${t(prayerDef.nameKey)} - ${t(status === 'done' ? 'performed' : 'missed')}`;
+
+        // Optimistic offline cache update
+        if (window.OfflineStore) {
+            const cacheKey = `${session.user.id}:${date}`;
+            const cached = (await OfflineStore.get('prayers', cacheKey)) || {};
+            cached[key] = { key, status, timestamp: Date.now() };
+            OfflineStore.set('prayers', cacheKey, cached);
+        }
 
         if (status === 'done') {
             pointsAmount = prayerDef.points;
@@ -118,7 +143,7 @@ const PrayerService = {
             return { success: true };
         } catch (e) {
             console.error('PrayerService: Error marking prayer', e);
-            return { success: false, error: e }; // Improved error handling
+            return { success: false, error: e };
         }
     },
 
@@ -177,6 +202,8 @@ const PrayerService = {
         const session = await window.AuthManager.getSession();
         if (!session) return [];
 
+        const cacheKey = `${session.user.id}:qada`;
+
         try {
             const { data, error } = await window.supabaseClient
                 .from('qada_prayers')
@@ -186,7 +213,7 @@ const PrayerService = {
 
             if (error) throw error;
 
-            return (data || []).map(r => ({
+            const result = (data || []).map(r => ({
                 id: r.id,
                 prayer: r.prayer_key,
                 date: r.original_date,
@@ -194,8 +221,22 @@ const PrayerService = {
                 timestamp: new Date(r.recorded_at).getTime(),
                 manual: r.is_manual
             }));
+
+            // Persist to offline cache
+            if (window.OfflineStore) {
+                OfflineStore.set('qada', cacheKey, result);
+            }
+
+            return result;
         } catch (e) {
             console.error('PrayerService: Failed to fetch Qada prayers', e);
+
+            // Offline fallback
+            if (window.OfflineStore) {
+                const cached = await OfflineStore.get('qada', cacheKey);
+                if (cached) return cached;
+            }
+
             return [];
         }
     },
