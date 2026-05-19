@@ -233,6 +233,16 @@ const AuthManager = {
         };
     },
 
+    // Returns true if the token from the snapshot is still valid (not expired or expiring within 60s).
+    _isSnapshotTokenFresh(snapshot) {
+        // Supabase stores expiry as UNIX seconds in `expires_at`
+        const expiresAt = snapshot?.expires_at;
+        if (!expiresAt) return false;
+        const nowSeconds = Math.floor(Date.now() / 1000);
+        // Treat token as stale if it expires within the next 60 seconds
+        return expiresAt - nowSeconds > 60;
+    },
+
     async getSession() {
         if (this._session) return this._session;
         if (this._sessionPromise) return this._sessionPromise;
@@ -247,13 +257,20 @@ const AuthManager = {
 
                 if (hasUser && hasAccessToken) {
                     this._session = parsedSnapshot;
-                    console.log('AuthManager: Using session snapshot');
 
-                    // 2. Trigger background refresh but don't await it if we have a snapshot
-                    // This allows the UI to render immediately
-                    this._refreshSessionBackground();
-
-                    return this._session;
+                    if (this._isSnapshotTokenFresh(parsedSnapshot)) {
+                        // Token is still fresh — use snapshot immediately and refresh in background
+                        console.log('AuthManager: Using fresh session snapshot');
+                        this._refreshSessionBackground();
+                        return this._session;
+                    } else {
+                        // Token is expired or about to expire (common after PWA suspend).
+                        // MUST refresh before returning so API calls don't fail.
+                        console.log('AuthManager: Snapshot token expired/stale — waiting for refresh (PWA resume)');
+                        const refreshed = await this._refreshSessionBackground();
+                        // If refresh succeeded, return new session; otherwise fall through to null
+                        return refreshed || null;
+                    }
                 }
 
                 // Drop outdated snapshots that don't contain a valid access token.
@@ -264,7 +281,7 @@ const AuthManager = {
             }
         }
 
-        // 3. If no snapshot, check if Supabase already has a session in its internal state
+        // 2. If no snapshot, check if Supabase already has a session in its internal state
         // This is a synchronous-ish check that might prevent unnecessary network waits
         const localSession = window.supabaseClient.auth.session ? window.supabaseClient.auth.session() : null;
         if (localSession) {
@@ -273,7 +290,7 @@ const AuthManager = {
             return localSession;
         }
 
-        // 4. No snapshot or local memory, must wait for network
+        // 3. No snapshot or local memory, must wait for network
         return this._refreshSessionBackground();
     },
 
@@ -293,8 +310,11 @@ const AuthManager = {
 
         this._sessionPromise = (async () => {
             try {
-                // Shorter timeout if we already have some session data to work with
-                const timeoutMs = this._session ? 2000 : 5000;
+                // If the cached token is fresh, use a short timeout (background refresh).
+                // If the token is stale/expired (e.g. PWA resume), wait longer so the
+                // refresh_token exchange with Supabase has enough time to complete.
+                const tokenFresh = this._session ? this._isSnapshotTokenFresh(this._session) : false;
+                const timeoutMs = tokenFresh ? 3000 : 10000;
                 const { data: { session } } = await withTimeout(window.supabaseClient.auth.getSession(), timeoutMs);
                 this.setSession(session);
                 return session;
